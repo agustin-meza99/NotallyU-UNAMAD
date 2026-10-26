@@ -11,6 +11,7 @@
         <item quantity="one">%1$d de %2$d completada</item>
         <item quantity="other">%1$d de %2$d completadas</item>
     </plurals>
+    <string name="today_section_not_delivered">No entregadas</string>
     <string name="today_section_overdue">Atrasadas</string>
     <string name="today_section_today">Para hoy</string>
     <string name="today_section_anytime">Sin hora</string>
@@ -42,6 +43,7 @@
     <string name="task_group">Grupal</string>
     <string name="task_group_yes">Grupal: Sí</string>
     <string name="task_delivered">Entregada</string>
+    <string name="task_not_delivered">No entregada</string>
     <string name="task_delivered_yes">Entregada: Sí</string>
     <string name="subtask_deleted">Subtarea eliminada</string>
 

@@ -21,8 +21,11 @@ enum class FiltroHoy(val id: String) {
     }
 }
 
-/** Secciones de Hoy, en el orden del documento (§7.3). */
-enum class TipoSeccionHoy { ATRASADAS, HOY, SIN_HORA, PROXIMAS, COMPLETADAS }
+/**
+ * Secciones de Hoy, en el orden del documento (§7.3). "No entregadas" va antes
+ * que "Atrasadas" porque el Aula Virtual no maneja el concepto de atraso.
+ */
+enum class TipoSeccionHoy { NO_ENTREGADAS, ATRASADAS, HOY, SIN_HORA, PROXIMAS, COMPLETADAS }
 
 /** Tarea con su curso resuelta, lista para pintar una fila. */
 data class ElementoHoy(
@@ -62,11 +65,14 @@ data class ConteosFiltroHoy(
 /**
  * Resultado puro de agrupar las tareas de Hoy.
  *
- * - Atrasadas / Para hoy / Sin hora / Próximas: solo pendientes y ya sin la
- *   tarea focal, para no duplicar su fila.
+ * - No entregadas: tareas del Aula (`externalId != null`) sin entregar y vencidas.
+ * - Atrasadas: solo tareas manuales vencidas; el Aula no maneja "atrasada".
+ * - Para hoy / Sin hora / Próximas: solo pendientes y ya sin la tarea focal,
+ *   para no duplicar su fila.
  * - Completadas: tareas hechas de la agenda de hoy (con o sin hora).
  * - historialCompletadas: todo el historial, para el filtro "Completadas".
- * - resumen: conteo del día (Atrasadas + Para hoy + Sin hora); Próximas fuera.
+ * - resumen: conteo del día (No entregadas + Atrasadas + Para hoy + Sin hora);
+ *   Próximas fuera.
  * - conteosFiltro: lo que cuenta cada chip; se mide sobre las listas completas,
  *   así que la focal entra una sola vez. `todas` sigue siendo el conteo de las
  *   secciones de la vista por secciones (§7.7), no el de "Completadas".
@@ -74,6 +80,7 @@ data class ConteosFiltroHoy(
  *   historial); `tieneContenidoSecciones` responde solo por las secciones.
  */
 data class GruposHoy(
+    val noEntregadas: List<ElementoHoy> = emptyList(),
     val atrasadas: List<ElementoHoy> = emptyList(),
     val hoy: List<ElementoHoy> = emptyList(),
     val sinHora: List<ElementoHoy> = emptyList(),
@@ -139,8 +146,19 @@ fun agruparHoy(
     val activas = tareasActivas.filter { !it.archivada }
     val sinFecha = activas.filter { it.entregaEn == null }
 
+    val elementosNoEntregadas = activas
+        .filter {
+            estaPendiente(it) && it.externalId != null && !it.entregada &&
+                it.entregaEn != null && it.entregaEn < inicioHoy
+        }
+        .sortedWith(comparadorEntrega)
+        .map(::elemento)
+
     val elementosAtrasadas = activas
-        .filter { estaPendiente(it) && it.entregaEn != null && it.entregaEn < inicioHoy }
+        .filter {
+            estaPendiente(it) && it.externalId == null &&
+                it.entregaEn != null && it.entregaEn < inicioHoy
+        }
         .sortedWith(comparadorEntrega)
         .map(::elemento)
 
@@ -184,17 +202,19 @@ fun agruparHoy(
     // Conteos de los chips (§7.7): sobre las listas completas, sin extraer la
     // focal, de modo que cada número coincide con lo que verá el usuario.
     val cantidadPendientes =
-        (elementosAtrasadas + elementosHoy + elementosSinHora + elementosProximas)
+        (elementosNoEntregadas + elementosAtrasadas + elementosHoy + elementosSinHora +
+            elementosProximas)
             .distinctBy { it.tarea.id }
             .size
     val cantidadTodas =
-        (elementosAtrasadas + elementosHoy + elementosSinHora + elementosProximas +
-            elementosCompletadas)
+        (elementosNoEntregadas + elementosAtrasadas + elementosHoy + elementosSinHora +
+            elementosProximas + elementosCompletadas)
             .distinctBy { it.tarea.id }
             .size
     val cantidadCompletadas = elementosHistorial.distinctBy { it.tarea.id }.size
 
     val focal = seleccionarFocal(
+        noEntregadas = elementosNoEntregadas,
         atrasadas = elementosAtrasadas,
         hoy = elementosHoy,
         sinHora = elementosSinHora,
@@ -203,6 +223,7 @@ fun agruparHoy(
     val idFiltrado = focal?.tareaId
 
     return GruposHoy(
+        noEntregadas = elementosNoEntregadas.filterNot { it.tarea.id == idFiltrado },
         atrasadas = elementosAtrasadas.filterNot { it.tarea.id == idFiltrado },
         hoy = elementosHoy.filterNot { it.tarea.id == idFiltrado },
         sinHora = elementosSinHora.filterNot { it.tarea.id == idFiltrado },
@@ -217,23 +238,28 @@ fun agruparHoy(
             completadas = cantidadCompletadas,
         ),
         resumenCompletadas = elementosCompletadas.size,
-        resumenTotal = elementosAtrasadas.size + tareasDelDia.size + sinFechaEnResumen,
-        agendaPendientes = elementosAtrasadas.size + elementosHoy.size + elementosSinHora.size,
+        resumenTotal = elementosNoEntregadas.size + elementosAtrasadas.size +
+            tareasDelDia.size + sinFechaEnResumen,
+        agendaPendientes = elementosNoEntregadas.size + elementosAtrasadas.size +
+            elementosHoy.size + elementosSinHora.size,
         proximasPendientes = elementosProximas.size,
     )
 }
 
 /**
- * Elige la tarea focal de forma determinista (§7.3.1): grupo Atrasadas > Para
- * hoy > Sin hora > Próximas; dentro, prioridad, fecha, creación e id.
+ * Elige la tarea focal de forma determinista (§7.3.1): grupo No entregadas >
+ * Atrasadas > Para hoy > Sin hora > Próximas; dentro, prioridad, fecha, creación
+ * e id.
  */
 private fun seleccionarFocal(
+    noEntregadas: List<ElementoHoy>,
     atrasadas: List<ElementoHoy>,
     hoy: List<ElementoHoy>,
     sinHora: List<ElementoHoy>,
     proximas: List<ElementoHoy>,
 ): TareaFocalHoy? {
     val grupos = listOf(
+        TipoSeccionHoy.NO_ENTREGADAS to noEntregadas,
         TipoSeccionHoy.ATRASADAS to atrasadas,
         TipoSeccionHoy.HOY to hoy,
         TipoSeccionHoy.SIN_HORA to sinHora,
@@ -306,6 +332,9 @@ fun construirSeccionesHoy(
     )
 
     return buildList {
+        if (grupos.noEntregadas.isNotEmpty()) {
+            add(seccion(TipoSeccionHoy.NO_ENTREGADAS, grupos.noEntregadas, false, true))
+        }
         if (grupos.atrasadas.isNotEmpty()) {
             add(seccion(TipoSeccionHoy.ATRASADAS, grupos.atrasadas, false, true))
         }

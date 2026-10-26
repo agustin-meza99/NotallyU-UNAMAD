@@ -228,6 +228,12 @@ fun TodayScreen(
 
         var seccionDestino: TipoSeccionHoy? = salto.seccion
         var idTareaDestino = idElementoSeccion(salto.seccion)
+        if (salto.seccion == TipoSeccionHoy.ATRASADAS && idTareaDestino == null) {
+            // Una fecha pasada puede pertenecer a una tarea del Aula, que vive
+            // en "No entregadas" y no en "Atrasadas".
+            seccionDestino = TipoSeccionHoy.NO_ENTREGADAS
+            idTareaDestino = idElementoSeccion(TipoSeccionHoy.NO_ENTREGADAS)
+        }
         if (salto.seccion == TipoSeccionHoy.HOY && idTareaDestino == null) {
             // "Hoy" sin filas propias baja a la primera de "Sin hora" (§7.1.1).
             seccionDestino = TipoSeccionHoy.SIN_HORA

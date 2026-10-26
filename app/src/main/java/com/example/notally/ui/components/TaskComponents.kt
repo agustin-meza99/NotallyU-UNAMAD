@@ -97,8 +97,13 @@ fun TaskRow(
 ) {
     val colores = MaterialTheme.colorScheme
     val hecha = tarea.estado == Estado.COMPLETADA
-    val atrasada = !hecha && !tarea.entregada && tarea.entregaEn != null &&
+    val esExterna = tarea.externalId != null
+    val vencida = tarea.entregaEn != null &&
         DateFormat.diasAtraso(tarea.entregaEn, ahora) > 0
+    // En el Aula Virtual no existe "atrasada": una tarea importada sin entregar
+    // se muestra como "No entregada". Solo las tareas manuales se atrasan.
+    val atrasada = !hecha && !tarea.entregada && !esExterna && vencida
+    val noEntregada = !tarea.entregada && esExterna && vencida
 
     val contexto = LocalContext.current
     val es24Horas = remember(contexto) { AndroidDateFormat.is24HourFormat(contexto) }
@@ -109,7 +114,7 @@ fun TaskRow(
     val sinFecha = stringResource(R.string.task_noDate)
     val textoFecha = when {
         tarea.entregaEn == null -> sinFecha
-        hecha || tarea.entregada -> textoEtiquetaFecha(tarea.entregaEn, ahora)
+        hecha || tarea.entregada || noEntregada -> textoEtiquetaFecha(tarea.entregaEn, ahora)
         else -> textoAtraso(DateFormat.diasAtraso(tarea.entregaEn, ahora))
             ?: textoEtiquetaFecha(tarea.entregaEn, ahora)
     }
@@ -119,6 +124,11 @@ fun TaskRow(
     val textoGrupal = if (tarea.esGrupal) stringResource(R.string.task_group) else null
     val textoEntregada = if (tarea.entregada) {
         stringResource(R.string.task_delivered)
+    } else {
+        null
+    }
+    val textoNoEntregada = if (noEntregada) {
+        stringResource(R.string.task_not_delivered)
     } else {
         null
     }
@@ -133,6 +143,7 @@ fun TaskRow(
             textoPrioridad,
             textoGrupal,
             textoEntregada,
+            textoNoEntregada,
             hecha,
         ) {
             buildList {
@@ -142,6 +153,7 @@ fun TaskRow(
                 add(textoPrioridad)
                 if (textoGrupal != null) add(textoGrupal)
                 if (textoEntregada != null) add(textoEntregada)
+                if (textoNoEntregada != null) add(textoNoEntregada)
             }.joinToString(". ") + "."
         }
 
@@ -255,6 +267,12 @@ fun TaskRow(
                         append(separador)
                         withStyle(SpanStyle(color = colores.primary)) {
                             append(textoEntregada)
+                        }
+                    }
+                    if (textoNoEntregada != null) {
+                        append(separador)
+                        withStyle(SpanStyle(color = colores.error)) {
+                            append(textoNoEntregada)
                         }
                     }
                 },

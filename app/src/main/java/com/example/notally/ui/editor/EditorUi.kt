@@ -184,6 +184,11 @@ internal fun EditorContent(
             }
             if (estado.entregada) {
                 EditorReadOnlyRow(texto = stringResource(R.string.task_delivered_yes))
+            } else if (estado.externalId != null &&
+                estado.entregaEn?.let { it < System.currentTimeMillis() } == true
+            ) {
+                // Solo tareas del Aula: una tarea manual vencida se atrasa.
+                EditorReadOnlyRow(texto = stringResource(R.string.task_not_delivered))
             }
 
             Spacer(Modifier.height(24.dp))

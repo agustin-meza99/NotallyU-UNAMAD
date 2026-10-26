@@ -105,6 +105,7 @@ private fun FiltroHoy.recursoEtiqueta(): Int = when (this) {
 @Composable
 internal fun tituloSeccion(tipo: TipoSeccionHoy): String = stringResource(
     when (tipo) {
+        TipoSeccionHoy.NO_ENTREGADAS -> R.string.today_section_not_delivered
         TipoSeccionHoy.ATRASADAS -> R.string.today_section_overdue
         TipoSeccionHoy.HOY -> R.string.today_section_today
         TipoSeccionHoy.SIN_HORA -> R.string.today_section_anytime
@@ -150,7 +151,11 @@ internal fun LazyListScope.elementosHoy(
                 val tarea = objetivo.elemento.tarea
                 FocalTaskCard(
                     titulo = tarea.titulo,
-                    antetitulo = tituloSeccion(objetivo.grupo),
+                    antetitulo = if (objetivo.grupo == TipoSeccionHoy.NO_ENTREGADAS) {
+                        stringResource(R.string.task_not_delivered)
+                    } else {
+                        tituloSeccion(objetivo.grupo)
+                    },
                     textoCurso = objetivo.elemento.curso?.nombre
                         ?: stringResource(R.string.task_no_course),
                     textoEntrega = tarea.entregaEn?.let {
