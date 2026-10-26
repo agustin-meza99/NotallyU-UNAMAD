@@ -323,15 +323,7 @@ fun FocalTaskCard(
             color = colores.inverseOnSurface,
         )
         Spacer(Modifier.height(8.dp))
-        Column(
-            modifier = Modifier
-                .padding(start = anchoPriorityRail)
-                .rielPrioridad(
-                    prioridad = prioridad,
-                    hecha = false,
-                    color = colores.inverseOnSurface,
-                ),
-        ) {
+        Column {
             Text(
                 text = titulo,
                 style = MaterialTheme.typography.titleLarge,

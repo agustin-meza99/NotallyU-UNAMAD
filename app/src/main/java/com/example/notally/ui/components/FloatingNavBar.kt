@@ -325,13 +325,13 @@ private fun BotonAccionPrincipal(
     }
 }
 
-@Preview(name = "Cluster con FAB", showBackground = true, backgroundColor = 0xFFFBFAF7)
+@Preview(name = "Cluster con FAB", showBackground = true)
 @Composable
 private fun VistaPreviaClusterConFab() {
     VistaPreviaCluster(conAccionPrincipal = true)
 }
 
-@Preview(name = "Cluster sin FAB", showBackground = true, backgroundColor = 0xFFFBFAF7)
+@Preview(name = "Cluster sin FAB", showBackground = true)
 @Composable
 private fun VistaPreviaClusterSinFab() {
     VistaPreviaCluster(conAccionPrincipal = false)
@@ -341,7 +341,7 @@ private fun VistaPreviaClusterSinFab() {
  * Tercera pestaña activa desde el primer frame: sirve para comprobar que el
  * indicador nace en su slot y no barre desde el índice 0.
  */
-@Preview(name = "Cluster con Ajustes activo", showBackground = true, backgroundColor = 0xFFFBFAF7)
+@Preview(name = "Cluster con Ajustes activo", showBackground = true)
 @Composable
 private fun VistaPreviaClusterTercera() {
     VistaPreviaCluster(conAccionPrincipal = true, indiceSeleccionado = 2)
@@ -357,7 +357,6 @@ private fun VistaPreviaClusterTercera() {
     widthDp = 656,
     heightDp = 200,
     showBackground = true,
-    backgroundColor = 0xFFFBFAF7,
 )
 @Composable
 private fun VistaPreviaClusterComparativa() {

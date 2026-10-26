@@ -30,25 +30,30 @@ import com.example.notally.R
 
 // ---------------------------------------------------------------------------
 // Paleta clara (§2.2 del DESIGN.md). Es la única paleta de la app.
+//
+// Generada con @material/material-color-utilities 0.3.0, esquema TonalSpot
+// claro a partir del seed #2B5773; no hay hex elegidos a mano. Cada constante
+// es un tono de la paleta tonal del hue correspondiente, con el mapeo que
+// documenta §2.2.
 // ---------------------------------------------------------------------------
 
-internal val LightPrimary = Color(0xFF262320)
-internal val LightOnPrimary = Color(0xFFFCFAF6)
-internal val LightPrimaryContainer = Color(0xFFE7E1D6)
-internal val LightOnPrimaryContainer = Color(0xFF262320)
-internal val LightInversePrimary = Color(0xFFD6CEC0)
-internal val LightSecondary = Color(0xFF5E594F)
+internal val LightPrimary = Color(0xFF246488)
+internal val LightOnPrimary = Color(0xFFFFFFFF)
+internal val LightPrimaryContainer = Color(0xFFC8E6FF)
+internal val LightOnPrimaryContainer = Color(0xFF004C6E)
+internal val LightInversePrimary = Color(0xFF94CDF7)
+internal val LightSecondary = Color(0xFF4F606E)
 internal val LightOnSecondary = Color(0xFFFFFFFF)
-internal val LightSecondaryContainer = Color(0xFFEAE4D9)
-internal val LightOnSecondaryContainer = Color(0xFF38342D)
-internal val LightTertiary = Color(0xFF2B5773)
+internal val LightSecondaryContainer = Color(0xFFD3E5F5)
+internal val LightOnSecondaryContainer = Color(0xFF384956)
+internal val LightTertiary = Color(0xFF64597C)
 internal val LightOnTertiary = Color(0xFFFFFFFF)
-internal val LightTertiaryContainer = Color(0xFFD6E5EF)
-internal val LightOnTertiaryContainer = Color(0xFF103246)
-internal val LightError = Color(0xFFA33A2C)
+internal val LightTertiaryContainer = Color(0xFFE9DDFF)
+internal val LightOnTertiaryContainer = Color(0xFF4B4163)
+internal val LightError = Color(0xFFBA1A1A)
 internal val LightOnError = Color(0xFFFFFFFF)
-internal val LightErrorContainer = Color(0xFFF7DDD8)
-internal val LightOnErrorContainer = Color(0xFF4A130B)
+internal val LightErrorContainer = Color(0xFFFFDAD6)
+internal val LightOnErrorContainer = Color(0xFF93000A)
 
 /**
  * Superficie base del tema claro.
@@ -61,20 +66,20 @@ internal val LightSurface: Color
     @ReadOnlyComposable
     get() = colorResource(R.color.notally_surface)
 
-internal val LightOnSurface = Color(0xFF1F1C18)
-internal val LightSurfaceDim = Color(0xFFE6E1D8)
-internal val LightSurfaceBright = Color(0xFFFFFDF9)
-internal val LightSurfaceContainerLowest = Color(0xFFFDFBF8)
-internal val LightSurfaceContainerLow = Color(0xFFF5F2ED)
-internal val LightSurfaceContainer = Color(0xFFF0ECE5)
-internal val LightSurfaceContainerHigh = Color(0xFFE9E4DC)
-internal val LightSurfaceContainerHighest = Color(0xFFE2DCD2)
-internal val LightSurfaceVariant = Color(0xFFE8E3DA)
-internal val LightOnSurfaceVariant = Color(0xFF5B554C)
-internal val LightOutline = Color(0xFF8A8275)
-internal val LightOutlineVariant = Color(0xFFD7D0C4)
-internal val LightInverseSurface = Color(0xFF2E2A25)
-internal val LightInverseOnSurface = Color(0xFFF6F2EA)
+internal val LightOnSurface = Color(0xFF181C20)
+internal val LightSurfaceDim = Color(0xFFD7DADF)
+internal val LightSurfaceBright = Color(0xFFF6F9FE)
+internal val LightSurfaceContainerLowest = Color(0xFFFFFFFF)
+internal val LightSurfaceContainerLow = Color(0xFFF1F4F9)
+internal val LightSurfaceContainer = Color(0xFFEBEEF3)
+internal val LightSurfaceContainerHigh = Color(0xFFE5E8ED)
+internal val LightSurfaceContainerHighest = Color(0xFFDFE3E8)
+internal val LightSurfaceVariant = Color(0xFFDDE3EA)
+internal val LightOnSurfaceVariant = Color(0xFF41474D)
+internal val LightOutline = Color(0xFF71787E)
+internal val LightOutlineVariant = Color(0xFFC1C7CE)
+internal val LightInverseSurface = Color(0xFF2D3135)
+internal val LightInverseOnSurface = Color(0xFFEEF1F6)
 
 internal val Scrim = Color(0xFF000000)
 

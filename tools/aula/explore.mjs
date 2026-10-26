@@ -18,7 +18,9 @@ const BASE_POR_DEFECTO = 'https://aula-virtual.unamad.edu.pe';
 const USER_AGENT = 'NotallyExplorer/1.0';
 const TIMEOUT_MS = 20_000;
 const RETARDO_MS = 1_000;
-const MAX_SECCIONES = 15;
+const MAX_SECCIONES = 2;
+const MAX_EXTRA = 2;
+const LIMITE_TOTAL = 12;
 
 const ENDPOINTS = [
   { nombre: 'user-info-data', ruta: '/web/user/info/data' },
@@ -81,12 +83,14 @@ async function cargarEnvLocal() {
 }
 
 function analizarArgumentos(argv) {
-  const opciones = { base: BASE_POR_DEFECTO, dryRun: false, ayuda: false };
+  const opciones = { base: BASE_POR_DEFECTO, dryRun: false, ayuda: false, seguir: false };
 
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === '--dry-run') {
       opciones.dryRun = true;
+    } else if (arg === '--seguir') {
+      opciones.seguir = true;
     } else if (arg === '--help' || arg === '-h') {
       opciones.ayuda = true;
     } else if (arg === '--base') {
@@ -118,6 +122,7 @@ function mostrarAyuda() {
 Uso:
   node tools/aula/explore.mjs
   node tools/aula/explore.mjs --dry-run
+  node tools/aula/explore.mjs --seguir
   node tools/aula/explore.mjs --base https://aula-virtual.unamad.edu.pe
 
 Credenciales:
@@ -127,6 +132,7 @@ Credenciales:
 Opciones:
   --base <url>   URL base del Aula Virtual (por defecto ${BASE_POR_DEFECTO})
   --dry-run      Valida el entorno y muestra el plan sin hacer login
+  --seguir       Tras el login, consulta hasta ${MAX_EXTRA} enlaces candidatos a tareas
   -h, --help     Muestra esta ayuda
 
 Variables de entorno:
@@ -156,6 +162,7 @@ function mostrarPlan(base) {
     console.log(`    GET ${endpoint.ruta}`);
   }
   console.log(`    GET /web/section/get?s=<id>  (hasta ${MAX_SECCIONES} secciones detectadas en /)`);
+  console.log(`  Seguimiento (--seguir): hasta ${MAX_EXTRA} enlaces candidatos (tarea/actividad/evaluacion/section/curso)`);
   console.log(`  Salida: ${path.join('tools', 'aula', 'out')}`);
   console.log('Entorno validado. No se ha contactado el servidor.');
 }
@@ -349,6 +356,36 @@ function clasificarEnlace(ruta) {
   return 'web';
 }
 
+/**
+ * Ordena los enlaces de la portada por probabilidad de contener tareas.
+ * Excluye las rutas de sección ya consultadas para no repetir peticiones.
+ */
+function candidatosSeguimiento(enlaces, seccionesConsultadas) {
+  const yaConsultadas = new Set(
+    seccionesConsultadas.map((id) => `/web/section/get?s=${encodeURIComponent(id)}`),
+  );
+
+  const puntuar = (ruta) => {
+    const r = ruta.toLowerCase();
+    let puntos = 0;
+    if (r.includes('tarea') || r.includes('assignment')) puntos += 10;
+    if (r.includes('actividad') || r.includes('activity')) puntos += 8;
+    if (r.includes('evaluacion') || r.includes('evaluation')) puntos += 6;
+    if (r.includes('foro') || r.includes('forum')) puntos += 4;
+    if (r.includes('/section/')) puntos += 3;
+    if (r.includes('curso') || r.includes('course')) puntos += 2;
+    if (r === '/' || r.startsWith('/web/user') || r.startsWith('/account')) puntos -= 10;
+    return puntos;
+  };
+
+  return enlaces
+    .filter((enlace) => !yaConsultadas.has(enlace.ruta))
+    .map((enlace) => ({ ...enlace, puntos: puntuar(enlace.ruta) }))
+    .filter((enlace) => enlace.puntos > 0)
+    .sort((a, b) => b.puntos - a.puntos || a.ruta.localeCompare(b.ruta))
+    .slice(0, MAX_EXTRA);
+}
+
 async function principal() {
   const opciones = analizarArgumentos(process.argv.slice(2));
 
@@ -478,6 +515,7 @@ async function principal() {
 
   const secciones = [...idsSecciones].slice(0, MAX_SECCIONES);
   const seccionesConsultadas = [];
+  const extrasConsultadas = [];
   for (const id of secciones) {
     const ruta = `/web/section/get?s=${encodeURIComponent(id)}`;
     try {
@@ -488,6 +526,33 @@ async function principal() {
     } catch (error) {
       console.error(`  ${error.message}`);
       resumenPeticiones.push({ nombre: `section-${id}`, ruta, error: error.message });
+    }
+  }
+
+  if (opciones.seguir) {
+    const candidatos = candidatosSeguimiento(enlaces, seccionesConsultadas);
+    if (candidatos.length === 0) {
+      console.log('Seguimiento: no hay enlaces candidatos (tarea/actividad/evaluacion/section/curso).');
+    } else {
+      console.log(`Seguimiento: consultando ${candidatos.length} enlace(s) candidato(s)...`);
+    }
+    for (const [indice, candidato] of candidatos.entries()) {
+      const nombre = `extra-${indice + 1}`;
+      try {
+        const respuesta = await sesion.pedir(candidato.ruta);
+        const guardada = await guardarRespuesta(nombre, respuesta, resumenPeticiones, candidato.ruta);
+        extrasConsultadas.push({
+          nombre,
+          ruta: candidato.ruta,
+          status: respuesta.status,
+          archivo: guardada.archivo,
+          esJson: guardada.esJson,
+        });
+        console.log(`  GET ${candidato.ruta} → HTTP ${respuesta.status} (${guardada.archivo})`);
+      } catch (error) {
+        console.error(`  ${error.message}`);
+        resumenPeticiones.push({ nombre, ruta: candidato.ruta, error: error.message });
+      }
     }
   }
 
@@ -506,6 +571,7 @@ async function principal() {
     enlaces: enlaces.length,
     seccionesDetectadas: [...idsSecciones].length,
     seccionesConsultadas,
+    extrasConsultadas,
     peticiones: resumenPeticiones,
   };
 
@@ -522,6 +588,7 @@ async function principal() {
   console.log(`  Eventos: ${resumen.eventos}`);
   console.log(`  Enlaces: ${resumen.enlaces}`);
   console.log(`  Secciones consultadas: ${seccionesConsultadas.length}`);
+  console.log(`  Enlaces de seguimiento: ${extrasConsultadas.length}`);
   console.log(`  Archivos: ${path.relative(process.cwd(), DIR_SALIDA)}${path.sep}`);
   console.log('Listo. No se muestran credenciales ni cookies.');
 }

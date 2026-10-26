@@ -3,8 +3,8 @@
 
     <!--
       El tema base solo cubre el primer frame: la UI real la pinta Compose.
-      `windowBackground` usa el mismo papel cálido que `surface` para no
-      mostrar un destello claro antes de `enableEdgeToEdge`.
+      `windowBackground` usa el mismo `surface` del esquema M3 para no mostrar
+      un destello de otro color antes de `enableEdgeToEdge`.
     -->
     <style name="Theme.Notally" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:windowBackground">@color/notally_surface</item>

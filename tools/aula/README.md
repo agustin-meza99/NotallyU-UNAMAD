@@ -87,6 +87,27 @@ También puedes validar que el script no tiene errores de sintaxis:
 node --check tools/aula/explore.mjs
 ```
 
+## Descubrimiento de tareas/actividades
+
+`discover.mjs` es un segundo modo, centrado en encontrar dónde viven las tareas:
+
+```powershell
+node tools/aula/discover.mjs
+node tools/aula/discover.mjs --dry-run
+```
+
+Hace un login y como máximo 10 peticiones autenticadas (1/s):
+
+1. Analiza estáticamente `out/home.html`, `out/extra-1.html` y las páginas que descarga.
+2. `GET /web/course?s=<sectionId>` y `GET /web/homework?s=<sectionId>` del primer curso.
+3. Descarga hasta 4 JS propios (controladores de curso/tareas y calendario).
+4. Consulta `/web/section/get?s=<sectionId>` de dos cursos.
+5. Prueba **un** endpoint derivado solo si el JS da una plantilla o `params` inequívocos.
+6. Solo llama al calendario si el JS muestra parámetros de periodo (`start`, `end`, `term`…).
+
+Escribe `out/tareas-descubrimiento.json` con rutas, códigos, tamaños, claves y el
+detalle de endpoints hallados. No imprime cookies ni credenciales.
+
 ## Qué guarda
 
 Todo se escribe en `tools/aula/out/`, que está ignorado por git:
