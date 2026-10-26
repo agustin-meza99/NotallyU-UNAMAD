@@ -52,3 +52,7 @@ firebase-debug.*.log
 # Seed de Firestore
 tools/seed-firestore/node_modules/
 .env
+
+# Explorador local del Aula Virtual
+tools/aula/out/
+tools/aula/*.local
