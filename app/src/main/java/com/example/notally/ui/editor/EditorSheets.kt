@@ -3,13 +3,13 @@ package com.example.notally.ui.editor
 import android.text.format.DateFormat as AndroidDateFormat
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
@@ -20,12 +20,12 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
-import androidx.compose.material3.rememberDatePickerState
-import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -36,20 +36,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.example.notally.R
 import com.example.notally.data.DateRanges
-import com.example.notally.data.model.Estado
 import com.example.notally.data.model.Curso
+import com.example.notally.data.model.Estado
 import com.example.notally.data.model.Prioridad
 import com.example.notally.data.repository.ResultadoCurso
+import com.example.notally.R
 import com.example.notally.ui.components.CourseNameField
+import com.example.notally.ui.components.DialogoConfirmarEliminacion
 import com.example.notally.ui.components.OptionRow
-import com.example.notally.ui.components.statusLabel
 import com.example.notally.ui.components.priorityLabel
+import com.example.notally.ui.components.statusLabel
 import com.example.notally.ui.theme.FormaNotally
 import com.example.notally.ui.util.DateFormat
 import com.example.notally.ui.util.textoEtiquetaFecha
@@ -420,4 +422,29 @@ internal fun combinarFechaYHora(
         LocalTime.of(zoned.hour, zoned.minute)
     } ?: LocalTime.MIDNIGHT
     return fecha.atTime(hora).atZone(zona).toInstant().toEpochMilli()
+}
+
+/** Confirmación de borrado de la tarea abierta en el editor. */
+@Composable
+internal fun DeleteTaskDialog(
+    tituloVisible: String,
+    cantidadSubtareas: Int,
+    onConfirmar: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    DialogoConfirmarEliminacion(
+        titulo = stringResource(R.string.confirm_deleteTask_title),
+        cuerpo = if (cantidadSubtareas == 0) {
+            stringResource(R.string.confirm_deleteTask_bodyNoSub, tituloVisible)
+        } else {
+            pluralStringResource(
+                R.plurals.confirm_deleteTask_body,
+                cantidadSubtareas,
+                tituloVisible,
+                cantidadSubtareas,
+            )
+        },
+        onConfirmar = onConfirmar,
+        onDismiss = onDismiss,
+    )
 }

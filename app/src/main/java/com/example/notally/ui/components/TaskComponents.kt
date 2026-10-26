@@ -1,66 +1,79 @@
 package com.example.notally.ui.components
 
 import android.text.format.DateFormat as AndroidDateFormat
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
-import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxState
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.CustomAccessibilityAction
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
-import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import com.example.notally.R
 import com.example.notally.data.model.Estado
 import com.example.notally.data.model.Prioridad
 import com.example.notally.data.model.Tarea
+import com.example.notally.R
+import com.example.notally.ui.theme.colorCurso
 import com.example.notally.ui.theme.FormaNotally
 import com.example.notally.ui.theme.MovimientoNotally
-import com.example.notally.ui.theme.colorCurso
 import com.example.notally.ui.util.DateFormat
 import com.example.notally.ui.util.textoAtraso
 import com.example.notally.ui.util.textoEtiquetaFecha
@@ -294,4 +307,201 @@ private fun TaskCheckbox(hecha: Boolean) {
             )
         }
     }
+}
+
+/**
+ * Fila de tarea con gestos de swipe (§7.2).
+ *
+ * End→start ejecuta "Completar" (`tertiaryContainer`); start→end ejecuta
+ * "Mañana" (`secondaryContainer`). Umbral 45 % del ancho y haptic al cruzarlo.
+ *
+ * Nota de API: material3 1.4.0 eliminó `confirmValueChange` del constructor
+ * principal de `SwipeToDismissBoxState` y añadió `onDismiss` + `reset()`. Se usa
+ * el constructor (deprecado pero público en 1.4.0) con `confirmValueChange`
+ * devolviendo `false`, que es exactamente el comportamiento pedido: ejecutar y
+ * volver a reposo sin expulsar la fila. Con `onDismiss` la fila llegaba al
+ * ancho completo antes de volver, un salto visible.
+ */
+@Suppress("DEPRECATION")
+@Composable
+fun SwipeTaskRow(
+    tarea: Tarea,
+    nombreCurso: String?,
+    colorCursoArgb: Long?,
+    modifier: Modifier = Modifier,
+    ahora: Long = System.currentTimeMillis(),
+    alPulsar: () -> Unit = {},
+    alAlternarCompletada: () -> Unit = {},
+    alCompletar: () -> Unit = alAlternarCompletada,
+    alPosponer: () -> Unit = {},
+    alEliminar: () -> Unit = {},
+) {
+    val colores = MaterialTheme.colorScheme
+    val haptica = LocalHapticFeedback.current
+    val densidad = LocalDensity.current
+
+    val completarActual by rememberUpdatedState(alCompletar)
+    val posponerActual by rememberUpdatedState(alPosponer)
+
+    val estado = remember(densidad) {
+        SwipeToDismissBoxState(
+            initialValue = SwipeToDismissBoxValue.Settled,
+            density = densidad,
+            confirmValueChange = { valor ->
+                when (valor) {
+                    SwipeToDismissBoxValue.EndToStart -> completarActual()
+                    SwipeToDismissBoxValue.StartToEnd -> posponerActual()
+                    SwipeToDismissBoxValue.Settled -> Unit
+                }
+                // Siempre vuelve a reposo: la fila no se expulsa.
+                false
+            },
+            positionalThreshold = { distanciaTotal -> distanciaTotal * 0.45f },
+        )
+    }
+
+    var hapticaArmada by remember { mutableStateOf(true) }
+    LaunchedEffect(estado) {
+        snapshotFlow { estado.progress }.collect { progreso ->
+            if (progreso >= 0.45f && hapticaArmada) {
+                haptica.performHapticFeedback(HapticFeedbackType.LongPress)
+                hapticaArmada = false
+            } else if (progreso < 0.30f && !hapticaArmada) {
+                hapticaArmada = true
+            }
+        }
+    }
+
+    SwipeToDismissBox(
+        state = estado,
+        modifier = modifier,
+        enableDismissFromStartToEnd = true,
+        enableDismissFromEndToStart = true,
+        backgroundContent = {
+            val direccion = estado.dismissDirection
+            val esCompletar = direccion == SwipeToDismissBoxValue.EndToStart
+            val contenedor = if (esCompletar) {
+                colores.tertiaryContainer
+            } else {
+                colores.secondaryContainer
+            }
+            val contenido = if (esCompletar) {
+                colores.onTertiaryContainer
+            } else {
+                colores.onSecondaryContainer
+            }
+            // El fondo ocupa solo el área revelada (ancho de la etiqueta), no
+            // toda la fila: así el color de acción no sangra bajo el texto.
+            if (direccion != SwipeToDismissBoxValue.Settled) {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    Row(
+                        modifier = Modifier
+                            .align(
+                                if (esCompletar) Alignment.CenterEnd
+                                else Alignment.CenterStart,
+                            )
+                            .fillMaxHeight()
+                            .clip(FormaNotally.m)
+                            .background(contenedor)
+                            .padding(horizontal = 20.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            painter = painterResource(
+                                if (esCompletar) R.drawable.ic_check
+                                else R.drawable.ic_calendar,
+                            ),
+                            contentDescription = null,
+                            tint = contenido,
+                            modifier = Modifier.size(20.dp),
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = stringResource(
+                                if (esCompletar) R.string.swipe_complete
+                                else R.string.swipe_tomorrow,
+                            ),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = contenido,
+                        )
+                    }
+                }
+            }
+        },
+    ) {
+        TaskRow(
+            tarea = tarea,
+            nombreCurso = nombreCurso,
+            colorCursoArgb = colorCursoArgb,
+            ahora = ahora,
+            alPulsar = alPulsar,
+            alAlternarCompletada = alAlternarCompletada,
+            alPosponer = alPosponer,
+            alEliminar = alEliminar,
+        )
+    }
+}
+
+/** "Prioridad alta/media/baja" para lectores de pantalla. */
+@Composable
+fun priorityLabelForA11y(prioridad: Prioridad): String = stringResource(
+    when (prioridad) {
+        Prioridad.ALTA -> R.string.a11y_priority_high
+        Prioridad.MEDIA -> R.string.a11y_priority_medium
+        Prioridad.BAJA -> R.string.a11y_priority_low
+    },
+)
+
+/** "Alta/Media/Baja" para la UI visible. */
+@Composable
+fun priorityLabel(prioridad: Prioridad): String = stringResource(
+    when (prioridad) {
+        Prioridad.ALTA -> R.string.priority_high
+        Prioridad.MEDIA -> R.string.priority_medium
+        Prioridad.BAJA -> R.string.priority_low
+    },
+)
+
+/** "Pendiente/En curso/Completada". */
+@Composable
+fun statusLabel(estado: Estado): String = stringResource(
+    when (estado) {
+        Estado.PENDIENTE -> R.string.state_pending
+        Estado.EN_CURSO -> R.string.state_doing
+        Estado.COMPLETADA -> R.string.state_done
+    },
+)
+
+/** Sangría que reserva el riel a la izquierda del texto: 3 dp + 12 dp de aire. */
+val anchoPriorityRail = 15.dp
+
+/**
+ * Riel de prioridad de §7.2 y §7.3.1.
+ *
+ * Se dibuja dentro del padding inicial que el llamador reserva con
+ * `padding(start = anchoPriorityRail)`. El alto sigue al bloque de texto
+ * (título + meta), así que no depende del número de líneas ni de la escala de
+ * fuente; el ancho reservado es fijo y el texto nunca se desplaza.
+ *
+ * Alta cubre el 100 % del bloque; media, el 50 % centrado; baja y hechas no
+ * dibujan nada. La diferencia de cobertura distingue alta de media sin depender
+ * del color (§2.1). Los extremos son redondeados (radio 1.5 dp) para que no se
+ * lea como un carácter suelto.
+ */
+fun Modifier.rielPrioridad(
+    prioridad: Prioridad,
+    hecha: Boolean,
+    color: Color,
+): Modifier = drawBehind {
+    if (hecha || prioridad == Prioridad.BAJA) return@drawBehind
+    val grosor = 3.dp.toPx()
+    val aire = 12.dp.toPx()
+    val cobertura = if (prioridad == Prioridad.ALTA) 1f else 0.5f
+    val alto = size.height * cobertura
+    drawRoundRect(
+        color = color,
+        topLeft = Offset(x = -(grosor + aire), y = (size.height - alto) / 2f),
+        size = Size(width = grosor, height = alto),
+        cornerRadius = CornerRadius(grosor / 2f),
+    )
 }

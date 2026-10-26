@@ -1,12 +1,28 @@
 package com.example.notally.data.repository
 
+import android.content.Context
+import android.database.sqlite.SQLiteConstraintException
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.preferencesDataStore
+import com.example.notally.data.local.CursoDao
 import com.example.notally.data.local.SubtareaDao
 import com.example.notally.data.local.TareaDao
+import com.example.notally.data.model.Curso
+import com.example.notally.data.model.CursoConConteo
 import com.example.notally.data.model.Estado
+import com.example.notally.data.model.Settings
 import com.example.notally.data.model.Subtarea
 import com.example.notally.data.model.Tarea
 import com.example.notally.data.model.TareaConSubtareas
+import java.io.IOException
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 /**
  * Acceso de lectura/escritura a tareas y subtareas.
@@ -102,4 +118,98 @@ class TareasRepository(
     suspend fun alternarSubtarea(subtareaId: Long) = subtareaDao.alternarHecha(subtareaId)
 
     suspend fun eliminarSubtarea(subtareaId: Long) = subtareaDao.eliminarPorId(subtareaId)
+}
+
+/** Resultado explícito de escribir un curso, sin excepciones hacia la UI. */
+sealed interface ResultadoCurso {
+    /** El curso se insertó con este id. */
+    data class Creado(val id: Long) : ResultadoCurso
+
+    /** El curso existente se actualizó. */
+    data class Actualizado(val id: Long) : ResultadoCurso
+
+    /** Nombre repetido: la restricción única de la base lo rechazó. */
+    data object Duplicado : ResultadoCurso
+
+    /** Cualquier otro fallo de escritura. */
+    data object Error : ResultadoCurso
+
+    val esExito: Boolean
+        get() = this is Creado || this is Actualizado
+}
+
+class CursosRepository(
+    private val cursoDao: CursoDao,
+) {
+
+    fun observarCursos(): Flow<List<Curso>> = cursoDao.observarCursos()
+
+    fun observarCursosConConteo(): Flow<List<CursoConConteo>> =
+        cursoDao.observarCursosConConteo()
+
+    suspend fun crearCurso(
+        nombre: String,
+        color: Long,
+        profesor: String? = null,
+        creditos: Int? = null,
+    ): ResultadoCurso = escribir {
+        ResultadoCurso.Creado(
+            cursoDao.insertar(
+                Curso(
+                    nombre = nombre,
+                    color = color,
+                    profesor = profesor,
+                    creditos = creditos,
+                ),
+            ),
+        )
+    }
+
+    suspend fun actualizarCurso(curso: Curso): ResultadoCurso = escribir {
+        cursoDao.actualizar(curso)
+        ResultadoCurso.Actualizado(curso.id)
+    }
+
+    private suspend fun escribir(bloque: suspend () -> ResultadoCurso): ResultadoCurso =
+        try {
+            bloque()
+        } catch (cancelada: CancellationException) {
+            throw cancelada
+        } catch (_: SQLiteConstraintException) {
+            ResultadoCurso.Duplicado
+        } catch (_: Exception) {
+            ResultadoCurso.Error
+        }
+
+    suspend fun eliminarCurso(cursoId: Long) = cursoDao.eliminarPorId(cursoId)
+}
+
+private const val NOMBRE_ARCHIVO_SETTINGS = "notally_settings"
+
+/** DataStore de preferencias de Notally, ligado al contexto de la aplicación. */
+val Context.dataStoreSettingsNotally: DataStore<Preferences> by preferencesDataStore(
+    name = NOMBRE_ARCHIVO_SETTINGS,
+)
+
+class SettingsRepository(
+    private val dataStore: DataStore<Preferences>,
+) {
+
+    val settings: Flow<Settings> = dataStore.data
+        .catch { error ->
+            if (error is IOException) emit(emptyPreferences()) else throw error
+        }
+        .map { preferencias ->
+            Settings(
+                semanaEmpiezaLunes = preferencias[Claves.SEMANA_EMPIEZA_LUNES] ?: true,
+            )
+        }
+
+    suspend fun cambiarSemanaEmpiezaLunes(activo: Boolean) {
+        dataStore.edit { it[Claves.SEMANA_EMPIEZA_LUNES] = activo }
+    }
+
+    private object Claves {
+        val SEMANA_EMPIEZA_LUNES = booleanPreferencesKey("week_starts_monday")
+    }
 }

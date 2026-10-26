@@ -1,24 +1,26 @@
 package com.example.notally.ui.today
 
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -26,9 +28,10 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -36,29 +39,34 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.notally.R
 import com.example.notally.data.DateRanges
+import com.example.notally.R
 import com.example.notally.ui.components.AvisoError
 import com.example.notally.ui.components.BloqueError
+import com.example.notally.ui.components.DayStrip
+import com.example.notally.ui.components.DiaTira
+import com.example.notally.ui.components.FilasCargando
+import com.example.notally.ui.components.FilterChipRow
+import com.example.notally.ui.components.FocalTaskCard
+import com.example.notally.ui.components.OpcionFiltro
 import com.example.notally.ui.components.SectionHeader
 import com.example.notally.ui.components.SwipeTaskRow
-import com.example.notally.ui.components.FilasCargando
-import com.example.notally.ui.components.FocalTaskCard
 import com.example.notally.ui.theme.EspaciadoNotally
-import com.example.notally.ui.theme.MovimientoNotally
 import com.example.notally.ui.theme.margenHorizontalPantalla
+import com.example.notally.ui.theme.MovimientoNotally
+import com.example.notally.ui.theme.TipografiaNotally
 import com.example.notally.ui.util.DateFormat
 import com.example.notally.ui.util.textoEtiquetaFecha
 import java.time.LocalDate
@@ -391,4 +399,88 @@ fun TodayScreen(
             }
         }
     }
+}
+
+/** Tira de días derivada del estado, con la etiqueta de sección de cada día. */
+internal fun diasTiraHoy(
+    estado: EstadoUiHoy,
+    fechaHoy: LocalDate,
+): List<DiaTira> = estado.diasSemana.map { dia ->
+    val recursoSeccion = when {
+        dia.pendientes == 0 -> null
+        dia.fecha.isBefore(fechaHoy) -> R.string.today_section_overdue
+        dia.fecha == fechaHoy -> R.string.today_section_today
+        else -> R.string.today_section_upcoming
+    }
+    DiaTira(
+        fecha = dia.fecha,
+        pendientes = dia.pendientes,
+        esHoy = dia.fecha == fechaHoy,
+        recursoEtiquetaSeccion = recursoSeccion,
+    )
+}
+
+/** La tira solo aparece con datos en caché, sin carga y fuera de "Completadas". */
+internal fun mostrarTiraHoy(estado: EstadoUiHoy, dias: List<DiaTira>): Boolean =
+    estado.tieneDatosEnCache && !estado.cargando &&
+        estado.filtro != FiltroHoy.COMPLETADAS &&
+        dias.any { it.pendientes > 0 }
+
+@Composable
+internal fun EncabezadoHoy(
+    antetitulo: String,
+    resumen: ResumenHoy?,
+) {
+    val colores = MaterialTheme.colorScheme
+    Column {
+        // Sin título visible (§7.1): la fecha orienta y el resumen informa.
+        if (antetitulo.isNotEmpty()) {
+            Text(
+                text = antetitulo,
+                style = MaterialTheme.typography.labelSmall,
+                color = colores.onSurfaceVariant,
+            )
+        }
+        if (resumen != null) {
+            if (antetitulo.isNotEmpty()) Spacer(Modifier.height(4.dp))
+            Text(
+                text = pluralStringResource(
+                    R.plurals.today_summary,
+                    resumen.total,
+                    resumen.completadas,
+                    resumen.total,
+                ),
+                style = TipografiaNotally.numerico,
+                color = colores.onSurface,
+            )
+        }
+    }
+}
+
+@Composable
+internal fun TiraDiasHoy(
+    dias: List<DiaTira>,
+    fechaSeleccionada: LocalDate?,
+    alElegirDia: (DiaTira) -> Unit,
+) {
+    DayStrip(
+        dias = dias,
+        fechaSeleccionada = fechaSeleccionada,
+        alElegirDia = alElegirDia,
+        modifier = Modifier.padding(top = 16.dp),
+    )
+}
+
+@Composable
+internal fun FiltrosHoy(
+    opciones: List<OpcionFiltro>,
+    idSeleccionado: String,
+    alSeleccionar: (String) -> Unit,
+) {
+    FilterChipRow(
+        opciones = opciones,
+        idSeleccionado = idSeleccionado,
+        alSeleccionar = alSeleccionar,
+        modifier = Modifier.padding(top = 16.dp),
+    )
 }

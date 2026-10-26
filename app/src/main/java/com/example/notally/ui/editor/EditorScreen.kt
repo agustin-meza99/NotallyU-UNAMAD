@@ -5,20 +5,26 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -31,38 +37,45 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.notally.R
 import com.example.notally.ui.components.BloqueError
 import com.example.notally.ui.components.FilasCargando
-import com.example.notally.ui.theme.MovimientoNotally
+import com.example.notally.ui.theme.FormaNotally
 import com.example.notally.ui.theme.margenHorizontalPantalla
-import kotlinx.coroutines.NonCancellable
+import com.example.notally.ui.theme.MovimientoNotally
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 
@@ -385,6 +398,88 @@ private fun EditorTopBar(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+internal fun EditorToolbar(
+    alPulsarSubtarea: () -> Unit,
+    alPulsarEntrega: () -> Unit,
+    alPulsarPrioridad: () -> Unit,
+) {
+    val compacto = LocalConfiguration.current.fontScale >= 1.5f
+    Surface(
+        shape = FormaNotally.l,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        border = BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant,
+        ),
+        modifier = Modifier.height(56.dp),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            ToolbarAction(
+                recursoIcono = R.drawable.ic_checklist,
+                etiqueta = stringResource(R.string.editor_toolbar_subtask),
+                compacto = compacto,
+                alPulsar = alPulsarSubtarea,
+            )
+            ToolbarAction(
+                recursoIcono = R.drawable.ic_calendar,
+                etiqueta = stringResource(R.string.editor_toolbar_date),
+                compacto = compacto,
+                alPulsar = alPulsarEntrega,
+            )
+            ToolbarAction(
+                recursoIcono = R.drawable.ic_flag,
+                etiqueta = stringResource(R.string.editor_property_priority),
+                compacto = compacto,
+                alPulsar = alPulsarPrioridad,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ToolbarAction(
+    recursoIcono: Int,
+    etiqueta: String,
+    compacto: Boolean,
+    alPulsar: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+            .clip(FormaNotally.s)
+            .clickable(role = Role.Button, onClick = alPulsar)
+            .then(
+                if (compacto) {
+                    Modifier.semantics { contentDescription = etiqueta }
+                } else {
+                    Modifier
+                },
+            )
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            painter = painterResource(recursoIcono),
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(18.dp),
+        )
+        if (!compacto) {
+            Spacer(Modifier.width(6.dp))
+            Text(
+                text = etiqueta,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
         }
     }
 }
