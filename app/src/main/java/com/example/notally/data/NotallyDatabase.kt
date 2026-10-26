@@ -16,11 +16,11 @@ import com.example.notally.data.model.Tarea
 
 /**
  * Base de datos local. El nombre del archivo físico se conserva; la versión 2
- * retira el color de los cursos.
+ * retira el color de los cursos y la 3 añade el `externalId` del Aula Virtual.
  */
 @Database(
     entities = [Curso::class, Tarea::class, Subtarea::class],
-    version = 2,
+    version = 3,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -70,13 +70,33 @@ abstract class NotallyDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Migración 2 → 3: añade `externalId` (id del Aula Virtual) a cursos y
+         * tareas, con índice único. Es aditiva: las filas existentes conservan
+         * todos sus datos y quedan con `externalId` nulo.
+         */
+        val MIGRACION_2_3: Migration = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `subjects` ADD COLUMN `externalId` TEXT")
+                db.execSQL(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS `index_subjects_externalId` " +
+                        "ON `subjects` (`externalId`)",
+                )
+                db.execSQL("ALTER TABLE `tasks` ADD COLUMN `externalId` TEXT")
+                db.execSQL(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS `index_tasks_externalId` " +
+                        "ON `tasks` (`externalId`)",
+                )
+            }
+        }
+
         fun construir(context: Context): NotallyDatabase =
             Room.databaseBuilder(
                 context.applicationContext,
                 NotallyDatabase::class.java,
                 NOMBRE,
             )
-                .addMigrations(MIGRACION_1_2)
+                .addMigrations(MIGRACION_1_2, MIGRACION_2_3)
                 .build()
     }
 }

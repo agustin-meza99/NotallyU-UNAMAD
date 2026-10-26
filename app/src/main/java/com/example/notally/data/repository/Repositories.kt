@@ -53,6 +53,31 @@ class TareasRepository(
 
     suspend fun obtenerTarea(tareaId: Long): Tarea? = tareaDao.obtenerTarea(tareaId)
 
+    suspend fun obtenerTareaPorExternalId(externalId: String): Tarea? =
+        tareaDao.obtenerTareaPorExternalId(externalId)
+
+    /**
+     * Inserta o actualiza una tarea importada del Aula identificada por
+     * `externalId`. Nunca duplica: si ya existe, actualiza esa fila.
+     */
+    suspend fun upsertTareaExterna(tarea: Tarea): ResultadoUpsert {
+        val externalId = tarea.externalId
+            ?: return ResultadoUpsert.Error
+        return try {
+            val existente = tareaDao.obtenerTareaPorExternalId(externalId)
+            if (existente == null) {
+                ResultadoUpsert.Creado(tareaDao.insertar(tarea.copy(id = 0L)))
+            } else {
+                tareaDao.actualizar(tarea.copy(id = existente.id))
+                ResultadoUpsert.Actualizado(existente.id)
+            }
+        } catch (cancelada: CancellationException) {
+            throw cancelada
+        } catch (_: Exception) {
+            ResultadoUpsert.Error
+        }
+    }
+
     /**
      * Inserta [tarea] (ignorando su id) y, opcionalmente, sus subtareas en el
      * orden recibido. Devuelve el id de la tarea creada.
@@ -138,6 +163,13 @@ sealed interface ResultadoCurso {
         get() = this is Creado || this is Actualizado
 }
 
+/** Resultado de un `upsert` por `externalId` desde el Aula Virtual. */
+sealed interface ResultadoUpsert {
+    data class Creado(val id: Long) : ResultadoUpsert
+    data class Actualizado(val id: Long) : ResultadoUpsert
+    data object Error : ResultadoUpsert
+}
+
 class CursosRepository(
     private val cursoDao: CursoDao,
 ) {
@@ -166,6 +198,34 @@ class CursosRepository(
     suspend fun actualizarCurso(curso: Curso): ResultadoCurso = escribir {
         cursoDao.actualizar(curso)
         ResultadoCurso.Actualizado(curso.id)
+    }
+
+    suspend fun obtenerCursoPorExternalId(externalId: String): Curso? =
+        cursoDao.obtenerCursoPorExternalId(externalId)
+
+    /**
+     * Inserta o actualiza un curso importado del Aula identificado por
+     * `externalId`. Nunca duplica: si ya existe, conserva su id y su fecha de
+     * creación.
+     */
+    suspend fun upsertCursoExterno(curso: Curso): ResultadoUpsert {
+        val externalId = curso.externalId
+            ?: return ResultadoUpsert.Error
+        return try {
+            val existente = cursoDao.obtenerCursoPorExternalId(externalId)
+            if (existente == null) {
+                ResultadoUpsert.Creado(cursoDao.insertar(curso.copy(id = 0L)))
+            } else {
+                cursoDao.actualizar(
+                    curso.copy(id = existente.id, creadoEn = existente.creadoEn),
+                )
+                ResultadoUpsert.Actualizado(existente.id)
+            }
+        } catch (cancelada: CancellationException) {
+            throw cancelada
+        } catch (_: Exception) {
+            ResultadoUpsert.Error
+        }
     }
 
     private suspend fun escribir(bloque: suspend () -> ResultadoCurso): ResultadoCurso =

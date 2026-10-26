@@ -185,4 +185,32 @@
     <string name="settings_week_support">Cambia el conteo de entregas de la semana.</string>
     <string name="settings_about">Acerca de</string>
     <string name="settings_version">Versión %s</string>
+
+    <!-- Aula Virtual -->
+    <string name="settings_aula">Aula Virtual</string>
+    <string name="settings_aula_connect">Conectar Aula Virtual</string>
+    <string name="settings_aula_connect_support">Importa tus cursos y entregas desde el Aula Virtual.</string>
+    <string name="settings_aula_connected">Aula Virtual</string>
+    <string name="settings_aula_last_import">Última importación: %s</string>
+    <string name="settings_aula_never_imported">Última importación: nunca</string>
+    <string name="settings_aula_import_now">Importar ahora</string>
+    <string name="settings_aula_disconnect">Desconectar</string>
+    <string name="settings_aula_sheet_title">Conectar Aula Virtual</string>
+    <string name="settings_aula_user">Usuario</string>
+    <string name="settings_aula_password">Contraseña</string>
+    <string name="settings_aula_connect_import">Conectar e importar</string>
+    <string name="settings_aula_credentials_note">Tus credenciales se guardan cifradas en este dispositivo.</string>
+    <string name="settings_aula_password_note">Si cambias la contraseña, vuelve a conectar.</string>
+    <string name="settings_aula_importing">Importando…</string>
+    <string name="settings_aula_progress">%1$s (%2$d de %3$d)</string>
+    <string name="settings_aula_summary">%1$d cursos · %2$d tareas</string>
+    <string name="settings_aula_summary_errors">%1$d cursos · %2$d tareas · %3$d errores</string>
+    <string name="settings_aula_error_credentials">Usuario o contraseña incorrectos.</string>
+    <string name="settings_aula_error_blocked">La cuenta está bloqueada temporalmente. Espera antes de intentar de nuevo.</string>
+    <string name="settings_aula_error_network">No se pudo conectar. Revisa tu conexión.</string>
+    <string name="settings_aula_error_server">El Aula Virtual no está disponible en este momento.</string>
+    <string name="settings_aula_error_session">La sesión caducó. Vuelve a conectar.</string>
+    <string name="settings_aula_error_no_courses">No se encontraron cursos en esta cuenta.</string>
+    <string name="settings_aula_disconnect_title">¿Desconectar el Aula Virtual?</string>
+    <string name="settings_aula_disconnect_body">Se borrarán el usuario y la contraseña guardados en este dispositivo. Los cursos y las tareas ya importados se conservan.</string>
 </resources>

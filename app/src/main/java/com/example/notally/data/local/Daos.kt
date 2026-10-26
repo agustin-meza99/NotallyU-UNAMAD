@@ -82,6 +82,9 @@ interface TareaDao {
     @Query("SELECT * FROM tasks WHERE id = :taskId")
     suspend fun obtenerTarea(taskId: Long): Tarea?
 
+    @Query("SELECT * FROM tasks WHERE externalId = :externalId LIMIT 1")
+    suspend fun obtenerTareaPorExternalId(externalId: String): Tarea?
+
     @Insert
     suspend fun insertar(tarea: Tarea): Long
 
@@ -146,6 +149,9 @@ interface CursoDao {
         """
     )
     fun observarCursosConConteo(): Flow<List<CursoConConteo>>
+
+    @Query("SELECT * FROM subjects WHERE externalId = :externalId LIMIT 1")
+    suspend fun obtenerCursoPorExternalId(externalId: String): Curso?
 
     @Insert
     suspend fun insertar(curso: Curso): Long

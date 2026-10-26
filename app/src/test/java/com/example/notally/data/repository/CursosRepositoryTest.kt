@@ -21,6 +21,8 @@ class CursosRepositoryTest {
         override fun observarCursosConConteo(): Flow<List<CursoConConteo>> =
             emptyFlow()
 
+        override suspend fun obtenerCursoPorExternalId(externalId: String): Curso? = null
+
         override suspend fun insertar(curso: Curso): Long = alInsertar()
 
         override suspend fun actualizar(curso: Curso) = Unit

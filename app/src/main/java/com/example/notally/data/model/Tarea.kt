@@ -31,6 +31,7 @@ import androidx.room.Relation
         Index(value = ["subjectId"]),
         Index(value = ["dueAt"]),
         Index(value = ["status"]),
+        Index(value = ["externalId"], unique = true),
     ],
 )
 data class Tarea(
@@ -56,6 +57,12 @@ data class Tarea(
     val completadoEn: Long? = null,
     @ColumnInfo(name = "isArchived")
     val archivada: Boolean = false,
+    /**
+     * `id` de la tarea del Aula Virtual. `null` para tareas creadas a mano;
+     * la importación lo usa para actualizar en vez de duplicar.
+     */
+    @ColumnInfo(name = "externalId")
+    val externalId: String? = null,
 )
 
 enum class Prioridad {

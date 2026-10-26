@@ -13,7 +13,10 @@ import androidx.room.PrimaryKey
  */
 @Entity(
     tableName = "subjects",
-    indices = [Index(value = ["name"], unique = true)],
+    indices = [
+        Index(value = ["name"], unique = true),
+        Index(value = ["externalId"], unique = true),
+    ],
 )
 data class Curso(
     @PrimaryKey(autoGenerate = true)
@@ -26,6 +29,12 @@ data class Curso(
     val creditos: Int? = null,
     @ColumnInfo(name = "createdAt")
     val creadoEn: Long = System.currentTimeMillis(),
+    /**
+     * `sectionId` del Aula Virtual. `null` para cursos creados a mano; la
+     * importación lo usa para actualizar en vez de duplicar.
+     */
+    @ColumnInfo(name = "externalId")
+    val externalId: String? = null,
 )
 
 /** Curso con el número de tareas no completadas y no archivadas. */

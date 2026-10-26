@@ -2,6 +2,8 @@ package com.example.notally.core
 
 import android.content.Context
 import com.example.notally.data.NotallyDatabase
+import com.example.notally.data.aula.AulaCredencialesStore
+import com.example.notally.data.aula.AulaImporter
 import com.example.notally.data.repository.SettingsRepository
 import com.example.notally.data.repository.CursosRepository
 import com.example.notally.data.repository.TareasRepository
@@ -27,4 +29,11 @@ class AppContainer(context: Context) {
     val repositorioCursos = CursosRepository(baseDatos.cursoDao())
 
     val repositorioSettings = SettingsRepository(contextoApp.dataStoreSettingsNotally)
+
+    val credencialesAula = AulaCredencialesStore(contextoApp)
+
+    val importadorAula = AulaImporter(
+        repositorioCursos = repositorioCursos,
+        repositorioTareas = repositorioTareas,
+    )
 }
