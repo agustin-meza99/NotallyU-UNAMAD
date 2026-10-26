@@ -1,4 +1,4 @@
-package com.example.notally.di
+package com.example.notally.core
 
 import android.content.Context
 import android.content.pm.ApplicationInfo

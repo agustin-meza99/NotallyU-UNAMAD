@@ -2,7 +2,7 @@ package com.example.notally
 
 import android.app.Application
 import android.content.Context
-import com.example.notally.di.AppContainer
+import com.example.notally.core.AppContainer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 

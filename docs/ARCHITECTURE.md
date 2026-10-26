@@ -43,7 +43,7 @@ ui (Compose) → ViewModel → repository → local (Room)
 - **Repository:** única puerta de entrada a los datos. Traduce modelos de Room a operaciones de dominio y centraliza reglas de escritura (timestamps, `completedAt`, orden de subtareas). No conoce Compose.
 - **local/remote:** detalles de persistencia. Room es la fuente de verdad; Firestore es un espejo que solo toca `data/sync`.
 
-**DI manual con `AppContainer`.** Una instancia en `NotallyApp`, accesible por `Context.notallyContainer`. Construye base de datos, repositorios y (en el futuro) el `SyncEngine`.
+**DI manual con `AppContainer` en `core`.** Una instancia en `NotallyApp`, accesible por `Context.notallyContainer`. `core` es el punto de composición + utilidades transversales: construye base de datos, repositorios y (en el futuro) el `SyncEngine`.
 
 **Un solo módulo Gradle.** El proyecto es pequeño y los límites se sostienen con reglas de dependencia + revisión. Extraer módulos antes de tener un problema real de build o de equipos solo agrega ceremonia.
 
@@ -80,8 +80,8 @@ app/src/main/java/com/example/notally/
 │   ├── DateRanges.kt                ✓ rangos de día en hora local
 │   ├── SeedData.kt                  ✓ datos demo solo en debug
 │   └── SubjectColors.kt             ✓ paleta de materias (fuente única)
-├── di/
-│   └── AppContainer.kt              ✓ DI manual
+├── core/
+│   └── AppContainer.kt              ✓ punto de composición + utilidades transversales
 ├── ui/
 │   ├── theme/                       ✓ tokens, tipografía, formas, movimiento
 │   ├── components/                  ✓ componentes reutilizables
@@ -102,7 +102,7 @@ app/src/main/java/com/example/notally/
 | `data.repository` | API de datos para ViewModels | `data.model`, `data.local` |
 | `data.remote.firestore` | Contrato remoto + mappers puros | `data.model`, Kotlin |
 | `data.sync` | Pull/push, outbox, LWW, persistencia | repos, remote, Room |
-| `di` | Construcción del grafo | todo `data` |
+| `core` | Punto de composición + utilidades transversales | todo `data` |
 | `ui.*` | Estado, pantallas, componentes | `data.model`, repos vía VM, `ui.*` |
 | `util` | Fechas/formato puro sin Android | Kotlin/JVM |
 
