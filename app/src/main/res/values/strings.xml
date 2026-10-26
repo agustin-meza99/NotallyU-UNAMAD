@@ -39,6 +39,8 @@
     <string name="task_completed">Tarea completada</string>
     <string name="task_deleted">Tarea eliminada</string>
     <string name="task_postpone">Posponer a mañana</string>
+    <string name="task_group">Grupal</string>
+    <string name="task_group_yes">Grupal: Sí</string>
     <string name="subtask_deleted">Subtarea eliminada</string>
 
     <!-- Prioridad y estado -->
@@ -100,6 +102,11 @@
     <string name="course_edit_title">Editar curso</string>
     <string name="course_name">Nombre</string>
     <string name="course_delete">Eliminar curso</string>
+    <string name="course_details">Detalles</string>
+    <string name="course_code">Código</string>
+    <string name="course_section">Sección</string>
+    <string name="course_period">Periodo</string>
+    <string name="course_type">Tipo</string>
 
     <!-- Editor de tarea -->
     <string name="editor_title_placeholder">Título de la tarea</string>

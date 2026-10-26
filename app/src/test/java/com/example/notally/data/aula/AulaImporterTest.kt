@@ -121,6 +121,8 @@ class AulaImporterTest {
         override suspend fun tareas(sectionId: String): List<AulaTarea> =
             tareasPorSeccion[sectionId].orEmpty()
 
+        override suspend fun periodoAcademico(): String? = null
+
         override fun disconnect() {
             desconectado = true
         }

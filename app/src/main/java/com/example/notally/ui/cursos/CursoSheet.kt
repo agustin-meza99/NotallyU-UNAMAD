@@ -33,6 +33,30 @@ import com.example.notally.ui.components.DialogoConfirmarEliminacion
 import com.example.notally.ui.theme.FormaNotally
 import kotlinx.coroutines.launch
 
+/** Fila de solo lectura para los datos que vienen del Aula Virtual. */
+@Composable
+private fun CursoDetailRow(etiqueta: String, valor: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp),
+        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+    ) {
+        Text(
+            text = etiqueta,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.width(96.dp),
+        )
+        Text(
+            text = valor,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f),
+        )
+    }
+}
+
 /** Qué muestra la hoja de curso: alta o edición de una tarjeta existente. */
 sealed interface ObjetivoCursoSheet {
     data object Nueva : ObjetivoCursoSheet
@@ -101,6 +125,33 @@ fun CursoSheet(
                 alLimpiarError = alLimpiarError,
             )
             Spacer(Modifier.height(16.dp))
+            val curso = edicion?.tarjeta?.curso
+            val detalles = curso?.let {
+                listOfNotNull(
+                    it.codigo?.takeUnless(String::isBlank)
+                        ?.let { valor -> R.string.course_code to valor },
+                    it.seccion?.takeUnless(String::isBlank)
+                        ?.let { valor -> R.string.course_section to valor },
+                    it.periodo?.takeUnless(String::isBlank)
+                        ?.let { valor -> R.string.course_period to valor },
+                    it.tipo?.takeUnless(String::isBlank)
+                        ?.let { valor -> R.string.course_type to valor },
+                )
+            }.orEmpty()
+            if (detalles.isNotEmpty()) {
+                Spacer(Modifier.height(16.dp))
+                Text(
+                    text = stringResource(R.string.course_details),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                detalles.forEach { (etiqueta, valor) ->
+                    CursoDetailRow(
+                        etiqueta = stringResource(etiqueta),
+                        valor = valor,
+                    )
+                }
+            }
             if (edicion != null) {
                 Spacer(Modifier.height(24.dp))
                 TextButton(

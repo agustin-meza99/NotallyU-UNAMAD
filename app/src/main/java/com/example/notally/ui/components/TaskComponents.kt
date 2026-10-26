@@ -116,16 +116,25 @@ fun TaskRow(
     val colorFecha = if (atrasada) colores.error else colores.onSurfaceVariant
 
     val textoPrioridad = priorityLabelForA11y(tarea.prioridad)
+    val textoGrupal = if (tarea.esGrupal) stringResource(R.string.task_group) else null
     val descripcionEntrega = tarea.entregaEn?.let {
         stringResource(R.string.a11y_task_due, textoFraseEntrega(it, ahora, es24Horas))
     }
     val descripcionFila =
-        remember(tarea.titulo, textoCurso, descripcionEntrega, textoPrioridad, hecha) {
+        remember(
+            tarea.titulo,
+            textoCurso,
+            descripcionEntrega,
+            textoPrioridad,
+            textoGrupal,
+            hecha,
+        ) {
             buildList {
                 add(tarea.titulo)
                 add(textoCurso)
                 if (descripcionEntrega != null) add(descripcionEntrega)
                 add(textoPrioridad)
+                if (textoGrupal != null) add(textoGrupal)
             }.joinToString(". ") + "."
         }
 
@@ -231,6 +240,10 @@ fun TaskRow(
                     append(textoCurso)
                     append(separador)
                     withStyle(SpanStyle(color = colorFecha)) { append(textoFecha) }
+                    if (textoGrupal != null) {
+                        append(separador)
+                        append(textoGrupal)
+                    }
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = colores.onSurfaceVariant,

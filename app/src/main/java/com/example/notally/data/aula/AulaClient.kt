@@ -48,6 +48,9 @@ interface AulaApi {
     /** @throws AulaException */
     suspend fun tareas(sectionId: String): List<AulaTarea>
 
+    /** Periodo académico seleccionado; `null` si el Aula no devuelve ninguno. */
+    suspend fun periodoAcademico(): String?
+
     fun disconnect()
 }
 
@@ -114,6 +117,9 @@ class AulaClient(
         val ruta = "$RUTA_TAREAS?s=" + codificar(sectionId)
         return obtener(ruta) { json -> AulaParser.parsearTareas(json) }
     }
+
+    override suspend fun periodoAcademico(): String? =
+        obtener(RUTA_PERIODOS) { json -> AulaParser.parsearPeriodo(json) }
 
     override fun disconnect() {
         conexiones.forEach { conexion ->
@@ -276,6 +282,7 @@ class AulaClient(
         const val RUTA_LOGIN = "/account/login"
         const val RUTA_CURSOS = "/web/user/info/courseinrole"
         const val RUTA_TAREAS = "/web/homework/list"
+        const val RUTA_PERIODOS = "/periodos-academicos/disponibles/get"
         const val TIMEOUT_MS = 15_000
     }
 }

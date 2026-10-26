@@ -179,6 +179,9 @@ internal fun EditorContent(
                 valor = textoEstado,
                 alPulsar = { alAbrirPropiedad(HojaEditor.ESTADO) },
             )
+            if (estado.esGrupal) {
+                EditorReadOnlyRow(texto = stringResource(R.string.task_group_yes))
+            }
 
             Spacer(Modifier.height(24.dp))
             BasicTextField(
@@ -317,6 +320,25 @@ private fun EditorPropertyRow(
             contentDescription = null,
             tint = colores.onSurfaceVariant.copy(alpha = 0.4f),
             modifier = Modifier.size(16.dp),
+        )
+    }
+}
+
+/** Fila informativa sin acción, para datos que vienen del Aula Virtual. */
+@Composable
+private fun EditorReadOnlyRow(texto: String) {
+    val colores = MaterialTheme.colorScheme
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp)
+            .padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = texto,
+            style = MaterialTheme.typography.titleSmall,
+            color = colores.onSurfaceVariant,
         )
     }
 }

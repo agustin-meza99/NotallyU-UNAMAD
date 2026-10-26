@@ -16,11 +16,12 @@ import com.example.notally.data.model.Tarea
 
 /**
  * Base de datos local. El nombre del archivo físico se conserva; la versión 2
- * retira el color de los cursos y la 3 añade el `externalId` del Aula Virtual.
+ * retira el color de los cursos, la 3 añade el `externalId` del Aula Virtual y
+ * la 4 añade datos opcionales del curso y de la tarea.
  */
 @Database(
     entities = [Curso::class, Tarea::class, Subtarea::class],
-    version = 3,
+    version = 4,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -90,13 +91,34 @@ abstract class NotallyDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Migración 3 → 4: añade los datos opcionales del Aula Virtual. Es
+         * aditiva: las filas existentes conservan todos sus datos y las nuevas
+         * columnas quedan nulas (o `0` para `esGrupal`).
+         */
+        val MIGRACION_3_4: Migration = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `subjects` ADD COLUMN `codigo` TEXT")
+                db.execSQL("ALTER TABLE `subjects` ADD COLUMN `seccion` TEXT")
+                db.execSQL("ALTER TABLE `subjects` ADD COLUMN `periodo` TEXT")
+                db.execSQL("ALTER TABLE `subjects` ADD COLUMN `tipo` TEXT")
+
+                db.execSQL("ALTER TABLE `tasks` ADD COLUMN `unidad` TEXT")
+                db.execSQL("ALTER TABLE `tasks` ADD COLUMN `inicioEn` INTEGER")
+                db.execSQL("ALTER TABLE `tasks` ADD COLUMN `intentos` INTEGER")
+                db.execSQL(
+                    "ALTER TABLE `tasks` ADD COLUMN `esGrupal` INTEGER NOT NULL DEFAULT 0",
+                )
+            }
+        }
+
         fun construir(context: Context): NotallyDatabase =
             Room.databaseBuilder(
                 context.applicationContext,
                 NotallyDatabase::class.java,
                 NOMBRE,
             )
-                .addMigrations(MIGRACION_1_2, MIGRACION_2_3)
+                .addMigrations(MIGRACION_1_2, MIGRACION_2_3, MIGRACION_3_4)
                 .build()
     }
 }

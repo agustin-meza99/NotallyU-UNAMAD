@@ -130,6 +130,22 @@ object AulaParser {
     }
 
     /**
+     * Periodo académico seleccionado de `/periodos-academicos/disponibles/get`.
+     *
+     * Devuelve el `text` del primer elemento con `selected: true`, o `null` si
+     * no hay ninguno.
+     */
+    fun parsearPeriodo(json: String): String? {
+        val arreglo = arregloRaiz(json)
+        for (indice in 0 until arreglo.length()) {
+            val objeto = arreglo.optJSONObject(indice) ?: continue
+            if (!objeto.optBoolean("selected", false)) continue
+            return objeto.texto("text")?.trim()?.takeUnless { it.isEmpty() }
+        }
+        return null
+    }
+
+    /**
      * Convierte HTML del Aula en texto plano: quita etiquetas, separa bloques,
      * decodifica entidades y colapsa espacios y saltos de línea.
      */

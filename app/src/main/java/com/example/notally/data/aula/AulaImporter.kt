@@ -68,6 +68,14 @@ class AulaImporter(
             }
 
             espera(PAUSA_ENTRE_PETICIONES_MS)
+            // El periodo es informativo: si falla, la importación continúa.
+            val periodo = try {
+                cliente.periodoAcademico()
+            } catch (_: AulaException) {
+                null
+            }
+
+            espera(PAUSA_ENTRE_PETICIONES_MS)
             val cursos = try {
                 cliente.cursos()
             } catch (error: AulaException) {
@@ -91,6 +99,10 @@ class AulaImporter(
                     nombre = cursoAula.nombre,
                     externalId = cursoAula.sectionId,
                     creadoEn = ahora,
+                    codigo = cursoAula.codigoCurso.takeUnless { it.isBlank() },
+                    seccion = cursoAula.codigoSeccion.takeUnless { it.isBlank() },
+                    periodo = periodo,
+                    tipo = cursoAula.tipo,
                 )
                 val resultadoCurso = repositorioCursos.upsertCursoExterno(cursoLocal)
                 when (resultadoCurso) {
@@ -155,6 +167,10 @@ class AulaImporter(
                         creadoEn = existente?.creadoEn ?: ahora,
                         actualizadoEn = ahora,
                         externalId = tareaAula.id,
+                        unidad = tareaAula.unidad,
+                        inicioEn = tareaAula.inicioEn,
+                        intentos = tareaAula.intentos,
+                        esGrupal = tareaAula.grupal,
                     )
                     val aGuardar = if (existente == null) {
                         base

@@ -63,6 +63,18 @@ data class Tarea(
      */
     @ColumnInfo(name = "externalId")
     val externalId: String? = null,
+    /** Unidad del Aula Virtual. Opcional y solo informativa. */
+    @ColumnInfo(name = "unidad")
+    val unidad: String? = null,
+    /** `dateBegin` del Aula Virtual en epoch (America/Lima). Opcional. */
+    @ColumnInfo(name = "inicioEn")
+    val inicioEn: Long? = null,
+    /** Intentos permitidos por el Aula Virtual. Opcional. */
+    @ColumnInfo(name = "intentos")
+    val intentos: Int? = null,
+    /** `isGroup` del Aula Virtual. La UI solo muestra la etiqueta "Grupal". */
+    @ColumnInfo(name = "esGrupal")
+    val esGrupal: Boolean = false,
 )
 
 enum class Prioridad {
