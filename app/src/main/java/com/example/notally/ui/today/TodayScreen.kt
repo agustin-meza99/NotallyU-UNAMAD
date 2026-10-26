@@ -379,7 +379,7 @@ fun TodayScreen(
                     start = margen,
                     end = margen,
                     top = 24.dp,
-                    bottom = 96.dp,
+                    bottom = EspaciadoNotally.rellenoInferiorListaConFab,
                 ),
             ) {
                 item(key = "header") {

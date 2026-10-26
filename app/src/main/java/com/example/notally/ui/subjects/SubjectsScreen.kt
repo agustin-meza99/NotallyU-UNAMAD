@@ -170,6 +170,7 @@ fun SubjectsScreen(
                             viewModel.limpiarErrorFormulario()
                             objetivoHoja = ObjetivoSubjectSheet.Nueva
                         },
+                        modifier = Modifier.padding(bottom = 16.dp),
                     )
                 }
 
@@ -275,10 +276,11 @@ private fun EncabezadoMaterias(
     mostrarConteos: Boolean,
     mostrarAgregar: Boolean,
     alAgregar: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val colores = MaterialTheme.colorScheme
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.Top,
     ) {
         Column(modifier = Modifier.weight(1f)) {

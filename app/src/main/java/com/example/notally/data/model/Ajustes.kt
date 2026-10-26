@@ -15,7 +15,6 @@ enum class ModoTema {
  */
 data class Ajustes(
     val modoTema: ModoTema = ModoTema.SISTEMA,
-    val usarColorDinamico: Boolean = false,
     val pestanaPorDefecto: String = PESTANA_HOY,
     val semanaEmpiezaLunes: Boolean = true,
     val notificacionesActivas: Boolean = true,

@@ -196,9 +196,6 @@
     <string name="settings_system">Sistema</string>
     <string name="settings_light">Claro</string>
     <string name="settings_dark">Oscuro</string>
-    <string name="settings_dynamic">Color dinámico</string>
-    <string name="settings_dynamic_support">Usa el acento de tu fondo de pantalla.</string>
-    <string name="settings_dynamic_unsupported">Requiere Android 12 o superior.</string>
     <string name="settings_agenda">Agenda</string>
     <string name="settings_week">La semana inicia en lunes</string>
     <string name="settings_week_support">Cambia el conteo de entregas de la semana.</string>

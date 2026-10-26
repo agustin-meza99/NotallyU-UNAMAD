@@ -19,6 +19,15 @@ object EspaciadoNotally {
     /** Padding inferior de listas con FAB. */
     val rellenoInferiorLista = 96.dp
 
+    /** Banda del FAB de Hoy: 52 dp de alto + 16 dp de margen inferior. */
+    val bandaFab = 68.dp
+
+    /**
+     * Padding inferior de una lista que comparte espacio con el FAB: base más
+     * la banda del FAB, para que la última fila nunca quede debajo (§4.1).
+     */
+    val rellenoInferiorListaConFab = rellenoInferiorLista + bandaFab
+
     /** Ancho máximo de lectura. */
     val anchoMaximoContenido = 680.dp
 }

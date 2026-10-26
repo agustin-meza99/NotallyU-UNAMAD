@@ -1,6 +1,5 @@
 package com.example.notally.ui.settings
 
-import android.os.Build
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,7 +20,6 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Switch
@@ -70,7 +68,6 @@ fun SettingsScreen(
     val contexto = LocalContext.current
     var mostrarHojaTema by remember { mutableStateOf(false) }
 
-    val dinamicoSoportado = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
     val nombreVersion = remember(contexto) {
         runCatching {
             contexto.packageManager.getPackageInfo(contexto.packageName, 0).versionName
@@ -110,22 +107,6 @@ fun SettingsScreen(
                     etiqueta = stringResource(R.string.settings_theme),
                     valor = etiquetaTema(ajustes.modoTema),
                     alPulsar = { mostrarHojaTema = true },
-                )
-            }
-            item(key = "divider_appearance") { SeparadorFila() }
-            item(key = "dynamic_row") {
-                FilaInterruptorAjustes(
-                    etiqueta = stringResource(R.string.settings_dynamic),
-                    soporte = stringResource(
-                        if (dinamicoSoportado) {
-                            R.string.settings_dynamic_support
-                        } else {
-                            R.string.settings_dynamic_unsupported
-                        },
-                    ),
-                    marcado = ajustes.usarColorDinamico && dinamicoSoportado,
-                    activo = dinamicoSoportado,
-                    alCambiar = viewModel::cambiarColorDinamico,
                 )
             }
 
@@ -191,14 +172,6 @@ private fun EtiquetaSeccion(
         style = MaterialTheme.typography.labelSmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = modifier.padding(bottom = 8.dp),
-    )
-}
-
-@Composable
-private fun SeparadorFila() {
-    HorizontalDivider(
-        thickness = 1.dp,
-        color = MaterialTheme.colorScheme.outlineVariant,
     )
 }
 

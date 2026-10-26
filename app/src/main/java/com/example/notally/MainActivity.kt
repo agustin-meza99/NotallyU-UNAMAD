@@ -62,10 +62,7 @@ private fun RaizAplicacion() {
         }
     }
 
-    TemaNotally(
-        darkTheme = temaOscuro,
-        dynamicColor = ajustes.usarColorDinamico,
-    ) {
+    TemaNotally(darkTheme = temaOscuro) {
         NotallyRoot()
     }
 }

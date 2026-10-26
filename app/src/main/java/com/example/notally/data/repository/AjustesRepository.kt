@@ -38,7 +38,6 @@ class AjustesRepository(
                 modoTema = preferencias[Claves.MODO_TEMA]
                     ?.let { guardado -> runCatching { modoTemaDesdeTexto(guardado) }.getOrNull() }
                     ?: ModoTema.SISTEMA,
-                usarColorDinamico = preferencias[Claves.USAR_COLOR_DINAMICO] ?: false,
                 pestanaPorDefecto = preferencias[Claves.PESTANA_POR_DEFECTO]
                     ?.takeIf { it in Ajustes.PESTANAS_VALIDAS }
                     ?: Ajustes.PESTANA_HOY,
@@ -51,10 +50,6 @@ class AjustesRepository(
 
     suspend fun cambiarModoTema(modo: ModoTema) {
         dataStore.edit { it[Claves.MODO_TEMA] = modo.aTexto() }
-    }
-
-    suspend fun cambiarColorDinamico(activo: Boolean) {
-        dataStore.edit { it[Claves.USAR_COLOR_DINAMICO] = activo }
     }
 
     suspend fun cambiarPestanaPorDefecto(pestana: String) {
@@ -76,7 +71,6 @@ class AjustesRepository(
         }
         dataStore.edit { preferencias ->
             preferencias[Claves.MODO_TEMA] = ajustes.modoTema.aTexto()
-            preferencias[Claves.USAR_COLOR_DINAMICO] = ajustes.usarColorDinamico
             preferencias[Claves.PESTANA_POR_DEFECTO] = ajustes.pestanaPorDefecto
             preferencias[Claves.SEMANA_EMPIEZA_LUNES] = ajustes.semanaEmpiezaLunes
             preferencias[Claves.NOTIFICACIONES_ACTIVAS] = ajustes.notificacionesActivas
@@ -85,7 +79,6 @@ class AjustesRepository(
 
     private object Claves {
         val MODO_TEMA = stringPreferencesKey("theme_mode")
-        val USAR_COLOR_DINAMICO = booleanPreferencesKey("use_dynamic_color")
         val PESTANA_POR_DEFECTO = stringPreferencesKey("default_tab")
         val SEMANA_EMPIEZA_LUNES = booleanPreferencesKey("week_starts_monday")
         val NOTIFICACIONES_ACTIVAS = booleanPreferencesKey("notifications_enabled")

@@ -30,10 +30,6 @@ class SettingsViewModel(
         viewModelScope.launch { repositorio.cambiarModoTema(modo) }
     }
 
-    fun cambiarColorDinamico(activo: Boolean) {
-        viewModelScope.launch { repositorio.cambiarColorDinamico(activo) }
-    }
-
     fun cambiarSemanaEmpiezaLunes(activo: Boolean) {
         viewModelScope.launch { repositorio.cambiarSemanaEmpiezaLunes(activo) }
     }

@@ -195,10 +195,9 @@ Reglas:
 - El nombre del color ("Índigo") es la etiqueta accesible del swatch; no se muestra texto de color en la tarjeta. Los nombres son de swatch, no de categoría: el color no codifica el tipo de materia.
 - La barra de progreso usa el color de materia sobre `outlineVariant`; no requiere AA (no es texto), pero el porcentaje nunca se comunica solo con color: siempre hay "3 de 7 completadas".
 
-### 2.6 Color dinámico
-- Desactivado por defecto. La identidad es la paleta de este documento.
-- Si el usuario lo activa, se usa el esquema dinámico completo del sistema para roles M3 (incluye superficies). Los colores de materia no cambian. No se mezcla paleta propia con acentos dinámicos: el contraste se delega al esquema del sistema.
-- El interruptor no debe reiniciar la pantalla ni perder scroll.
+### 2.6 Paleta fija
+- No existe variante dinámica ni ajuste que la active: la paleta de §2 es la única identidad.
+- Los roles M3 (incluidas superficies) salen siempre de `EsquemaColoresClaro` / `EsquemaColoresOscuro`; los colores de materia no cambian.
 
 ---
 
@@ -261,7 +260,7 @@ Estilos extra (fuera de `Typography`, en `NotallyType`):
 | space6 | 32 | Entre bloques mayores (título editorial → contenido) |
 | space7 | 48 | Reserva superior en estados vacíos; target táctil |
 - Margen lateral de pantalla: 20 dp (24 dp en ≥ 600 dp).
-- Padding inferior de listas: 96 dp (barra de navegación + FAB) o 24 dp si no hay FAB.
+- Padding inferior de listas: 96 dp de base o 24 dp si no hay FAB. Con un FAB superpuesto se suma su banda (52 dp de alto + 16 dp de margen = 68 dp): Hoy usa 164 dp para que la última fila quede siempre por encima del FAB, a cualquier escala de fuente.
 - No se usa `Spacer` para separar secciones desplazables: va en `contentPadding`.
 
 ### 4.2 Radios
@@ -394,11 +393,14 @@ Motivo: filtrar por una fecha arbitraria obligaría a redefinir "Atrasadas", "Pa
 **Anatomía (izquierda → derecha)**
 1. Checkbox circular: 20 dp visual (borde 2 dp `outline`; marcado: relleno `primary` + check `onPrimary`), target 48×48.
 2. Separación 4 dp.
-3. Columna de prioridad: 2 dp de ancho reservados siempre (evita jitter), radio full, alineada al inicio del título. Alta = `error` y 20 dp de alto; Media = `outline` y 12 dp; Baja y tareas hechas = transparente. La altura distingue alta de media sin depender del color.
+3. Riel de prioridad: sangría fija de 15 dp a la izquierda del texto (riel de 3 dp + 12 dp de aire). El riel es una cápsula vertical de 3 dp, extremos redondeados (radio 1.5 dp) y color `error` (Alta) u `outline` (Media); su alto sigue al bloque título + meta: Alta cubre el 100 %, Media el 50 % centrado, Baja y tareas hechas no dibujan nada. La cobertura, no solo el color, distingue Alta de Media (§2.1) y el ancho reservado es fijo, así que el texto nunca se desplaza.
 4. Columna de texto (peso 1): título `titleMedium`; 4 dp; meta `bodySmall` = punto de materia 6 dp + nombre + " · " + fecha.
 5. Sin chevron. La fila entera abre el editor.
 
-**Medidas:** alto mínimo 56 dp (padding vertical 12), padding horizontal 0; el texto empieza a 8 dp de la barra; gap entre filas 4 dp; sin divisores.
+**Medidas:** alto mínimo 56 dp (padding vertical 12), padding horizontal 0; 8 dp entre el checkbox y el riel, 3 dp de riel y 12 dp hasta el texto (15 dp de sangría reservada siempre); gap entre filas 4 dp; sin divisores.
+
+**Por qué un riel y no una barra.** Una barra de 2 dp × 20 dp pegada al primer glifo se lee como un cursor de texto, sobre todo en tema oscuro y en títulos de una línea. El riel mide 3 dp de grosor y al menos la altura del bloque de texto (≥ 48 dp a 1.0, más con varias líneas o a 200 %), con extremos redondeados y 12 dp de aire: supera con holgura el tamaño de un carácter y se lee como marca de margen. La cobertura (100 % vs 50 % centrada) distingue Alta de Media sin depender del color y el slot fijo conserva la ausencia de jitter.
+
 
 **Meta**
 - Materia: "Cálculo diferencial" (una línea a 1.0; hasta 2 con fuente grande).
@@ -453,7 +455,7 @@ La prioridad manda dentro del bucket, aunque §7.3 ordene las secciones por fech
 **Anatomía**
 - Contenedor `inverseSurface`, radio `shapeL` 16, sin borde y sin sombra. En claro es el bloque casi negro (`#2E2A25`); en oscuro es papel sobre tinta (`#ECE7DE`). Se elige `inverseSurface` y no `primary` porque nombra el rol "inverso de la página" y no reutiliza el color de acción del FAB/checkbox. Un bloque fijo oscuro en tema oscuro quedaría a 1.19:1 de `surface` y rompería el límite de 3:1 para componentes no textuales.
 - Padding 16 dp.
-- Barra de prioridad: 2 dp de ancho, 20 dp de alto para Alta, 12 dp para Media, transparente para Baja, radio full, color `inverseOnSurface`, separada 8 dp del texto y alineada con el título. Reutiliza el lenguaje de altura de §7.2; no hay píldora "Alta" ni borde de prioridad.
+- Riel de prioridad: 3 dp de ancho, 12 dp de aire hasta el título, extremos redondeados, color `inverseOnSurface`, sangría fija de 15 dp. Alta cubre el 100 % del bloque título + meta y Media el 50 % centrado; Baja no dibuja. Reutiliza la anatomía de §7.2: la cobertura, no el color, distingue alta de media; no hay píldora "Alta" ni borde de prioridad.
 - Eyebrow `labelSmall` uppercase, `inverseOnSurface`: "ATRASADAS", "PARA HOY", "SIN HORA" o "PRÓXIMAS".
 - 8 dp; título `titleLarge` (22/28, sans), `inverseOnSurface`, sin serif. No lleva `maxLines`: la tarjeta crece y garantiza un título de 60 caracteres incluso a 200 %. Es la excepción al máximo de tres líneas de las filas, porque es un solo bloque y no una lista.
 - 8 dp; meta `bodySmall`, `inverseOnSurface`: nombre de materia + " · " + etiqueta de entrega ("Hoy", "Vie 31 oct", "Sin fecha"). Sin punto de materia: sobre `inverseSurface` los acentos claros dan 1.97–2.67:1 (Lima 2.67, Lavanda 2.59), por debajo de 3:1; el nombre en texto conserva la identificación.
@@ -612,7 +614,7 @@ La prioridad manda dentro del bucket, aunque §7.3 ordene las secciones por fech
 - Separador de 1 dp `outlineVariant` entre filas de una misma sección; ninguno antes de la primera ni después de la última.
 
 **Contenido**
-- Apariencia → "Tema" (valor: Sistema / Claro / Oscuro) abre bottom sheet con 3 opciones y check `tertiary`. "Color dinámico" con switch; soporte "Usa el acento de tu fondo de pantalla.". En API 30 el switch queda deshabilitado y el soporte cambia a "Requiere Android 12 o superior.".
+- Apariencia → "Tema" (valor: Sistema / Claro / Oscuro) abre bottom sheet con 3 opciones y check `tertiary`.
 - Agenda → "La semana inicia en lunes" con switch, activado por defecto; soporte "Cambia el conteo de entregas de la semana.".
 - Acerca de → "Versión 1.0" como texto no interactivo. Sin enlaces falsos ni redes.
 
@@ -716,9 +718,6 @@ La prioridad manda dentro del bucket, aunque §7.3 ordene las secciones por fech
 | confirm.deleteSubject.bodyNoTasks | "Se eliminará «%s»." |
 | settings.appearance | "Apariencia" |
 | settings.theme / system / light / dark | "Tema" / "Sistema" / "Claro" / "Oscuro" |
-| settings.dynamic | "Color dinámico" |
-| settings.dynamic.support | "Usa el acento de tu fondo de pantalla." |
-| settings.dynamic.unsupported | "Requiere Android 12 o superior." |
 | settings.agenda | "Agenda" |
 | settings.week | "La semana inicia en lunes" |
 | settings.week.support | "Cambia el conteo de entregas de la semana." |
@@ -740,7 +739,7 @@ Reglas de formato:
 - Texto normal ≥ 4.5:1; texto ≥ 18 sp regular o ≥ 14 sp bold ≥ 3:1. Todos los pares de la sección 2.4 pasan.
 - `outlineVariant` no se usa como único límite de un control (1.47:1); para inputs y checkbox se usa `outline` (3.64:1 claro).
 - Targets de 48×48 dp; separación mínima entre targets 8 dp. Chips y checkboxes usan `minimumInteractiveComponentSize`.
-- No se usa el color como único portador de estado: "Atrasada" lleva texto, "Completada" lleva tachado + check, y la prioridad cambia de altura de barra además de color.
+- No se usa el color como único portador de estado: "Atrasada" lleva texto, "Completada" lleva tachado + check, y la prioridad cambia la cobertura del riel además de su color.
 
 ### 9.2 TalkBack (textos exactos)
 - **TaskRow (contenedor):** "Entregar informe. Cálculo diferencial. Entrega hoy, 23:59. Prioridad alta." Rol botón; `onClickLabel` = "Abrir tarea".
@@ -794,14 +793,13 @@ Regla de decisión: **usar** si el símbolo compila con material3 1.4.0; **emula
 **Alternativa si el orquestador decide subir a `material3 1.5.0-alpha`:** sobrescribir solo `androidx.compose.material3:material3` (no todo el BOM) y usar `MaterialExpressiveTheme`, `MotionScheme`, `MaterialShapes`, `FAB menu` y `HorizontalFloatingToolbar`. Riesgo: cambio de API entre alphas y QA visual; la paleta y la tipografía de este documento siguen siendo válidas. No mezclar ambas rutas en la misma entrega.
 
 **Otros riesgos**
-1. **Color dinámico activo por defecto** en el `Theme.kt` actual (`dynamicColor: Boolean = true`). Debe pasar a `false`; si no, la identidad desaparece en Android 12+ y los contrastes calculados no aplican.
-2. **Iconos:** `material3 1.4.0` ya no arrastra `material-icons-core`; `Icons.Default.*` no compila sin dependencia. Añadir 12 vector XML de Material Symbols; no añadir la librería completa.
-3. **Serif del sistema:** fabricantes pueden sustituir la familia. Validar en Samsung/Xiaomi; si las métricas rompen, el fallback es `SansSerif` solo en `displaySmall`, nunca en toda la escala.
-4. **`enableEdgeToEdge` + IME:** el editor debe usar `imePadding` y `Scaffold` con insets; sin esto la toolbar queda debajo del teclado.
-5. **Autosave y back predictivo:** guardar con debounce y flush en `DisposableEffect`/`onStop`; no bloquear el gesto del sistema.
-6. **Ajuste "semana inicia lunes":** debe afectar el conteo "entregas esta semana" de Materias. Si ese conteo no se implementa, el interruptor se oculta: no se publican ajustes muertos.
-7. **Toolchain:** AGP `9.4.0-alpha08` y `compileSdk 37` son preview; cualquier fallo de build ajeno al diseño se reporta, no se parchea desde UI.
-8. **Datos:** Room/DataStore aún no están en el proyecto. Los estados de carga/error se implementan contra flujos reales; prohibido rellenar con datos de ejemplo.
+1. **Iconos:** `material3 1.4.0` ya no arrastra `material-icons-core`; `Icons.Default.*` no compila sin dependencia. Añadir 12 vector XML de Material Symbols; no añadir la librería completa.
+2. **Serif del sistema:** fabricantes pueden sustituir la familia. Validar en Samsung/Xiaomi; si las métricas rompen, el fallback es `SansSerif` solo en `displaySmall`, nunca en toda la escala.
+3. **`enableEdgeToEdge` + IME:** el editor debe usar `imePadding` y `Scaffold` con insets; sin esto la toolbar queda debajo del teclado.
+4. **Autosave y back predictivo:** guardar con debounce y flush en `DisposableEffect`/`onStop`; no bloquear el gesto del sistema.
+5. **Ajuste "semana inicia lunes":** debe afectar el conteo "entregas esta semana" de Materias. Si ese conteo no se implementa, el interruptor se oculta: no se publican ajustes muertos.
+6. **Toolchain:** AGP `9.4.0-alpha08` y `compileSdk 37` son preview; cualquier fallo de build ajeno al diseño se reporta, no se parchea desde UI.
+7. **Datos:** Room/DataStore aún no están en el proyecto. Los estados de carga/error se implementan contra flujos reales; prohibido rellenar con datos de ejemplo.
 
 ---
 
@@ -860,4 +858,5 @@ Las excepciones 1–5 están implementadas y verificadas (2026-10-26). El resto 
    - **Contadores en chips (§7.7).** Número `numeric` sin fondo, con slot de 24 dp mínimo; se define qué cuenta cada chip y se acepta que los tres no sean sumables porque "Completadas" abarca historial.
    - **FAB y "+" de Materias de 52 dp circulares (§7.10, §7.4).** Sustituyen al FAB de 56 dp con radio 16 y al `IconButton` de 48 dp; icono 24 dp, target 52, foco exterior de 2 dp `tertiary`. Esto ajusta §4.2 (el FAB deja `shapeL` y pasa a `shapeFull`) y no cambia la sombra de 2 dp del FAB.
    - **Swatches Lima y Lavanda (§2.5).** Entran por Ocre y Ciruela, solo como acentos de materia y con los hex y ratios de §2.5. No se añade un segundo acento de UI: `tertiary` sigue siendo el único acento funcional. El papel cálido y la tinta no cambian.
+   - **Riel de prioridad (2026-10-26).** La barra de 2 dp × 20/12 dp se sustituye por un riel de 3 dp con extremos redondeados y 12 dp de aire, cuya altura sigue al bloque de texto (Alta 100 %, Media 50 % centrado). En la captura real la barra corta pegada al primer glifo se leía como un cursor; el riel conserva la diferencia estructural Alta/Media, el hueco fijo sin jitter y funciona a 200 % con títulos de 1–3 líneas. Ajusta §4.1, §7.2, §7.3.1 y §9.1.
    **No adoptado de la referencia:** fondo blanco frío (se mantiene `#FBFAF7` / `#151310`), nav flotante oscura de 4 iconos (se mantiene `ShortNavigationBar` de 3 destinos, §6), tarjetas tipo ticket con muesca (se mantienen las filas de §7.2), píldoras de estado "In review / In progress" (se mantienen "Pendiente / En curso / Completada" como texto y el punto de prioridad), texto blanco sobre lima (prohibido: lima solo como swatch y con variante oscura), y sombras decorativas (solo FAB, snackbar y diálogo; la tarjeta focal no lleva).
