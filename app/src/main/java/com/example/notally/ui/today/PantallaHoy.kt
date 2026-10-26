@@ -97,6 +97,8 @@ fun PantallaHoy(
     modifier: Modifier = Modifier,
     alCrearTarea: () -> Unit = {},
     alAbrirTarea: (Long) -> Unit = {},
+    diaSeleccionadoEpoch: Long? = null,
+    alSeleccionarDia: (Long?) -> Unit = {},
     viewModel: HoyViewModel = viewModel(
         factory = HoyViewModel.factory(LocalContext.current),
     ),
@@ -200,9 +202,9 @@ fun PantallaHoy(
         estado.filtro != FiltroHoy.COMPLETADAS &&
         diasTira.any { it.pendientes > 0 }
 
-    // La selección vive en la pantalla: se conserva hasta tocar otro día o
-    // cambiar de pestaña, y nunca altera secciones, conteos ni resumen.
-    var diaSeleccionadoEpoch by remember { mutableStateOf<Long?>(null) }
+    // La selección de la tira vive en la raíz de pestañas con
+    // `rememberSaveable`: sobrevive a la recreación de la Activity y se limpia
+    // al cambiar de pestaña (§7.1.1). Nunca altera secciones, conteos ni resumen.
     val fechaSeleccionada = diaSeleccionadoEpoch?.let(LocalDate::ofEpochDay)
 
     val focalElegible = estado.filtro != FiltroHoy.COMPLETADAS && !mostrarCarga &&
@@ -404,7 +406,7 @@ fun PantallaHoy(
                             dias = diasTira,
                             fechaSeleccionada = fechaSeleccionada,
                             alElegirDia = { dia ->
-                                diaSeleccionadoEpoch = dia.fecha.toEpochDay()
+                                alSeleccionarDia(dia.fecha.toEpochDay())
                                 saltoPendiente = resolverSaltoDia(dia, fechaHoy)
                             },
                             modifier = Modifier.padding(top = 16.dp),

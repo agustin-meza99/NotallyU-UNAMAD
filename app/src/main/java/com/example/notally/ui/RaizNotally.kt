@@ -144,6 +144,11 @@ private fun ContenedorPestanas(
             Destino.Ajustes,
         )
     }
+    // Día elegido en la tira de Hoy. Vive sobre el contenido de la pestaña para
+    // sobrevivir a la recreación de la Activity; el `rememberSaveable` de dentro
+    // de la pestaña lo restauraría también al volver de otra pestaña, que es lo
+    // que §7.1.1 prohíbe. Por eso se limpia al cambiar de pestaña.
+    var diaHoySeleccionado by rememberSaveable { mutableStateOf<Long?>(null) }
     val coloresElemento = ShortNavigationBarItemDefaults.colors(
         selectedIconColor = colores.onPrimaryContainer,
         selectedTextColor = colores.onSurface,
@@ -166,7 +171,10 @@ private fun ContenedorPestanas(
                     ShortNavigationBarItem(
                         selected = seleccionado,
                         onClick = {
-                            if (!seleccionado) onSeleccionar(destino)
+                            if (!seleccionado) {
+                                diaHoySeleccionado = null
+                                onSeleccionar(destino)
+                            }
                         },
                         icon = {
                             Icon(
@@ -205,6 +213,8 @@ private fun ContenedorPestanas(
                         Destino.Hoy -> PantallaHoy(
                             alCrearTarea = { onAbrirEditor(null) },
                             alAbrirTarea = { id -> onAbrirEditor(id) },
+                            diaSeleccionadoEpoch = diaHoySeleccionado,
+                            alSeleccionarDia = { diaHoySeleccionado = it },
                         )
 
                         Destino.Materias -> PantallaMaterias()

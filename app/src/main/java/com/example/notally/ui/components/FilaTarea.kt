@@ -208,14 +208,21 @@ fun FilaTarea(
             CasillaTarea(hecha = hecha)
         }
 
-        Spacer(Modifier.width(4.dp))
-        BarraPrioridad(prioridad = tarea.prioridad, hecha = hecha)
         Spacer(Modifier.width(8.dp))
 
         Column(
             modifier = Modifier
                 .weight(1f)
-                .padding(vertical = 12.dp),
+                .padding(start = anchoRielPrioridad, top = 12.dp, bottom = 12.dp)
+                .rielPrioridad(
+                    prioridad = tarea.prioridad,
+                    hecha = hecha,
+                    color = if (tarea.prioridad == Prioridad.ALTA) {
+                        colores.error
+                    } else {
+                        colores.outline
+                    },
+                ),
         ) {
             Text(
                 text = tarea.titulo,
@@ -248,41 +255,6 @@ fun FilaTarea(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-        }
-    }
-}
-
-/**
- * Barra de prioridad de 2 dp. El hueco de 20 dp se reserva siempre para que
- * marcar/desmarcar no cambie la altura de la fila (sin jitter).
- */
-@Composable
-private fun BarraPrioridad(prioridad: Prioridad, hecha: Boolean) {
-    val colores = MaterialTheme.colorScheme
-    val altura = when {
-        hecha || prioridad == Prioridad.BAJA -> 0.dp
-        prioridad == Prioridad.ALTA -> 20.dp
-        else -> 12.dp
-    }
-    val color = when {
-        hecha || prioridad == Prioridad.BAJA -> Color.Transparent
-        prioridad == Prioridad.ALTA -> colores.error
-        else -> colores.outline
-    }
-    Box(
-        modifier = Modifier
-            .width(2.dp)
-            .height(20.dp),
-        contentAlignment = Alignment.TopStart,
-    ) {
-        if (altura > 0.dp) {
-            Box(
-                modifier = Modifier
-                    .width(2.dp)
-                    .height(altura)
-                    .clip(CircleShape)
-                    .background(color),
-            )
         }
     }
 }

@@ -3,16 +3,12 @@ package com.example.notally.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
@@ -21,7 +17,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
@@ -100,46 +95,26 @@ fun TarjetaTareaFocal(
             color = colores.inverseOnSurface,
         )
         Spacer(Modifier.height(8.dp))
-        // La barra vive en su propia fila con el título, no con el antetítulo:
-        // así queda alineada con `titleLarge` (§7.3.1).
-        Row(verticalAlignment = Alignment.Top) {
-            // Hueco de 20 dp reservado siempre: Alta y Media cambian de altura,
-            // Baja queda transparente sin mover el texto.
-            Box(
-                modifier = Modifier
-                    .width(2.dp)
-                    .height(20.dp),
-                contentAlignment = Alignment.TopStart,
-            ) {
-                val alturaBarra = when (prioridad) {
-                    Prioridad.ALTA -> 20.dp
-                    Prioridad.MEDIA -> 12.dp
-                    Prioridad.BAJA -> 0.dp
-                }
-                if (alturaBarra > 0.dp) {
-                    Box(
-                        modifier = Modifier
-                            .width(2.dp)
-                            .height(alturaBarra)
-                            .clip(CircleShape)
-                            .background(colores.inverseOnSurface),
-                    )
-                }
-            }
-            Spacer(Modifier.width(8.dp))
-            Column {
-                Text(
-                    text = titulo,
-                    style = MaterialTheme.typography.titleLarge,
+        Column(
+            modifier = Modifier
+                .padding(start = anchoRielPrioridad)
+                .rielPrioridad(
+                    prioridad = prioridad,
+                    hecha = false,
                     color = colores.inverseOnSurface,
-                )
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = textoMateria + separador + textoEntrega,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = colores.inverseOnSurface,
-                )
-            }
+                ),
+        ) {
+            Text(
+                text = titulo,
+                style = MaterialTheme.typography.titleLarge,
+                color = colores.inverseOnSurface,
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = textoMateria + separador + textoEntrega,
+                style = MaterialTheme.typography.bodySmall,
+                color = colores.inverseOnSurface,
+            )
         }
     }
 }
