@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
@@ -252,7 +253,15 @@ fun colorCurso(argb: Long): Color = LocalPaletteCursos.current.colorCurso(argb)
 // Tipografia
 // ===========================================================================
 
-private val Sans = FontFamily.SansSerif
+/**
+ * Geist (Vercel, OFL 1.1) en tres pesos. Sustituye a la sans del sistema; el
+ * serif quedó retirado el 2026-10-26. Licencia en `res/raw/geist_ofl.txt`.
+ */
+val FamiliaGeist = FontFamily(
+    Font(R.font.geist_regular, FontWeight.Normal),
+    Font(R.font.geist_medium, FontWeight.Medium),
+    Font(R.font.geist_semibold, FontWeight.SemiBold),
+)
 
 /**
  * Escala tipográfica del DESIGN.md §3.2.
@@ -263,70 +272,70 @@ private val Sans = FontFamily.SansSerif
  */
 val Tipografia = Typography(
     headlineSmall = TextStyle(
-        fontFamily = Sans,
+        fontFamily = FamiliaGeist,
         fontWeight = FontWeight.Medium,
         fontSize = 24.sp,
         lineHeight = 32.sp,
         letterSpacing = 0.sp,
     ),
     titleLarge = TextStyle(
-        fontFamily = Sans,
+        fontFamily = FamiliaGeist,
         fontWeight = FontWeight.Medium,
         fontSize = 22.sp,
         lineHeight = 28.sp,
         letterSpacing = 0.sp,
     ),
     titleMedium = TextStyle(
-        fontFamily = Sans,
+        fontFamily = FamiliaGeist,
         fontWeight = FontWeight.Medium,
         fontSize = 16.sp,
         lineHeight = 24.sp,
         letterSpacing = 0.10.sp,
     ),
     titleSmall = TextStyle(
-        fontFamily = Sans,
+        fontFamily = FamiliaGeist,
         fontWeight = FontWeight.Medium,
         fontSize = 14.sp,
         lineHeight = 20.sp,
         letterSpacing = 0.10.sp,
     ),
     bodyLarge = TextStyle(
-        fontFamily = Sans,
+        fontFamily = FamiliaGeist,
         fontWeight = FontWeight.Normal,
         fontSize = 16.sp,
         lineHeight = 24.sp,
         letterSpacing = 0.10.sp,
     ),
     bodyMedium = TextStyle(
-        fontFamily = Sans,
+        fontFamily = FamiliaGeist,
         fontWeight = FontWeight.Normal,
         fontSize = 14.sp,
         lineHeight = 22.sp,
         letterSpacing = 0.10.sp,
     ),
     bodySmall = TextStyle(
-        fontFamily = Sans,
+        fontFamily = FamiliaGeist,
         fontWeight = FontWeight.Normal,
         fontSize = 12.sp,
         lineHeight = 16.sp,
         letterSpacing = 0.20.sp,
     ),
     labelLarge = TextStyle(
-        fontFamily = Sans,
+        fontFamily = FamiliaGeist,
         fontWeight = FontWeight.Medium,
         fontSize = 14.sp,
         lineHeight = 20.sp,
         letterSpacing = 0.10.sp,
     ),
     labelMedium = TextStyle(
-        fontFamily = Sans,
+        fontFamily = FamiliaGeist,
         fontWeight = FontWeight.Medium,
         fontSize = 12.sp,
         lineHeight = 16.sp,
         letterSpacing = 0.40.sp,
     ),
     labelSmall = TextStyle(
-        fontFamily = Sans,
+        fontFamily = FamiliaGeist,
         fontWeight = FontWeight.Medium,
         fontSize = 11.sp,
         lineHeight = 16.sp,
@@ -342,7 +351,7 @@ val Tipografia = Typography(
  */
 object TipografiaNotally {
     val tituloEditor = TextStyle(
-        fontFamily = Sans,
+        fontFamily = FamiliaGeist,
         fontWeight = FontWeight.SemiBold,
         fontSize = 28.sp,
         lineHeight = 36.sp,
@@ -350,7 +359,7 @@ object TipografiaNotally {
     )
 
     val cuerpoEditor = TextStyle(
-        fontFamily = Sans,
+        fontFamily = FamiliaGeist,
         fontWeight = FontWeight.Normal,
         fontSize = 17.sp,
         lineHeight = 28.sp,
@@ -358,7 +367,7 @@ object TipografiaNotally {
     )
 
     val numerico = TextStyle(
-        fontFamily = Sans,
+        fontFamily = FamiliaGeist,
         fontWeight = FontWeight.Medium,
         fontSize = 12.sp,
         lineHeight = 16.sp,

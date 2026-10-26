@@ -243,6 +243,7 @@ Para habilitarlo: activar Email/Password en la consola → añadir `ui/auth` y s
 - **Textos:** todo lo visible en `res/values/strings.xml`. Nada hardcodeado en composables.
 - **Fechas:** solo con `ui/utils/DateFormat` (y `DateText`). No formatear con `SimpleDateFormat` suelto en pantallas.
 - **Tema:** un solo tema claro (`LightColorsScheme`) con tipografía y formas fijas. No hay modo oscuro, `values-night`, color dinámico ni preferencia de tema; `TemaNotally` solo recibe `content` y `Settings` no persiste ajustes de apariencia.
+- **Tipografía:** Geist (Vercel) en tres pesos (400/500/600), licencia OFL 1.1. Los TTF viven en `app/src/main/res/font/` (`geist_regular`, `geist_medium`, `geist_semibold`), la familia se declara en `ui/theme/Theme.kt` (`FamiliaGeist`) y la licencia en `res/raw/geist_ofl.txt`. Sustituye a la sans del sistema; no hay fuente descargable por red.
 - **Colores:** solo tokens de `ui/theme/Theme.kt`. Prohibido `Color(0xFF…)` en pantallas o componentes; los colores de curso salen de `data/ColorsCurso.kt`.
 - **Errores de contrato:** los mappers fallan con `require` y mensaje accionable; no se ignoran campos.
 
