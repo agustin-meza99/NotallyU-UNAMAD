@@ -109,6 +109,7 @@ internal fun tituloSeccion(tipo: TipoSeccionHoy): String = stringResource(
         TipoSeccionHoy.ATRASADAS -> R.string.today_section_overdue
         TipoSeccionHoy.HOY -> R.string.today_section_today
         TipoSeccionHoy.SIN_HORA -> R.string.today_section_anytime
+        TipoSeccionHoy.ENTREGADAS -> R.string.today_section_delivered
         TipoSeccionHoy.PROXIMAS -> R.string.today_section_upcoming
         TipoSeccionHoy.COMPLETADAS -> R.string.today_section_done
     },
@@ -255,6 +256,12 @@ internal fun LazyListScope.elementosHoy(
                             cantidad = seccion.cantidad,
                             contraible = seccion.contraible,
                             expandida = seccion.expandida,
+                            descripcionAccesibilidad =
+                                if (seccion.tipo == TipoSeccionHoy.ENTREGADAS) {
+                                    stringResource(R.string.a11y_section_delivered)
+                                } else {
+                                    null
+                                },
                             alAlternar = {
                                 viewModel.alternarSeccion(seccion.tipo)
                             },

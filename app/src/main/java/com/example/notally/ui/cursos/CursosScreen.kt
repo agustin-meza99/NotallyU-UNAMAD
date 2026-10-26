@@ -377,12 +377,13 @@ private fun TarjetaCurso(
         label = "cursoCardBorder",
     )
 
-    val completa = tarjeta.totalTareas > 0 && tarjeta.tareasHechas == tarjeta.totalTareas
-    val textoCompleta = if (completa) {
+    val completa = tarjeta.totalTareas > 0 &&
+        tarjeta.tareasAvanzadas == tarjeta.totalTareas
+    val textoCompleta = if (completa && !tarjeta.esAula) {
         pluralStringResource(
             R.plurals.course_progress_complete,
             tarjeta.totalTareas,
-            tarjeta.tareasHechas,
+            tarjeta.tareasAvanzadas,
             tarjeta.totalTareas,
         )
     } else {
@@ -390,6 +391,19 @@ private fun TarjetaCurso(
     }
     val estadisticas = when {
         tarjeta.totalTareas == 0 -> stringResource(R.string.course_noTasks)
+        tarjeta.esAula -> {
+            val tareas = pluralStringResource(
+                R.plurals.course_tasks,
+                tarjeta.totalTareas,
+                tarjeta.totalTareas,
+            )
+            val entregadas = pluralStringResource(
+                R.plurals.course_delivered,
+                tarjeta.tareasEntregadas,
+                tarjeta.tareasEntregadas,
+            )
+            "$tareas${stringResource(R.string.task_meta_separator)}$entregadas"
+        }
         textoCompleta != null -> textoCompleta
         else -> {
             val tareas = pluralStringResource(
@@ -411,7 +425,7 @@ private fun TarjetaCurso(
         else -> pluralStringResource(
             R.plurals.course_progress,
             tarjeta.totalTareas,
-            tarjeta.tareasHechas,
+            tarjeta.tareasAvanzadas,
             tarjeta.totalTareas,
         )
     }
@@ -458,7 +472,7 @@ private fun TarjetaCurso(
                     fraccion = if (tarjeta.totalTareas == 0) {
                         0f
                     } else {
-                        tarjeta.tareasHechas.toFloat() / tarjeta.totalTareas
+                        tarjeta.tareasAvanzadas.toFloat() / tarjeta.totalTareas
                     },
                     modifier = Modifier.weight(1f),
                 )
@@ -467,7 +481,7 @@ private fun TarjetaCurso(
                     Text(
                         text = stringResource(
                             R.string.course_progress_ratio,
-                            tarjeta.tareasHechas,
+                            tarjeta.tareasAvanzadas,
                             tarjeta.totalTareas,
                         ),
                         style = TipografiaNotally.numerico,

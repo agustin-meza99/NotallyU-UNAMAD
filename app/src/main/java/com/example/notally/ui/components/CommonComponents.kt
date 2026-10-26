@@ -227,6 +227,7 @@ fun SectionHeader(
     cantidad: Int? = null,
     contraible: Boolean = false,
     expandida: Boolean = true,
+    descripcionAccesibilidad: String? = null,
     alAlternar: (() -> Unit)? = null,
 ) {
     val colores = MaterialTheme.colorScheme
@@ -264,6 +265,9 @@ fun SectionHeader(
             )
             .semantics {
                 heading()
+                if (descripcionAccesibilidad != null) {
+                    contentDescription = descripcionAccesibilidad
+                }
                 if (alternable) {
                     stateDescription = if (expandida) estadoExpandida else estadoContraida
                 }

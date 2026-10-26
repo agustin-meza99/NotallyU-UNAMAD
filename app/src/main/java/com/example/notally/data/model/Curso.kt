@@ -49,10 +49,12 @@ data class Curso(
     val tipo: String? = null,
 )
 
-/** Curso con el número de tareas no completadas y no archivadas. */
+/** Curso con el número de tareas pendientes y de entregadas del Aula. */
 data class CursoConConteo(
     @Embedded
     val curso: Curso,
     @ColumnInfo(name = "pendingTaskCount")
     val tareasPendientes: Int,
+    @ColumnInfo(name = "deliveredTaskCount")
+    val tareasEntregadas: Int = 0,
 )

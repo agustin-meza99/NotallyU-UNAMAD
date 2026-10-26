@@ -143,16 +143,24 @@ interface CursoDao {
     suspend fun obtenerCursos(): List<Curso>
 
     /**
-     * Cursos con el conteo de tareas pendientes (ni completadas ni
-     * archivadas). Los cursos sin tareas aparecen con `pendingTaskCount = 0`.
+     * Cursos con el conteo de tareas pendientes (ni completadas, ni archivadas,
+     * ni entregadas del Aula) y el de tareas entregadas del Aula. Los cursos sin
+     * tareas aparecen con ambos conteos en 0.
      */
     @Query(
         """
-        SELECT subjects.*, COUNT(tasks.id) AS pendingTaskCount
+        SELECT subjects.*,
+            COUNT(DISTINCT tasks.id) AS pendingTaskCount,
+            COUNT(DISTINCT entregadas.id) AS deliveredTaskCount
         FROM subjects
         LEFT JOIN tasks ON tasks.subjectId = subjects.id
             AND tasks.status != 'DONE'
             AND tasks.isArchived = 0
+            AND NOT (tasks.externalId IS NOT NULL AND tasks.entregada = 1)
+        LEFT JOIN tasks AS entregadas ON entregadas.subjectId = subjects.id
+            AND entregadas.isArchived = 0
+            AND entregadas.externalId IS NOT NULL
+            AND entregadas.entregada = 1
         GROUP BY subjects.id
         ORDER BY subjects.name COLLATE NOCASE ASC
         """

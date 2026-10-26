@@ -41,7 +41,14 @@ data class TarjetaCursoUi(
     val curso: Curso,
     val totalTareas: Int,
     val tareasHechas: Int,
+    val tareasEntregadas: Int = 0,
 ) {
+    /** Curso importado del Aula Virtual: su avance se mide por entregas. */
+    val esAula: Boolean get() = curso.externalId != null
+
+    /** Número de tareas que muestra el avance: entregadas en el Aula, hechas si no. */
+    val tareasAvanzadas: Int get() = if (esAula) tareasEntregadas else tareasHechas
+
     val tareasPendientes: Int get() = (totalTareas - tareasHechas).coerceAtLeast(0)
 }
 
@@ -63,7 +70,7 @@ sealed interface EventoCursos {
  *
  * Los conteos de cada tarjeta salen de `observarTareasActivas()` (no archivadas
  * e incluye completadas) y el total de pendientes del encabezado usa el conteo
- * de `CursoDao`, que excluye completadas y archivadas. "Entregas esta
+ * de `CursoDao`, que excluye completadas, archivadas y entregadas del Aula. "Entregas esta
  * semana" se calcula con [WeekDeliveries] y respeta el ajuste de inicio de
  * semana.
  */
@@ -196,6 +203,7 @@ class CursosViewModel(
                     curso = entrada.curso,
                     totalTareas = tareas.size,
                     tareasHechas = tareas.count { it.estado == Estado.COMPLETADA },
+                    tareasEntregadas = entrada.tareasEntregadas,
                 )
             }
         return EstadoUiCursos(

@@ -15,6 +15,7 @@
     <string name="today_section_overdue">Atrasadas</string>
     <string name="today_section_today">Para hoy</string>
     <string name="today_section_anytime">Sin hora</string>
+    <string name="today_section_delivered">Entregadas</string>
     <string name="today_section_done">Completadas</string>
     <string name="today_section_upcoming">Próximas</string>
     <string name="today_empty_title">Nada para hoy</string>
@@ -96,6 +97,10 @@
         <item quantity="one">%d hecha</item>
         <item quantity="other">%d hechas</item>
     </plurals>
+    <plurals name="course_delivered">
+        <item quantity="one">%d entregada</item>
+        <item quantity="other">%d entregadas</item>
+    </plurals>
     <string name="course_name_duplicate">Ya existe un curso con ese nombre.</string>
     <string name="course_save_error">No se pudo guardar el curso.</string>
     <string name="course_delete_error">No se pudo eliminar el curso.</string>
@@ -173,6 +178,7 @@
     <string name="a11y_more">Más opciones</string>
     <string name="a11y_expand_section">Expandir sección</string>
     <string name="a11y_collapse_section">Contraer sección</string>
+    <string name="a11y_section_delivered">Sección entregadas</string>
     <string name="section_expanded">Expandida</string>
     <string name="section_collapsed">Contraída</string>
     <string name="a11y_week_day">%1$s, %2$d de %3$s, %4$s</string>

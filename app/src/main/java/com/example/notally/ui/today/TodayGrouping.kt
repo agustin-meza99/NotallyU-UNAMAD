@@ -25,7 +25,15 @@ enum class FiltroHoy(val id: String) {
  * Secciones de Hoy, en el orden del documento (§7.3). "No entregadas" va antes
  * que "Atrasadas" porque el Aula Virtual no maneja el concepto de atraso.
  */
-enum class TipoSeccionHoy { NO_ENTREGADAS, ATRASADAS, HOY, SIN_HORA, PROXIMAS, COMPLETADAS }
+enum class TipoSeccionHoy {
+    NO_ENTREGADAS,
+    ATRASADAS,
+    HOY,
+    SIN_HORA,
+    ENTREGADAS,
+    PROXIMAS,
+    COMPLETADAS,
+}
 
 /** Tarea con su curso resuelta, lista para pintar una fila. */
 data class ElementoHoy(
@@ -67,6 +75,8 @@ data class ConteosFiltroHoy(
  *
  * - No entregadas: tareas del Aula (`externalId != null`) sin entregar y vencidas.
  * - Atrasadas: solo tareas manuales vencidas; el Aula no maneja "atrasada".
+ * - Entregadas: tareas del Aula ya entregadas y vencidas. Es un estado distinto
+ *   del completado, así que no entra en el resumen "X de Y completadas".
  * - Para hoy / Sin hora / Próximas: solo pendientes y ya sin la tarea focal,
  *   para no duplicar su fila.
  * - Completadas: tareas hechas de la agenda de hoy (con o sin hora).
@@ -84,6 +94,7 @@ data class GruposHoy(
     val atrasadas: List<ElementoHoy> = emptyList(),
     val hoy: List<ElementoHoy> = emptyList(),
     val sinHora: List<ElementoHoy> = emptyList(),
+    val entregadas: List<ElementoHoy> = emptyList(),
     val proximas: List<ElementoHoy> = emptyList(),
     val completadas: List<ElementoHoy> = emptyList(),
     val historialCompletadas: List<ElementoHoy> = emptyList(),
@@ -172,6 +183,14 @@ fun agruparHoy(
         .sortedWith(comparadorSinHora)
         .map(::elemento)
 
+    val elementosEntregadas = activas
+        .filter {
+            it.externalId != null && it.entregada &&
+                it.entregaEn != null && it.entregaEn < inicioHoy
+        }
+        .sortedWith(comparadorEntregadas)
+        .map(::elemento)
+
     val elementosProximas = tareasProximas
         .filter { estaPendiente(it) && it.entregaEn != null && it.entregaEn >= inicioManana }
         .sortedWith(comparadorEntrega)
@@ -203,12 +222,12 @@ fun agruparHoy(
     // focal, de modo que cada número coincide con lo que verá el usuario.
     val cantidadPendientes =
         (elementosNoEntregadas + elementosAtrasadas + elementosHoy + elementosSinHora +
-            elementosProximas)
+            elementosEntregadas + elementosProximas)
             .distinctBy { it.tarea.id }
             .size
     val cantidadTodas =
         (elementosNoEntregadas + elementosAtrasadas + elementosHoy + elementosSinHora +
-            elementosProximas + elementosCompletadas)
+            elementosEntregadas + elementosProximas + elementosCompletadas)
             .distinctBy { it.tarea.id }
             .size
     val cantidadCompletadas = elementosHistorial.distinctBy { it.tarea.id }.size
@@ -227,6 +246,7 @@ fun agruparHoy(
         atrasadas = elementosAtrasadas.filterNot { it.tarea.id == idFiltrado },
         hoy = elementosHoy.filterNot { it.tarea.id == idFiltrado },
         sinHora = elementosSinHora.filterNot { it.tarea.id == idFiltrado },
+        entregadas = elementosEntregadas,
         proximas = elementosProximas.filterNot { it.tarea.id == idFiltrado },
         completadas = elementosCompletadas,
         historialCompletadas = elementosHistorial,
@@ -344,6 +364,17 @@ fun construirSeccionesHoy(
         if (grupos.sinHora.isNotEmpty()) {
             add(seccion(TipoSeccionHoy.SIN_HORA, grupos.sinHora, false, true))
         }
+        if (grupos.entregadas.isNotEmpty()) {
+            add(
+                seccion(
+                    tipo = TipoSeccionHoy.ENTREGADAS,
+                    elementos = grupos.entregadas,
+                    contraible = true,
+                    expandida = false,
+                    cantidad = grupos.entregadas.size,
+                ),
+            )
+        }
         if (grupos.proximas.isNotEmpty()) {
             add(
                 seccion(
@@ -387,6 +418,12 @@ private val comparadorEntrega: Comparator<Tarea> =
 
 private val comparadorSinHora: Comparator<Tarea> =
     compareBy<Tarea> { it.creadoEn }
+        .thenBy(rangoPrioridad)
+        .thenBy(::claveTitulo)
+
+/** Entregadas: la más reciente primero, igual que las completadas. */
+private val comparadorEntregadas: Comparator<Tarea> =
+    compareByDescending<Tarea> { it.entregaEn ?: Long.MIN_VALUE }
         .thenBy(rangoPrioridad)
         .thenBy(::claveTitulo)
 
