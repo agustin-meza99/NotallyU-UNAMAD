@@ -242,6 +242,7 @@ Para habilitarlo: activar Email/Password en la consola → añadir `ui/auth` y s
 - **Eventos one-shot** (navegación, snackbar) por `SharedFlow`, nunca dentro del `UiState`.
 - **Textos:** todo lo visible en `res/values/strings.xml`. Nada hardcodeado en composables.
 - **Fechas:** solo con `ui/util/DateFormat` (y `DateText`). No formatear con `SimpleDateFormat` suelto en pantallas.
+- **Tema:** un solo tema claro (`EsquemaColoresClaro`) con tipografía y formas fijas. No hay modo oscuro, `values-night`, color dinámico ni preferencia de tema; `TemaNotally` solo recibe `content` y `Settings` no persiste ajustes de apariencia.
 - **Colores:** solo tokens de `ui/theme/Theme.kt`. Prohibido `Color(0xFF…)` en pantallas o componentes; los colores de curso salen de `data/ColoresCurso.kt`.
 - **Errores de contrato:** los mappers fallan con `require` y mensaje accionable; no se ignoran campos.
 

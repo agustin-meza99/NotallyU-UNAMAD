@@ -2,16 +2,15 @@ package com.example.notally.data
 
 import androidx.room.TypeConverter
 import com.example.notally.data.model.Estado
-import com.example.notally.data.model.ModoTema
 import com.example.notally.data.model.Prioridad
 
 /**
  * Conversores de Room para los enums del dominio.
  *
  * Los identificadores Kotlin están en español, pero los valores persistidos
- * conservan el contrato original en inglés (`"HIGH"`, `"IN_PROGRESS"`,
- * `"DARK"`, ...). El mapeo es explícito y puro para que el esquema y las
- * consultas SQL no cambien.
+ * conservan el contrato original en inglés (`"HIGH"`, `"IN_PROGRESS"`, ...).
+ * El mapeo es explícito y puro para que el esquema y las consultas SQL no
+ * cambien.
  */
 class Converters {
 
@@ -26,12 +25,6 @@ class Converters {
 
     @TypeConverter
     fun textoAEstado(valor: String): Estado = estadoDesdeTexto(valor)
-
-    @TypeConverter
-    fun modoTemaATexto(valor: ModoTema): String = valor.aTexto()
-
-    @TypeConverter
-    fun textoAModoTema(valor: String): ModoTema = modoTemaDesdeTexto(valor)
 }
 
 /** Texto persistido de una prioridad, con los nombres originales en inglés. */
@@ -62,19 +55,4 @@ fun estadoDesdeTexto(texto: String): Estado = when (texto) {
     "IN_PROGRESS" -> Estado.EN_CURSO
     "DONE" -> Estado.COMPLETADA
     else -> throw IllegalArgumentException("Estado desconocido: $texto")
-}
-
-/** Texto persistido de un modo de tema, con los nombres originales en inglés. */
-fun ModoTema.aTexto(): String = when (this) {
-    ModoTema.SISTEMA -> "SYSTEM"
-    ModoTema.CLARO -> "LIGHT"
-    ModoTema.OSCURO -> "DARK"
-}
-
-/** Reconstruye un modo de tema desde su texto persistido. */
-fun modoTemaDesdeTexto(texto: String): ModoTema = when (texto) {
-    "SYSTEM" -> ModoTema.SISTEMA
-    "LIGHT" -> ModoTema.CLARO
-    "DARK" -> ModoTema.OSCURO
-    else -> throw IllegalArgumentException("Modo de tema desconocido: $texto")
 }

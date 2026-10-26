@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- Fondo de `surface` en modo oscuro (§2.3), usado por el tema base. -->
-    <color name="notally_surface">#FF151310</color>
-</resources>

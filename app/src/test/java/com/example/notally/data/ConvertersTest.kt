@@ -1,7 +1,6 @@
 package com.example.notally.data
 
 import com.example.notally.data.model.Estado
-import com.example.notally.data.model.ModoTema
 import com.example.notally.data.model.Prioridad
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
@@ -36,20 +35,6 @@ class ConvertersTest {
         assertEquals("IN_PROGRESS", convertidores.estadoATexto(Estado.EN_CURSO))
         assertThrows(IllegalArgumentException::class.java) {
             convertidores.textoAEstado("BLOCKED")
-        }
-    }
-
-    @Test
-    fun `el modo de tema va y vuelve por su texto persistido en ingles`() {
-        ModoTema.entries.forEach { modo ->
-            val guardado = convertidores.modoTemaATexto(modo)
-            assertEquals(modo.aTexto(), guardado)
-            assertEquals(modo, convertidores.textoAModoTema(guardado))
-        }
-        assertEquals("SYSTEM", convertidores.modoTemaATexto(ModoTema.SISTEMA))
-        assertEquals("DARK", convertidores.modoTemaATexto(ModoTema.OSCURO))
-        assertThrows(IllegalArgumentException::class.java) {
-            convertidores.textoAModoTema("AUTO")
         }
     }
 

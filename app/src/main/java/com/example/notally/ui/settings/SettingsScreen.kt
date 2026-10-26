@@ -1,6 +1,5 @@
 package com.example.notally.ui.settings
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -19,9 +18,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -42,8 +39,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.notally.R
-import com.example.notally.data.model.ModoTema
-import com.example.notally.ui.components.OptionRow
 import com.example.notally.ui.components.anilloFoco
 import com.example.notally.ui.theme.EspaciadoNotally
 import com.example.notally.ui.theme.FormaNotally
@@ -53,8 +48,7 @@ import com.example.notally.ui.util.DateFormat
 /**
  * Pantalla Settings (§7.12).
  *
- * Cambiar el tema no reinicia la pantalla ni pierde el scroll: el estado del
- * `LazyColumn` y el `ViewModel` viven por encima del `TemaNotally`.
+ * Ajustes de agenda y versión; el tema es siempre claro y no se configura.
  */
 @Composable
 fun SettingsScreen(
@@ -66,7 +60,6 @@ fun SettingsScreen(
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val margen = margenHorizontalPantalla
     val contexto = LocalContext.current
-    var mostrarHojaTema by remember { mutableStateOf(false) }
 
     val nombreVersion = remember(contexto) {
         runCatching {
@@ -99,22 +92,8 @@ fun SettingsScreen(
                 )
             }
 
-            item(key = "appearance_label") {
-                EtiquetaSeccion(stringResource(R.string.settings_appearance))
-            }
-            item(key = "theme_row") {
-                FilaSettings(
-                    etiqueta = stringResource(R.string.settings_theme),
-                    valor = etiquetaTema(settings.modoTema),
-                    alPulsar = { mostrarHojaTema = true },
-                )
-            }
-
             item(key = "agenda_label") {
-                EtiquetaSeccion(
-                    stringResource(R.string.settings_agenda),
-                    modifier = Modifier.padding(top = 24.dp),
-                )
+                EtiquetaSeccion(stringResource(R.string.settings_agenda))
             }
             item(key = "week_row") {
                 FilaInterruptorSettings(
@@ -149,17 +128,6 @@ fun SettingsScreen(
             }
         }
     }
-
-    if (mostrarHojaTema) {
-        HojaTema(
-            actual = settings.modoTema,
-            alDescartar = { mostrarHojaTema = false },
-            alSeleccionar = { modo ->
-                viewModel.cambiarModoTema(modo)
-                mostrarHojaTema = false
-            },
-        )
-    }
 }
 
 @Composable
@@ -173,57 +141,6 @@ private fun EtiquetaSeccion(
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = modifier.padding(bottom = 8.dp),
     )
-}
-
-@Composable
-private fun FilaSettings(
-    etiqueta: String,
-    valor: String? = null,
-    soporte: String? = null,
-    alPulsar: (() -> Unit)? = null,
-) {
-    val colores = MaterialTheme.colorScheme
-    var enfocada by remember { mutableStateOf(false) }
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 56.dp)
-            .anilloFoco(visible = enfocada, shape = FormaNotally.s)
-            .onFocusChanged { enfocada = it.isFocused }
-            .then(
-                if (alPulsar != null) {
-                    Modifier.clickable(role = Role.Button, onClick = alPulsar)
-                } else {
-                    Modifier
-                },
-            )
-            .padding(vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = etiqueta,
-                style = MaterialTheme.typography.bodyLarge,
-                color = colores.onSurface,
-            )
-            if (soporte != null) {
-                Spacer(Modifier.height(2.dp))
-                Text(
-                    text = soporte,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = colores.onSurfaceVariant,
-                )
-            }
-        }
-        if (valor != null) {
-            Spacer(Modifier.width(16.dp))
-            Text(
-                text = valor,
-                style = MaterialTheme.typography.bodyMedium,
-                color = colores.onSurfaceVariant,
-            )
-        }
-    }
 }
 
 @Composable
@@ -281,42 +198,3 @@ private fun FilaInterruptorSettings(
         )
     }
 }
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun HojaTema(
-    actual: ModoTema,
-    alDescartar: () -> Unit,
-    alSeleccionar: (ModoTema) -> Unit,
-) {
-    ModalBottomSheet(
-        onDismissRequest = alDescartar,
-        shape = FormaNotally.xl,
-        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-        scrimColor = MaterialTheme.colorScheme.scrim.copy(alpha = 0.32f),
-    ) {
-        Text(
-            text = stringResource(R.string.settings_theme),
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 8.dp),
-        )
-        ModoTema.entries.forEach { modo ->
-            OptionRow(
-                etiqueta = etiquetaTema(modo),
-                seleccionado = actual == modo,
-                alPulsar = { alSeleccionar(modo) },
-            )
-        }
-        Spacer(Modifier.height(8.dp))
-    }
-}
-
-@Composable
-private fun etiquetaTema(modo: ModoTema): String = stringResource(
-    when (modo) {
-        ModoTema.SISTEMA -> R.string.settings_system
-        ModoTema.CLARO -> R.string.settings_light
-        ModoTema.OSCURO -> R.string.settings_dark
-    },
-)

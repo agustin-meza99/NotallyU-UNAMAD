@@ -1,12 +1,5 @@
 package com.example.notally.data.model
 
-/** Modo de tema elegido por el usuario. */
-enum class ModoTema {
-    SISTEMA,
-    CLARO,
-    OSCURO,
-}
-
 /**
  * Preferencias de la aplicación, persistidas en DataStore.
  *
@@ -14,7 +7,6 @@ enum class ModoTema {
  * [PESTANA_HOY], [PESTANA_PROXIMAS], [PESTANA_TODAS] y [PESTANA_CURSOS].
  */
 data class Settings(
-    val modoTema: ModoTema = ModoTema.SISTEMA,
     val pestanaPorDefecto: String = PESTANA_HOY,
     val semanaEmpiezaLunes: Boolean = true,
     val notificacionesActivas: Boolean = true,

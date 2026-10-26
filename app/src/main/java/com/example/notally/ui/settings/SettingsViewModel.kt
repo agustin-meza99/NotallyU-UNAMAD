@@ -8,7 +8,6 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.notally.contenedorNotally
 import com.example.notally.data.model.Settings
-import com.example.notally.data.model.ModoTema
 import com.example.notally.data.repository.SettingsRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -25,10 +24,6 @@ class SettingsViewModel(
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = Settings(),
     )
-
-    fun cambiarModoTema(modo: ModoTema) {
-        viewModelScope.launch { repositorio.cambiarModoTema(modo) }
-    }
 
     fun cambiarSemanaEmpiezaLunes(activo: Boolean) {
         viewModelScope.launch { repositorio.cambiarSemanaEmpiezaLunes(activo) }

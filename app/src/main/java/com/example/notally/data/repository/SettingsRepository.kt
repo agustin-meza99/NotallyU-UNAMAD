@@ -8,10 +8,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import com.example.notally.data.aTexto
 import com.example.notally.data.model.Settings
-import com.example.notally.data.model.ModoTema
-import com.example.notally.data.modoTemaDesdeTexto
 import java.io.IOException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -35,9 +32,6 @@ class SettingsRepository(
         }
         .map { preferencias ->
             Settings(
-                modoTema = preferencias[Claves.MODO_TEMA]
-                    ?.let { guardado -> runCatching { modoTemaDesdeTexto(guardado) }.getOrNull() }
-                    ?: ModoTema.SISTEMA,
                 pestanaPorDefecto = preferencias[Claves.PESTANA_POR_DEFECTO]
                     ?.takeIf { it in Settings.PESTANAS_VALIDAS }
                     ?: Settings.PESTANA_HOY,
@@ -47,10 +41,6 @@ class SettingsRepository(
         }
 
     suspend fun actual(): Settings = settings.first()
-
-    suspend fun cambiarModoTema(modo: ModoTema) {
-        dataStore.edit { it[Claves.MODO_TEMA] = modo.aTexto() }
-    }
 
     suspend fun cambiarPestanaPorDefecto(pestana: String) {
         require(pestana in Settings.PESTANAS_VALIDAS) { "Pestaña desconocida: $pestana" }
@@ -70,7 +60,6 @@ class SettingsRepository(
             "Pestaña desconocida: ${settings.pestanaPorDefecto}"
         }
         dataStore.edit { preferencias ->
-            preferencias[Claves.MODO_TEMA] = settings.modoTema.aTexto()
             preferencias[Claves.PESTANA_POR_DEFECTO] = settings.pestanaPorDefecto
             preferencias[Claves.SEMANA_EMPIEZA_LUNES] = settings.semanaEmpiezaLunes
             preferencias[Claves.NOTIFICACIONES_ACTIVAS] = settings.notificacionesActivas
@@ -78,7 +67,6 @@ class SettingsRepository(
     }
 
     private object Claves {
-        val MODO_TEMA = stringPreferencesKey("theme_mode")
         val PESTANA_POR_DEFECTO = stringPreferencesKey("default_tab")
         val SEMANA_EMPIEZA_LUNES = booleanPreferencesKey("week_starts_monday")
         val NOTIFICACIONES_ACTIVAS = booleanPreferencesKey("notifications_enabled")

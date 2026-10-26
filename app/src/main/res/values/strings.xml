@@ -161,7 +161,6 @@
     <string name="a11y_priority_high">Prioridad alta</string>
     <string name="a11y_priority_medium">Prioridad media</string>
     <string name="a11y_priority_low">Prioridad baja</string>
-    <string name="a11y_today_heading">Hoy</string>
     <string name="a11y_more">Más opciones</string>
     <string name="a11y_expand_section">Expandir sección</string>
     <string name="a11y_collapse_section">Contraer sección</string>
@@ -191,11 +190,6 @@
     <string name="confirm_deleteSubject_bodyNoTasks">Se eliminará «%s».</string>
 
     <!-- Ajustes -->
-    <string name="settings_appearance">Apariencia</string>
-    <string name="settings_theme">Tema</string>
-    <string name="settings_system">Sistema</string>
-    <string name="settings_light">Claro</string>
-    <string name="settings_dark">Oscuro</string>
     <string name="settings_agenda">Agenda</string>
     <string name="settings_week">La semana inicia en lunes</string>
     <string name="settings_week_support">Cambia el conteo de entregas de la semana.</string>

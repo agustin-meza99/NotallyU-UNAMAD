@@ -87,7 +87,7 @@ fun CursoSheet(
     var nombre by rememberSaveable(claveObjetivo) {
         mutableStateOf(edicion?.tarjeta?.curso?.nombre.orEmpty())
     }
-    // Se normaliza al swatch canónico del tema: un color viejo fuera de los
+    // Se normaliza al swatch canónico de la paleta: un color viejo fuera de los
     // seis tokens se marca y se guarda como su equivalente más cercano.
     var color by rememberSaveable(claveObjetivo) {
         mutableStateOf(
@@ -246,8 +246,8 @@ private fun FilaMuestras(
         MuestrasCursos.forEach { muestra ->
             val nombre = stringResource(muestra.recursoNombre)
             val seleccionada = muestra.argb == resuelto.argb
-            val relleno = muestra.contenedor(paleta.esOscuro)
-            val contenido = muestra.sobreContenedor(paleta.esOscuro)
+            val relleno = muestra.contenedorClaro
+            val contenido = muestra.claro
             Box(
                 modifier = Modifier
                     .size(48.dp)

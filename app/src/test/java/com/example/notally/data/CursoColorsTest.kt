@@ -3,6 +3,7 @@ package com.example.notally.data
 import androidx.compose.ui.graphics.Color
 import com.example.notally.R
 import com.example.notally.ui.theme.MuestrasCursos
+import com.example.notally.ui.theme.PaletaCursos
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -55,17 +56,6 @@ class CursoColorsTest {
         )
         assertEquals(
             listOf(
-                Color(0xFFAFC3EE),
-                Color(0xFF9FC9B2),
-                Color(0xFFE7AE97),
-                Color(0xFFD8E5A0),
-                Color(0xFFCAA8B8),
-                Color(0xFF96CDD6),
-            ),
-            muestras.map { it.oscuro },
-        )
-        assertEquals(
-            listOf(
                 Color(0xFFE9ECF5),
                 Color(0xFFE6EFE8),
                 Color(0xFFF4E8E2),
@@ -75,24 +65,9 @@ class CursoColorsTest {
             ),
             muestras.map { it.contenedorClaro },
         )
-        assertEquals(
-            listOf(
-                Color(0xFF222B3F),
-                Color(0xFF1D2C24),
-                Color(0xFF33231C),
-                Color(0xFF2A2B16),
-                Color(0xFF2B2233),
-                Color(0xFF182B2E),
-            ),
-            muestras.map { it.contenedorOscuro },
-        )
         muestras.forEach { muestra ->
-            assertEquals(muestra.claro, muestra.acento(esOscuro = false))
-            assertEquals(muestra.oscuro, muestra.acento(esOscuro = true))
-            assertEquals(muestra.contenedorClaro, muestra.contenedor(esOscuro = false))
-            assertEquals(muestra.contenedorOscuro, muestra.contenedor(esOscuro = true))
-            assertEquals(muestra.claro, muestra.sobreContenedor(esOscuro = false))
-            assertEquals(muestra.oscuro, muestra.sobreContenedor(esOscuro = true))
+            assertEquals(muestra.claro, PaletaCursos.Unica.colorCurso(muestra.argb))
+            assertEquals(muestra.contenedorClaro, PaletaCursos.Unica.contenedorCurso(muestra.argb))
         }
     }
 }
