@@ -15,8 +15,8 @@ import com.example.notally.data.model.Prioridad
 import com.example.notally.data.model.Subtarea
 import com.example.notally.data.model.Tarea
 import com.example.notally.data.model.TareaConSubtareas
-import com.example.notally.data.repository.RepositorioMaterias
-import com.example.notally.data.repository.RepositorioTareas
+import com.example.notally.data.repository.MateriasRepository
+import com.example.notally.data.repository.TareasRepository
 import com.example.notally.ui.theme.MuestrasMaterias
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -85,8 +85,8 @@ sealed interface EventoEditor {
  */
 class EditorViewModel(
     private val tareaId: Long?,
-    private val repositorioTareas: RepositorioTareas,
-    private val repositorioMaterias: RepositorioMaterias,
+    private val repositorioTareas: TareasRepository,
+    private val repositorioMaterias: MateriasRepository,
     private val etiquetaSinTitulo: String,
     private val reloj: () -> Long = System::currentTimeMillis,
 ) : ViewModel() {
@@ -240,7 +240,7 @@ class EditorViewModel(
         val revisionAlIniciar = revision
         try {
             if (borrador.tareaId == 0L) {
-                if (!ReglasEditor.tieneContenido(
+                if (!EditorRules.tieneContenido(
                         borrador.titulo,
                         borrador.notas,
                         borrador.subtareas.size,
@@ -250,7 +250,7 @@ class EditorViewModel(
                 }
                 val creada = repositorioTareas.crearTarea(
                     Tarea(
-                        titulo = ReglasEditor.tituloVisible(borrador.titulo, etiquetaSinTitulo),
+                        titulo = EditorRules.tituloVisible(borrador.titulo, etiquetaSinTitulo),
                         notas = borrador.notas,
                         materiaId = borrador.materiaId,
                         entregaEn = borrador.entregaEn,
@@ -268,7 +268,7 @@ class EditorViewModel(
                     }
                     ?: return
                 val actualizada = base.copy(
-                    titulo = ReglasEditor.tituloVisible(borrador.titulo, etiquetaSinTitulo),
+                    titulo = EditorRules.tituloVisible(borrador.titulo, etiquetaSinTitulo),
                     notas = borrador.notas,
                     materiaId = borrador.materiaId,
                     entregaEn = borrador.entregaEn,
@@ -301,7 +301,7 @@ class EditorViewModel(
         return@withLock try {
             val id = repositorioTareas.crearTarea(
                 Tarea(
-                    titulo = ReglasEditor.tituloVisible(actual.titulo, etiquetaSinTitulo),
+                    titulo = EditorRules.tituloVisible(actual.titulo, etiquetaSinTitulo),
                     notas = actual.notas,
                     materiaId = actual.materiaId,
                     entregaEn = actual.entregaEn,

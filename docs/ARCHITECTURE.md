@@ -67,26 +67,25 @@ Leyenda: **✓ existe** · **✗ nuevo en este cambio** · **◇ propuesto (no e
 
 ```
 app/src/main/java/com/example/notally/
-├── NotallyApp.kt                    ✓ Application + AppContainer + seed demo
+├── NotallyApp.kt                    ✓ Application + AppContainer
 ├── MainActivity.kt                  ✓ entry point Compose
 ├── data/
-│   ├── model/                       ✓ Task, Subject, Subtask, relations, Settings
-│   ├── local/                       ✓ TaskDao, SubjectDao, SubtaskDao
-│   ├── repository/                  ✓ TaskRepository, SubjectRepository, SettingsRepository
+│   ├── model/                       ✓ Tarea, Materia, Subtarea, relaciones, Ajustes
+│   ├── local/                       ✓ TareaDao, MateriaDao, SubtareaDao
+│   ├── repository/                  ✓ TareasRepository, MateriasRepository, AjustesRepository
 │   ├── remote/firestore/            ✗ contrato y mappers puros (Task/Subject/Subtask)
 │   ├── sync/                        ◇ SyncEngine, OutboxDao, SyncState (futuro)
 │   ├── NotallyDatabase.kt           ✓ Room v1
 │   ├── Converters.kt                ✓ enums persistidos por nombre
 │   ├── DateRanges.kt                ✓ rangos de día en hora local
-│   ├── SeedData.kt                  ✓ datos demo solo en debug
-│   └── SubjectColors.kt             ✓ paleta de materias (fuente única)
+│   └── ColoresMateria.kt            ✓ paleta de materias (fuente única)
 ├── core/
 │   └── AppContainer.kt              ✓ punto de composición + utilidades transversales
 ├── ui/
 │   ├── theme/                       ✓ tokens, tipografía, formas, movimiento
 │   ├── components/                  ✓ componentes reutilizables
-│   ├── today/                       ✓ Hoy, agrupación, reglas de postergar
-│   ├── subjects/                    ✓ Materias, formulario, entregas de semana
+│   ├── today/                       ✓ TodayScreen, agrupación, reglas de postergar
+│   ├── subjects/                    ✓ SubjectsScreen, formulario, entregas de semana
 │   ├── editor/                      ✓ detalle/editor de tarea
 │   ├── settings/                    ✓ ajustes
 │   ├── util/                        ✓ DateFormat, DateText (solo UI)
@@ -94,6 +93,9 @@ app/src/main/java/com/example/notally/
 │   └── auth/                        ◇ pantalla de acceso (futuro)
 └── util/                            ◇ helpers puros sin Android (futuro)
 ```
+
+Los datos de demo viven en `tools/seed-firestore/seed.mjs` (Firestore); la app
+arranca **vacía**, sin seed local.
 
 | Paquete | Responsabilidad | Puede importar |
 |---|---|---|

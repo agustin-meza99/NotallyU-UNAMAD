@@ -2,27 +2,19 @@ package com.example.notally
 
 import android.app.Application
 import android.content.Context
-import com.example.notally.core.ContenedorApp
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
+import com.example.notally.core.AppContainer
 
 class NotallyApp : Application() {
 
-    lateinit var contenedor: ContenedorApp
+    lateinit var contenedor: AppContainer
         private set
 
     override fun onCreate() {
         super.onCreate()
-        contenedor = ContenedorApp(this)
-        // El seed de demo se completa antes de que MainActivity componga Hoy:
-        // así la primera emisión de Room ya trae datos y no se pinta un vacío
-        // falso (§7.13). En release `sembrarSiHaceFalta` retorna sin tocar la BD.
-        runBlocking(Dispatchers.IO) {
-            contenedor.sembrarSiHaceFalta()
-        }
+        contenedor = AppContainer(this)
     }
 }
 
 /** Acceso al contenedor desde cualquier `Context` (activities, fragments, etc.). */
-val Context.contenedorNotally: ContenedorApp
+val Context.contenedorNotally: AppContainer
     get() = (applicationContext as NotallyApp).contenedor

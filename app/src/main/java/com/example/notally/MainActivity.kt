@@ -16,7 +16,7 @@ import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.notally.data.model.Ajustes
 import com.example.notally.data.model.ModoTema
-import com.example.notally.ui.RaizNotally
+import com.example.notally.ui.NotallyRoot
 import com.example.notally.ui.theme.TemaNotally
 
 class MainActivity : ComponentActivity() {
@@ -66,6 +66,6 @@ private fun RaizAplicacion() {
         darkTheme = temaOscuro,
         dynamicColor = ajustes.usarColorDinamico,
     ) {
-        RaizNotally()
+        NotallyRoot()
     }
 }

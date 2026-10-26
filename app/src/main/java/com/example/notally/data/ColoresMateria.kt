@@ -4,7 +4,7 @@ package com.example.notally.data
  * Los seis acentos de materia del DESIGN.md §2.5, en ARGB opaco.
  *
  * Es la única fuente de verdad: [com.example.notally.ui.theme.MuestrasMaterias]
- * construye sus `argb` a partir de estas constantes y el seed elige entre ellas,
+ * construye sus `argb` a partir de estas constantes y la app elige entre ellas,
  * de modo que un color sembrado siempre coincide exactamente con un swatch
  * seleccionable (sin resolución "al más cercano" ni duplicados).
  *
