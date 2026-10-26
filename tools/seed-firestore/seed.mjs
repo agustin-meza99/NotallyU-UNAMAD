@@ -212,6 +212,15 @@ const TASKS = [
   },
 ];
 
+// IDs deterministas del seed anterior (`subjects`), usados solo para limpiar
+// la colección heredada cuando las reglas impiden enumerarla.
+const LEGACY_SUBJECT_IDS = [
+  'subject-calculo',
+  'subject-estructuras',
+  'subject-bases-datos',
+  'subject-etica',
+];
+
 // ---------------------------------------------------------------------------
 // Codificación de valores Firestore
 // ---------------------------------------------------------------------------
@@ -367,7 +376,13 @@ async function getDocument(idToken, projectId, uid, collection, id) {
   return body;
 }
 
-async function listDocumentIds(docsBase, idToken, uid, collection) {
+async function listDocumentIds(
+  docsBase,
+  idToken,
+  uid,
+  collection,
+  { tolerateDenied = false } = {},
+) {
   const ids = [];
   let pageToken;
   do {
@@ -378,6 +393,9 @@ async function listDocumentIds(docsBase, idToken, uid, collection) {
       { headers: { Authorization: `Bearer ${idToken}` } },
     );
     if (!response.ok) {
+      // `subjects` es una colección heredada fuera del contrato actual: las
+      // reglas pueden denegar su lectura. Quien llama decide si tolerarlo.
+      if (tolerateDenied && response.status === 403) return null;
       const code = body?.error?.status ?? `HTTP ${response.status}`;
       fail(`listado de ${collection} falló (${code}).`);
     }
@@ -389,15 +407,24 @@ async function listDocumentIds(docsBase, idToken, uid, collection) {
   return ids;
 }
 
-async function deleteDocument(projectId, idToken, uid, collection, id) {
+async function deleteDocument(
+  projectId,
+  idToken,
+  uid,
+  collection,
+  id,
+  { tolerateDenied = false } = {},
+) {
   const { response, body } = await requestJson(
     `${FIRESTORE_BASE}/${docName(projectId, uid, collection, id)}`,
     { method: 'DELETE', headers: { Authorization: `Bearer ${idToken}` } },
   );
   if (!response.ok) {
+    if (tolerateDenied && response.status === 403) return false;
     const code = body?.error?.status ?? `HTTP ${response.status}`;
     fail(`no se pudo borrar ${collection}/${id} (${code}).`);
   }
+  return true;
 }
 
 async function resetSeedDocuments({ projectId, idToken, uid, docsBase }) {
@@ -418,10 +445,35 @@ async function resetSeedDocuments({ projectId, idToken, uid, docsBase }) {
 
   // Migración de demo: la colección anterior `subjects` ya no existe en el
   // contrato; se borran todos sus documentos residuales (eran solo del seed).
-  const legacySubjectIds = await listDocumentIds(docsBase, idToken, uid, 'subjects');
+  // Las reglas actuales solo cubren `courses`/`tasks`, así que listar o borrar
+  // `subjects` puede devolver PERMISSION_DENIED: en ese caso se intentan los
+  // IDs deterministas del seed anterior y se avisa sin abortar el seed.
+  const listedSubjectIds = await listDocumentIds(
+    docsBase,
+    idToken,
+    uid,
+    'subjects',
+    { tolerateDenied: true },
+  );
+  const legacySubjectIds = listedSubjectIds ?? LEGACY_SUBJECT_IDS;
+  let blockedSubjects = 0;
   for (const id of legacySubjectIds) {
-    await deleteDocument(projectId, idToken, uid, 'subjects', id);
-    deleted += 1;
+    const removed = await deleteDocument(
+      projectId,
+      idToken,
+      uid,
+      'subjects',
+      id,
+      { tolerateDenied: true },
+    );
+    if (removed) deleted += 1;
+    else blockedSubjects += 1;
+  }
+  if (blockedSubjects > 0) {
+    console.warn(
+      `Aviso: ${blockedSubjects} documento(s) de subjects heredados no se pudieron borrar ` +
+        '(PERMISSION_DENIED); requieren limpieza con credenciales de administrador.',
+    );
   }
 
   console.log(
