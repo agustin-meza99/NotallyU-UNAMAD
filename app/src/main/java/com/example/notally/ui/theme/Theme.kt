@@ -1,16 +1,40 @@
 package com.example.notally.ui.theme
 
 import androidx.annotation.StringRes
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.FiniteAnimationSpec
+import androidx.compose.animation.core.SpringSpec
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
+import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.notally.R
 import com.example.notally.data.ColoresCurso
 import kotlin.math.pow
+
+// ===========================================================================
+// Colores
+// ===========================================================================
 
 // ---------------------------------------------------------------------------
 // Helpers de distancia de color (solo para resolver acentos de curso).
@@ -311,6 +335,294 @@ class PaletaCursos internal constructor(
 val LocalPaletaCursos = staticCompositionLocalOf { PaletaCursos.Claro }
 
 /** Color de acento de curso resuelto para el tema actual. */
-@androidx.compose.runtime.Composable
-@androidx.compose.runtime.ReadOnlyComposable
+@Composable
+@ReadOnlyComposable
 fun colorCurso(argb: Long): Color = LocalPaletaCursos.current.colorCurso(argb)
+
+// ===========================================================================
+// Tipografia
+// ===========================================================================
+
+private val Serif = FontFamily.Serif
+private val Sans = FontFamily.SansSerif
+
+/**
+ * Escala tipográfica del DESIGN.md §3.2.
+ *
+ * El serif se reserva para títulos de pantalla; cuerpo, controles y contenido
+ * editable usan sans.
+ */
+val Tipografia = Typography(
+    displayLarge = TextStyle(
+        fontFamily = Serif,
+        fontWeight = FontWeight.Normal,
+        fontSize = 56.sp,
+        lineHeight = 64.sp,
+        letterSpacing = (-0.50).sp,
+    ),
+    displayMedium = TextStyle(
+        fontFamily = Serif,
+        fontWeight = FontWeight.Normal,
+        fontSize = 44.sp,
+        lineHeight = 52.sp,
+        letterSpacing = (-0.25).sp,
+    ),
+    displaySmall = TextStyle(
+        fontFamily = Serif,
+        fontWeight = FontWeight.Normal,
+        fontSize = 36.sp,
+        lineHeight = 44.sp,
+        letterSpacing = (-0.25).sp,
+    ),
+    headlineLarge = TextStyle(
+        fontFamily = Serif,
+        fontWeight = FontWeight.Normal,
+        fontSize = 32.sp,
+        lineHeight = 40.sp,
+        letterSpacing = (-0.20).sp,
+    ),
+    headlineMedium = TextStyle(
+        fontFamily = Serif,
+        fontWeight = FontWeight.Normal,
+        fontSize = 28.sp,
+        lineHeight = 36.sp,
+        letterSpacing = (-0.20).sp,
+    ),
+    headlineSmall = TextStyle(
+        fontFamily = Sans,
+        fontWeight = FontWeight.Medium,
+        fontSize = 24.sp,
+        lineHeight = 32.sp,
+        letterSpacing = 0.sp,
+    ),
+    titleLarge = TextStyle(
+        fontFamily = Sans,
+        fontWeight = FontWeight.Medium,
+        fontSize = 22.sp,
+        lineHeight = 28.sp,
+        letterSpacing = 0.sp,
+    ),
+    titleMedium = TextStyle(
+        fontFamily = Sans,
+        fontWeight = FontWeight.Medium,
+        fontSize = 16.sp,
+        lineHeight = 24.sp,
+        letterSpacing = 0.10.sp,
+    ),
+    titleSmall = TextStyle(
+        fontFamily = Sans,
+        fontWeight = FontWeight.Medium,
+        fontSize = 14.sp,
+        lineHeight = 20.sp,
+        letterSpacing = 0.10.sp,
+    ),
+    bodyLarge = TextStyle(
+        fontFamily = Sans,
+        fontWeight = FontWeight.Normal,
+        fontSize = 16.sp,
+        lineHeight = 24.sp,
+        letterSpacing = 0.10.sp,
+    ),
+    bodyMedium = TextStyle(
+        fontFamily = Sans,
+        fontWeight = FontWeight.Normal,
+        fontSize = 14.sp,
+        lineHeight = 22.sp,
+        letterSpacing = 0.10.sp,
+    ),
+    bodySmall = TextStyle(
+        fontFamily = Sans,
+        fontWeight = FontWeight.Normal,
+        fontSize = 12.sp,
+        lineHeight = 16.sp,
+        letterSpacing = 0.20.sp,
+    ),
+    labelLarge = TextStyle(
+        fontFamily = Sans,
+        fontWeight = FontWeight.Medium,
+        fontSize = 14.sp,
+        lineHeight = 20.sp,
+        letterSpacing = 0.10.sp,
+    ),
+    labelMedium = TextStyle(
+        fontFamily = Sans,
+        fontWeight = FontWeight.Medium,
+        fontSize = 12.sp,
+        lineHeight = 16.sp,
+        letterSpacing = 0.40.sp,
+    ),
+    labelSmall = TextStyle(
+        fontFamily = Sans,
+        fontWeight = FontWeight.Medium,
+        fontSize = 11.sp,
+        lineHeight = 16.sp,
+        letterSpacing = 0.60.sp,
+    ),
+)
+
+/**
+ * Estilos extra fuera de [Typography] (§3.2).
+ *
+ * `numeric` activa cifras tabulares (`tnum`) para que los conteos no bailen al
+ * actualizarse.
+ */
+object TipografiaNotally {
+    val tituloEditor = TextStyle(
+        fontFamily = Sans,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 28.sp,
+        lineHeight = 36.sp,
+        letterSpacing = (-0.20).sp,
+    )
+
+    val cuerpoEditor = TextStyle(
+        fontFamily = Sans,
+        fontWeight = FontWeight.Normal,
+        fontSize = 17.sp,
+        lineHeight = 28.sp,
+        letterSpacing = 0.sp,
+    )
+
+    val numerico = TextStyle(
+        fontFamily = Sans,
+        fontWeight = FontWeight.Medium,
+        fontSize = 12.sp,
+        lineHeight = 16.sp,
+        letterSpacing = 0.20.sp,
+        fontFeatureSettings = "tnum",
+    )
+}
+
+// ===========================================================================
+// Formas
+// ===========================================================================
+
+/**
+ * Formas del DESIGN.md §4.2.
+ *
+ * Mapeo a los slots de Material 3: extraSmall = 4, small = 8, medium = 12,
+ * large = 16, extraLarge = 28. `full` no existe como slot y se usa CircleShape.
+ */
+val FormasNotally = Shapes(
+    extraSmall = RoundedCornerShape(4.dp),
+    small = RoundedCornerShape(8.dp),
+    medium = RoundedCornerShape(12.dp),
+    large = RoundedCornerShape(16.dp),
+    extraLarge = RoundedCornerShape(28.dp),
+)
+
+/** Acceso directo a los tokens de forma, para componentes que no usan slots. */
+object FormaNotally {
+    val xs = RoundedCornerShape(4.dp)
+    val s = RoundedCornerShape(8.dp)
+    val m = RoundedCornerShape(12.dp)
+    val l = RoundedCornerShape(16.dp)
+    val xl = RoundedCornerShape(28.dp)
+    val full = CircleShape
+
+    /** Radio de fila: nunca 28 dp en una fila de lista. */
+    val row = RoundedCornerShape(12.dp)
+}
+
+// ===========================================================================
+// Movimiento
+// ===========================================================================
+
+/**
+ * Motion del DESIGN.md §5.
+ *
+ * En material3 1.4.0 `MotionScheme` es `internal`, así que los springs
+ * expresivos se copian como constantes de la app (valores verificados en el
+ * artefacto). No se fuerza duración: si el sistema desactiva animaciones,
+ * Compose respeta `MotionDurationScale`.
+ */
+object MovimientoNotally {
+
+    // Springs espaciales: tamaño, posición, expansión.
+    fun <T> espacialNormal(): SpringSpec<T> =
+        spring(dampingRatio = 0.8f, stiffness = 380f)
+
+    fun <T> espacialRapida(): SpringSpec<T> =
+        spring(dampingRatio = 0.6f, stiffness = 800f)
+
+    // Springs de efectos: color, alpha, confirmación.
+    fun <T> efectoNormal(): SpringSpec<T> =
+        spring(dampingRatio = 1.0f, stiffness = 1600f)
+
+    fun <T> efectoRapida(): SpringSpec<T> =
+        spring(dampingRatio = 1.0f, stiffness = 3800f)
+
+    // Duraciones puntuales (§5, excepciones permitidas).
+    const val colorMs = 120
+    const val dibujoMarcaMs = 160
+    const val fabMs = 150
+    const val chevronMs = 180
+    const val movimientoElementoMs = 220
+    const val fundidoMs = 180
+    const val fundidoPestanaMs = 120
+    const val slidePestanaMs = 180
+    const val snackbarMs = 5_000L
+
+    val fundidoEasing = FastOutSlowInEasing
+
+    /** Atajo para `animateContentSize`. */
+    fun tamanoContenido(): FiniteAnimationSpec<androidx.compose.ui.unit.IntSize> = espacialNormal()
+}
+
+// ===========================================================================
+// Espaciado
+// ===========================================================================
+
+/** Espaciado del DESIGN.md §4.1 (múltiplos de 4). */
+object EspaciadoNotally {
+    val x1 = 4.dp
+    val x2 = 8.dp
+    val x3 = 12.dp
+    val x4 = 16.dp
+    val x5 = 24.dp
+    val x6 = 32.dp
+    val x7 = 48.dp
+
+    /** Padding inferior de listas que comparten espacio con el cluster (§4.1, §6). */
+    val rellenoInferiorLista = 96.dp
+
+    /** Ancho máximo de lectura. */
+    val anchoMaximoContenido = 680.dp
+}
+
+/**
+ * Margen lateral de pantalla: 20 dp; 24 dp en ventanas de 600 dp o más.
+ * Se calcula con la configuración local para no fijar un valor único.
+ */
+val margenHorizontalPantalla: Dp
+    @Composable
+    @ReadOnlyComposable
+    get() = if (LocalConfiguration.current.screenWidthDp >= 600) 24.dp else 20.dp
+
+// ===========================================================================
+// Tema
+// ===========================================================================
+
+/**
+ * Tema de Notally.
+ *
+ * La paleta es fija: [EsquemaColoresClaro] o [EsquemaColoresOscuro] según el
+ * modo elegido. No existe variante dinámica ni ajuste que altere los roles M3.
+ */
+@Composable
+fun TemaNotally(
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    content: @Composable () -> Unit,
+) {
+    val colorScheme = if (darkTheme) EsquemaColoresOscuro else EsquemaColoresClaro
+    val paletaCursos = if (darkTheme) PaletaCursos.Oscuro else PaletaCursos.Claro
+
+    CompositionLocalProvider(LocalPaletaCursos provides paletaCursos) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = Tipografia,
+            shapes = FormasNotally,
+            content = content,
+        )
+    }
+}

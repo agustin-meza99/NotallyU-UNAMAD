@@ -82,7 +82,7 @@ app/src/main/java/com/example/notally/
 ├── core/
 │   └── AppContainer.kt              ✓ punto de composición + utilidades transversales
 ├── ui/
-│   ├── theme/                       ✓ tokens, tipografía, formas, movimiento
+│   ├── theme/Theme.kt               ✓ tokens: colores, tipografía, formas, movimiento y espaciado
 │   ├── components/                  ✓ componentes reutilizables
 │   ├── today/                       ✓ TodayScreen, agrupación, reglas de postergar
 │   ├── cursos/                      ✓ CursosScreen, CursoSheet, entregas de semana
@@ -114,7 +114,7 @@ arranca **vacía**, sin seed local.
 2. `data.local.**` **no** importa `ui.**`.
 3. `data.remote.firestore` no importa `com.google.firebase.*`: es Kotlin puro y se prueba en JVM.
 4. Los ViewModels no importan DAOs ni `FirebaseFirestore`; hablan con repositorios.
-5. Excepción documentada: `ui/theme/ColoresMaterial.kt` consume `data/ColoresCurso.kt` para construir los swatches de curso. Es una dependencia de **tokens de color**, no de estado ni de persistencia; se mantiene para que la paleta tenga una sola fuente de verdad y no duplique hex en UI.
+5. Excepción documentada: `ui/theme/Theme.kt` consume `data/ColoresCurso.kt` para construir los swatches de curso. Es una dependencia de **tokens de color**, no de estado ni de persistencia; se mantiene para que la paleta tenga una sola fuente de verdad y no duplique hex en UI.
 
 ---
 
@@ -242,7 +242,7 @@ Para habilitarlo: activar Email/Password en la consola → añadir `ui/auth` y s
 - **Eventos one-shot** (navegación, snackbar) por `SharedFlow`, nunca dentro del `UiState`.
 - **Textos:** todo lo visible en `res/values/strings.xml`. Nada hardcodeado en composables.
 - **Fechas:** solo con `ui/util/DateFormat` (y `DateText`). No formatear con `SimpleDateFormat` suelto en pantallas.
-- **Colores:** solo tokens de `ui/theme/ColoresMaterial.kt`. Prohibido `Color(0xFF…)` en pantallas o componentes; los colores de curso salen de `data/ColoresCurso.kt`.
+- **Colores:** solo tokens de `ui/theme/Theme.kt`. Prohibido `Color(0xFF…)` en pantallas o componentes; los colores de curso salen de `data/ColoresCurso.kt`.
 - **Errores de contrato:** los mappers fallan con `require` y mensaje accionable; no se ignoran campos.
 
 ---
