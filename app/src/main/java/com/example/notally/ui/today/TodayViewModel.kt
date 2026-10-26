@@ -321,13 +321,15 @@ class TodayViewModel(
 
         val empty = when {
             aggregate.loading -> null
-            // Sin ninguna tarea manda el vacío total, aunque el filtro activo
-            // sea "Pendientes" o "Completadas" (no hay nada que completar).
             groups.isEmpty -> TodayEmpty.Total
+            // Con historial pero sin secciones de hoy, "Todas" no tiene filas:
+            // se ofrece el vacío total; los chips siguen visibles para llegar
+            // a "Completadas" (§7.7).
             filter == TodayFilter.DONE ->
                 if (groups.completedHistory.isEmpty()) TodayEmpty.DoneFilter else null
             filter == TodayFilter.PENDING ->
                 if (!groups.hasPending) TodayEmpty.PendingFilter else null
+            !groups.hasSectionContent -> TodayEmpty.Total
             else -> null
         }
 

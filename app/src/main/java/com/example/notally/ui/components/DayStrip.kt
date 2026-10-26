@@ -168,7 +168,7 @@ private fun DayCell(
     )
 
     val pendingText = if (day.pendingCount == 0) {
-        stringResource(R.string.today_pending_none)
+        stringResource(R.string.today_pending_none_label)
     } else {
         pluralStringResource(
             R.plurals.today_pending_count,

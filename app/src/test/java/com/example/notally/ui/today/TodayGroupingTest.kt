@@ -371,6 +371,83 @@ class TodayGroupingTest {
     }
 
     @Test
+    fun `la focal de para hoy no se repite en su seccion`() {
+        val onlyToday = groupToday(
+            now = now,
+            zone = utc,
+            dayTasks = listOf(todayLate),
+            upcomingTasks = emptyList(),
+            activeTasks = listOf(todayLate),
+            subjectsById = subjects,
+        )
+
+        assertEquals(TodaySectionType.TODAY, onlyToday.focal?.bucket)
+        assertEquals(3L, onlyToday.focal?.taskId)
+        assertTrue(onlyToday.today.isEmpty())
+        assertTrue(
+            buildTodaySections(onlyToday, TodayFilter.ALL)
+                .none { it.type == TodaySectionType.TODAY },
+        )
+    }
+
+    @Test
+    fun `la focal de sin hora no se repite en su seccion`() {
+        val onlyAnytime = groupToday(
+            now = now,
+            zone = utc,
+            dayTasks = emptyList(),
+            upcomingTasks = emptyList(),
+            activeTasks = listOf(anytime),
+            subjectsById = subjects,
+        )
+
+        assertEquals(TodaySectionType.ANYTIME, onlyAnytime.focal?.bucket)
+        assertEquals(5L, onlyAnytime.focal?.taskId)
+        assertTrue(onlyAnytime.anytime.isEmpty())
+        assertTrue(
+            buildTodaySections(onlyAnytime, TodayFilter.ALL)
+                .none { it.type == TodaySectionType.ANYTIME },
+        )
+    }
+
+    @Test
+    fun `filas de seccion mas focal igualan el contador de todas`() {
+        val result = groups()
+        val sections = buildTodaySections(result, TodayFilter.ALL)
+        val rows = sections.sumOf { it.items.size }
+        val focalRows = if (result.focal == null) 0 else 1
+
+        assertEquals(result.filterCounts.all, rows + focalRows)
+
+        val pendingRows = sections
+            .filter { it.type != TodaySectionType.COMPLETED }
+            .sumOf { it.items.size }
+        assertEquals(result.filterCounts.pending, pendingRows + focalRows)
+    }
+
+    @Test
+    fun `solo historial completa no vacia la pantalla y deja Completadas alcanzable`() {
+        val onlyHistory = groupToday(
+            now = now,
+            zone = utc,
+            dayTasks = emptyList(),
+            upcomingTasks = emptyList(),
+            activeTasks = listOf(oldDone, noDateDoneOld),
+            subjectsById = subjects,
+        )
+
+        // "Todas" sigue contando solo las secciones de hoy (§7.7)...
+        assertEquals(0, onlyHistory.filterCounts.all)
+        // ...pero hay algo que mostrar: "Completadas" tiene historial.
+        assertFalse(onlyHistory.isEmpty)
+        assertFalse(onlyHistory.hasSectionContent)
+        assertEquals(2, onlyHistory.filterCounts.done)
+        assertNull(onlyHistory.focal)
+        assertTrue(buildTodaySections(onlyHistory, TodayFilter.ALL).isEmpty())
+        assertEquals(2, onlyHistory.completedHistory.size)
+    }
+
+    @Test
     fun `los contadores de los chips coinciden con lo que muestra cada filtro`() {
         val counts = groups().filterCounts
 

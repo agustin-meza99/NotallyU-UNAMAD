@@ -62,7 +62,10 @@ data class TodayFilterCounts(
  * - completedHistory: todo el historial, para el filtro "Completadas".
  * - summary: conteo del día (Atrasadas + Para hoy + Sin hora); Próximas fuera.
  * - filterCounts: lo que cuenta cada chip; se mide sobre las listas completas,
- *   así que la focal entra una sola vez.
+ *   así que la focal entra una sola vez. `all` sigue siendo el conteo de las
+ *   secciones de la vista por secciones (§7.7), no el de "Completadas".
+ * - isEmpty: no hay nada que mostrar en ningún filtro (ni secciones ni
+ *   historial); `hasSectionContent` responde solo por las secciones.
  */
 data class TodayGroups(
     val overdue: List<TodayItem> = emptyList(),
@@ -79,8 +82,13 @@ data class TodayGroups(
     private val agendaPendingCount: Int = 0,
     private val upcomingPendingCount: Int = 0,
 ) {
+    /** Nada que mostrar en ningún filtro: ni secciones ni historial. */
     val isEmpty: Boolean
-        get() = filterCounts.all == 0
+        get() = filterCounts.all == 0 && completedHistory.isEmpty()
+
+    /** Hay al menos una fila (o la focal) en las secciones de Hoy. */
+    val hasSectionContent: Boolean
+        get() = filterCounts.all > 0
 
     val hasPending: Boolean
         get() = filterCounts.pending > 0

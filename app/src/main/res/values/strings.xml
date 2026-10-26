@@ -24,6 +24,7 @@
         <item quantity="other">%d tareas pendientes</item>
     </plurals>
     <string name="today_pending_none">Sin tareas pendientes</string>
+    <string name="today_pending_none_label">sin tareas pendientes</string>
 
     <!-- Tarea -->
     <string name="task_due_today">Hoy</string>

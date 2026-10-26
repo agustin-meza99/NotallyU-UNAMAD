@@ -104,4 +104,22 @@ class DateFormatTest {
         assertTrue(formatted.contains("p."))
         assertTrue(formatted.endsWith("m."))
     }
+
+    @Test
+    fun `abreviatura del dia usa tres letras mayusculas sin punto`() {
+        assertEquals("LUN", DateFormat.weekdayAbbreviation(LocalDate.parse("2026-10-26")))
+        assertEquals("DOM", DateFormat.weekdayAbbreviation(LocalDate.parse("2026-10-25")))
+    }
+
+    @Test
+    fun `nombre del dia lleva inicial mayuscula`() {
+        assertEquals("Domingo", DateFormat.weekdayName(LocalDate.parse("2026-10-25")))
+        assertEquals("Miércoles", DateFormat.weekdayName(LocalDate.parse("2026-10-21")))
+    }
+
+    @Test
+    fun `nombre del mes va en minuscula dentro de la frase`() {
+        assertEquals("octubre", DateFormat.monthName(LocalDate.parse("2026-10-25")))
+        assertEquals("noviembre", DateFormat.monthName(LocalDate.parse("2026-11-01")))
+    }
 }

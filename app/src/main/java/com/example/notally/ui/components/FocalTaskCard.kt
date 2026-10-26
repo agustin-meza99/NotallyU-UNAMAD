@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -75,8 +76,9 @@ fun FocalTaskCard(
     )
     val openLabel = stringResource(R.string.a11y_openTask)
 
-    Row(
+    Column(
         modifier = modifier
+            .fillMaxWidth()
             .heightIn(min = 96.dp)
             .onFocusChanged { focused = it.isFocused }
             .focusRing(visible = focused, shape = NotallyShape.l)
@@ -91,50 +93,53 @@ fun FocalTaskCard(
             )
             .semantics { contentDescription = description }
             .padding(16.dp),
-        verticalAlignment = Alignment.Top,
     ) {
-        // Hueco de 20 dp reservado siempre: Alta y Media cambian de altura,
-        // Baja queda transparente sin mover el texto.
-        Box(
-            modifier = Modifier
-                .width(2.dp)
-                .height(20.dp),
-            contentAlignment = Alignment.TopStart,
-        ) {
-            val barHeight = when (priority) {
-                Priority.HIGH -> 20.dp
-                Priority.MEDIUM -> 12.dp
-                Priority.LOW -> 0.dp
+        Text(
+            text = eyebrow.uppercase(DateFormat.SpanishLocale),
+            style = MaterialTheme.typography.labelSmall,
+            color = colors.inverseOnSurface,
+        )
+        Spacer(Modifier.height(8.dp))
+        // La barra vive en su propia fila con el título, no con el eyebrow:
+        // así queda alineada con `titleLarge` (§7.3.1).
+        Row(verticalAlignment = Alignment.Top) {
+            // Hueco de 20 dp reservado siempre: Alta y Media cambian de altura,
+            // Baja queda transparente sin mover el texto.
+            Box(
+                modifier = Modifier
+                    .width(2.dp)
+                    .height(20.dp),
+                contentAlignment = Alignment.TopStart,
+            ) {
+                val barHeight = when (priority) {
+                    Priority.HIGH -> 20.dp
+                    Priority.MEDIUM -> 12.dp
+                    Priority.LOW -> 0.dp
+                }
+                if (barHeight > 0.dp) {
+                    Box(
+                        modifier = Modifier
+                            .width(2.dp)
+                            .height(barHeight)
+                            .clip(CircleShape)
+                            .background(colors.inverseOnSurface),
+                    )
+                }
             }
-            if (barHeight > 0.dp) {
-                Box(
-                    modifier = Modifier
-                        .width(2.dp)
-                        .height(barHeight)
-                        .clip(CircleShape)
-                        .background(colors.inverseOnSurface),
+            Spacer(Modifier.width(8.dp))
+            Column {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleLarge,
+                    color = colors.inverseOnSurface,
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = subjectText + separator + dueText,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.inverseOnSurface,
                 )
             }
-        }
-        Spacer(Modifier.width(8.dp))
-        Column {
-            Text(
-                text = eyebrow.uppercase(DateFormat.SpanishLocale),
-                style = MaterialTheme.typography.labelSmall,
-                color = colors.inverseOnSurface,
-            )
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleLarge,
-                color = colors.inverseOnSurface,
-            )
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = subjectText + separator + dueText,
-                style = MaterialTheme.typography.bodySmall,
-                color = colors.inverseOnSurface,
-            )
         }
     }
 }

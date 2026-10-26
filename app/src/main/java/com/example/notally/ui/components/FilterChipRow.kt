@@ -5,6 +5,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -87,9 +89,15 @@ private fun FilterChipItem(
 ) {
     val colors = MaterialTheme.colorScheme
     var focused by remember { mutableStateOf(false) }
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
 
     val container by animateColorAsState(
-        targetValue = if (selected) colors.tertiaryContainer else Color.Transparent,
+        targetValue = when {
+            selected -> colors.tertiaryContainer
+            pressed -> colors.surfaceContainerLow
+            else -> Color.Transparent
+        },
         animationSpec = tween(NotallyMotion.colorMs),
         label = "filterChipContainer",
     )
@@ -119,6 +127,7 @@ private fun FilterChipItem(
             .onFocusChanged { focused = it.isFocused }
             .selectable(
                 selected = selected,
+                interactionSource = interactionSource,
                 role = Role.RadioButton,
                 onClick = onClick,
             )
@@ -150,7 +159,7 @@ private fun FilterChipItem(
                     )
                 }
             }
-            Spacer(Modifier.width(6.dp))
+            Spacer(Modifier.width(8.dp))
             Row {
                 Text(
                     text = option.label,

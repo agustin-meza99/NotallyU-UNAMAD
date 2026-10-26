@@ -301,7 +301,7 @@ fun TodayScreen(
         }
     }
 
-    val showFab = fabVisible && !state.isEmptyTotal && !state.loading &&
+    val showFab = fabVisible && state.empty != TodayEmpty.Total && !state.loading &&
         !(state.error && !state.hasCachedData)
     var fabFocused by remember { mutableStateOf(false) }
 

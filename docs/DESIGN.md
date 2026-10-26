@@ -848,7 +848,7 @@ Los ratios de la sección 2.4 y 2.5 se calcularon con la fórmula anterior sobre
 
 ## 13. Desviaciones aprobadas (2026-10-25; ampliado 2026-10-26)
 
-Las excepciones 1–4 están implementadas y verificadas. La 5 está aprobada el 2026-10-26 y pendiente de implementación; se anota antes de tocar código, como exige §0. El resto del documento sigue vigente.
+Las excepciones 1–5 están implementadas y verificadas (2026-10-26). El resto del documento sigue vigente.
 
 1. **Hoja de Entrega abierta para elegir hora (§7.9).** La hoja de Entrega no se cierra al elegir la fecha: permanece abierta para ofrecer "Elegir hora"/"Quitar hora" y solo se cierra al tocar fuera, con el gesto de vuelta o al elegir "Sin fecha". Se mantiene porque la hora es opcional y el date picker no debe forzar una segunda apertura.
 2. **`SwipeTaskRow` usa el constructor deprecado de `SwipeToDismissBoxState`.** En material3 1.4.0 el constructor principal perdió `confirmValueChange`; la alternativa pública es `onDismiss` + `reset()`, que deja que la fila llegue al ancho completo antes de volver (salto visible). Se usa el constructor deprecado, todavía público en 1.4.0, con `confirmValueChange` devolviendo `false` para ejecutar la acción y volver a `Settled` sin expulsar la fila. Se retirará cuando el componente estable ofrezca el mismo control sin parpadeo.
