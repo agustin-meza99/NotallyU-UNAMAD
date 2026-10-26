@@ -43,7 +43,7 @@ import com.example.notally.ui.components.anilloFoco
 import com.example.notally.ui.theme.EspaciadoNotally
 import com.example.notally.ui.theme.FormaNotally
 import com.example.notally.ui.theme.margenHorizontalPantalla
-import com.example.notally.ui.util.DateFormat
+import com.example.notally.ui.utils.DateFormat
 
 /**
  * Pantalla Settings (§7.12).

@@ -48,7 +48,7 @@ import com.example.notally.data.model.Prioridad
 import com.example.notally.R
 import com.example.notally.ui.theme.FormaNotally
 import com.example.notally.ui.theme.MovimientoNotally
-import com.example.notally.ui.util.DateFormat
+import com.example.notally.ui.utils.DateFormat
 import java.time.LocalDate
 import kotlin.math.roundToInt
 

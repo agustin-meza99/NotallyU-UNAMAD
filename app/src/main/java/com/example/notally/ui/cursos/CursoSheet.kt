@@ -44,8 +44,8 @@ import com.example.notally.data.repository.ResultadoCurso
 import com.example.notally.ui.components.CourseNameField
 import com.example.notally.ui.components.DialogoConfirmarEliminacion
 import com.example.notally.ui.theme.FormaNotally
-import com.example.notally.ui.theme.LocalPaletaCursos
-import com.example.notally.ui.theme.MuestrasCursos
+import com.example.notally.ui.theme.LocalPaletteCursos
+import com.example.notally.ui.theme.SwatchesCursos
 import kotlinx.coroutines.launch
 
 /** Qué muestra la hoja de curso: alta o edición de una tarjeta existente. */
@@ -75,7 +75,7 @@ fun CursoSheet(
     alLimpiarError: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val paleta = LocalPaletaCursos.current
+    val palette = LocalPaletteCursos.current
     val edicion = objetivo as? ObjetivoCursoSheet.Editar
     val claveObjetivo = edicion?.tarjeta?.curso?.id?.toString() ?: "new"
     var nombre by rememberSaveable(claveObjetivo) {
@@ -85,7 +85,7 @@ fun CursoSheet(
     // seis tokens se marca y se guarda como su equivalente más cercano.
     var color by rememberSaveable(claveObjetivo) {
         mutableStateOf(
-            paleta.muestraCurso(
+            palette.swatchCurso(
                 edicion?.tarjeta?.curso?.color ?: colorPorDefecto,
             ).argb,
         )
@@ -169,7 +169,7 @@ fun CursoSheet(
                                 val resultado = alGuardar(
                                     edicion?.tarjeta?.curso,
                                     nombre.trim(),
-                                    paleta.muestraCurso(color).argb,
+                                    palette.swatchCurso(color).argb,
                                 )
                                 if (CursoFormRules.termino(resultado)) alGuardado()
                             } finally {
@@ -217,18 +217,18 @@ private fun SwatchRow(
     colorSeleccionado: Long,
     alSeleccionar: (Long) -> Unit,
 ) {
-    val paleta = LocalPaletaCursos.current
-    val resuelto = paleta.muestraCurso(colorSeleccionado)
+    val palette = LocalPaletteCursos.current
+    val resolved = palette.swatchCurso(colorSeleccionado)
     androidx.compose.foundation.layout.FlowRow(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        MuestrasCursos.forEach { muestra ->
-            val nombre = stringResource(muestra.recursoNombre)
-            val seleccionada = muestra.argb == resuelto.argb
-            val relleno = muestra.contenedorClaro
-            val contenido = muestra.claro
+        SwatchesCursos.forEach { swatch ->
+            val nombre = stringResource(swatch.nameRes)
+            val seleccionada = swatch.argb == resolved.argb
+            val relleno = swatch.lightContainer
+            val contenido = swatch.light
             Box(
                 modifier = Modifier
                     .size(48.dp)
@@ -236,7 +236,7 @@ private fun SwatchRow(
                     .selectable(
                         selected = seleccionada,
                         role = Role.RadioButton,
-                        onClick = { alSeleccionar(muestra.argb) },
+                        onClick = { alSeleccionar(swatch.argb) },
                     )
                     .semantics { contentDescription = nombre },
                 contentAlignment = Alignment.Center,

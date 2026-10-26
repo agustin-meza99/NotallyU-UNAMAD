@@ -26,7 +26,7 @@ import com.example.notally.ui.components.OpcionFiltro
 import com.example.notally.ui.components.SectionHeader
 import com.example.notally.ui.components.SwipeTaskRow
 import com.example.notally.ui.theme.MovimientoNotally
-import com.example.notally.ui.util.textoEtiquetaFecha
+import com.example.notally.ui.utils.textoEtiquetaFecha
 import java.time.LocalDate
 
 @Composable

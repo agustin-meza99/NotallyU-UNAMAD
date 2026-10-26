@@ -53,8 +53,8 @@ import com.example.notally.ui.components.OptionRow
 import com.example.notally.ui.components.priorityLabel
 import com.example.notally.ui.components.statusLabel
 import com.example.notally.ui.theme.FormaNotally
-import com.example.notally.ui.util.DateFormat
-import com.example.notally.ui.util.textoEtiquetaFecha
+import com.example.notally.ui.utils.DateFormat
+import com.example.notally.ui.utils.textoEtiquetaFecha
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
@@ -82,7 +82,7 @@ fun EditorSheetsHost(
     hoja: HojaEditor?,
     borrador: BorradorTarea,
     cursos: List<Curso>,
-    colorCursoPorDefecto: Long,
+    defaultCursoColor: Long,
     errorNuevoCurso: ResultadoCurso?,
     alDescartar: () -> Unit,
     alSeleccionarCurso: (Long?) -> Unit,
@@ -103,7 +103,7 @@ fun EditorSheetsHost(
             HojaEditor.CURSO -> CourseSelectorContent(
                 cursos = cursos,
                 idSeleccionado = borrador.cursoId,
-                colorPorDefecto = colorCursoPorDefecto,
+                colorPorDefecto = defaultCursoColor,
                 error = errorNuevoCurso,
                 alSeleccionar = {
                     alSeleccionarCurso(it)

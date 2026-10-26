@@ -16,7 +16,7 @@ import com.example.notally.data.repository.SettingsRepository
 import com.example.notally.data.repository.CursosRepository
 import com.example.notally.data.repository.ResultadoCurso
 import com.example.notally.data.repository.TareasRepository
-import com.example.notally.ui.util.clockFlow
+import com.example.notally.ui.utils.clockFlow
 import java.time.ZoneId
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
@@ -185,8 +185,8 @@ class CursosViewModel(
 
     /** Color por defecto en alta: siguiente swatch en orden (§2.5). */
     fun colorPorDefecto(cantidadCursos: Int): Long {
-        val muestras = com.example.notally.ui.theme.MuestrasCursos
-        return muestras[cantidadCursos % muestras.size].argb
+        val swatches = com.example.notally.ui.theme.SwatchesCursos
+        return swatches[cantidadCursos % swatches.size].argb
     }
 
     private fun buildState(agregado: Agregado, ahora: Long): EstadoUiCursos {

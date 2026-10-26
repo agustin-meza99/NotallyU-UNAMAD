@@ -1,4 +1,4 @@
-package com.example.notally.ui.util
+package com.example.notally.ui.utils
 
 import java.time.LocalDate
 import java.time.LocalTime

@@ -2,8 +2,8 @@ package com.example.notally.data
 
 import androidx.compose.ui.graphics.Color
 import com.example.notally.R
-import com.example.notally.ui.theme.MuestrasCursos
-import com.example.notally.ui.theme.PaletaCursos
+import com.example.notally.ui.theme.SwatchesCursos
+import com.example.notally.ui.theme.PaletteCursos
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -12,26 +12,26 @@ class CursoColorsTest {
 
     @Test
     fun `hay seis acentos opacos y distintos`() {
-        val colores = ColoresCurso.todos
+        val colors = ColorsCurso.all
 
-        assertEquals(6, colores.size)
-        assertEquals(6, colores.distinct().size)
-        assertTrue(colores.all { (it ushr 24) == 0xFFL })
+        assertEquals(6, colors.size)
+        assertEquals(6, colors.distinct().size)
+        assertTrue(colors.all { (it ushr 24) == 0xFFL })
     }
 
     @Test
     fun `los valores respetan la tabla del documento`() {
         assertEquals(
             listOf(0xFF3A5A9EL, 0xFF2F6A4EL, 0xFF99482EL, 0xFF5F7300L, 0xFF7A5F87L, 0xFF1D5F6AL),
-            ColoresCurso.todos,
+            ColorsCurso.all,
         )
     }
 
     @Test
     fun `las muestras conservan orden nombres y variantes del documento`() {
-        val muestras = MuestrasCursos
+        val swatches = SwatchesCursos
 
-        assertEquals(ColoresCurso.todos, muestras.map { it.argb })
+        assertEquals(ColorsCurso.all, swatches.map { it.argb })
         assertEquals(
             listOf(
                 R.string.course_color_indigo,
@@ -41,7 +41,7 @@ class CursoColorsTest {
                 R.string.course_color_lavender,
                 R.string.course_color_petrol,
             ),
-            muestras.map { it.recursoNombre },
+            swatches.map { it.nameRes },
         )
         assertEquals(
             listOf(
@@ -52,7 +52,7 @@ class CursoColorsTest {
                 Color(0xFF7A5F87),
                 Color(0xFF1D5F6A),
             ),
-            muestras.map { it.claro },
+            swatches.map { it.light },
         )
         assertEquals(
             listOf(
@@ -63,11 +63,11 @@ class CursoColorsTest {
                 Color(0xFFF3EDF5),
                 Color(0xFFE3EEEE),
             ),
-            muestras.map { it.contenedorClaro },
+            swatches.map { it.lightContainer },
         )
-        muestras.forEach { muestra ->
-            assertEquals(muestra.claro, PaletaCursos.Unica.colorCurso(muestra.argb))
-            assertEquals(muestra.contenedorClaro, PaletaCursos.Unica.contenedorCurso(muestra.argb))
+        swatches.forEach { swatch ->
+            assertEquals(swatch.light, PaletteCursos.Single.colorCurso(swatch.argb))
+            assertEquals(swatch.lightContainer, PaletteCursos.Single.contenedorCurso(swatch.argb))
         }
     }
 }

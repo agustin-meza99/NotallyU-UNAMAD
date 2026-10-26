@@ -26,7 +26,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.notally.R
-import com.example.notally.data.ColoresCurso
+import com.example.notally.data.ColorsCurso
 import kotlin.math.pow
 
 // ===========================================================================
@@ -43,7 +43,7 @@ private fun rgb(argb: Long): Triple<Int, Int, Int> = Triple(
     (argb and 0xFF).toInt(),
 )
 
-private fun distanciaColor(a: Long, b: Long): Double {
+private fun colorDistance(a: Long, b: Long): Double {
     val (ar, ag, ab) = rgb(a)
     val (br, bg, bb) = rgb(b)
     // Distancia ponderada (aprox. percepción): el ojo es más sensible al verde.
@@ -107,12 +107,12 @@ internal val Scrim = Color(0xFF000000)
 // ---------------------------------------------------------------------------
 
 @Composable
-internal fun esquemaColoresClaro(): ColorScheme {
+internal fun lightColorsScheme(): ColorScheme {
     val superficie = LightSurface
-    return remember(superficie) { esquemaClaro(superficie) }
+    return remember(superficie) { lightScheme(superficie) }
 }
 
-private fun esquemaClaro(superficie: Color): ColorScheme = lightColorScheme(
+private fun lightScheme(superficie: Color): ColorScheme = lightColorScheme(
     primary = LightPrimary,
     onPrimary = LightOnPrimary,
     primaryContainer = LightPrimaryContainer,
@@ -160,54 +160,54 @@ private fun esquemaClaro(superficie: Color): ColorScheme = lightColorScheme(
  * Un swatch de curso.
  *
  * [argb] es el valor canónico que se guarda en `Curso.colorArgb` (hex claro).
- * [claro] identifica el curso sobre superficie; [contenedorClaro] se usa en la
+ * [light] identifica el curso sobre superficie; [lightContainer] se usa en la
  * hoja de edición y en la selección de swatch.
  */
 @Immutable
-data class MuestraCurso(
+data class SwatchCurso(
     val argb: Long,
-    @param:StringRes val recursoNombre: Int,
-    val claro: Color,
-    val contenedorClaro: Color,
+    @param:StringRes val nameRes: Int,
+    val light: Color,
+    val lightContainer: Color,
 )
 
 /** Los seis acentos, en el orden de la tabla del documento. */
-val MuestrasCursos: List<MuestraCurso> = listOf(
-    MuestraCurso(
-        argb = ColoresCurso.INDIGO,
-        recursoNombre = R.string.course_color_indigo,
-        claro = Color(ColoresCurso.INDIGO),
-        contenedorClaro = Color(0xFFE9ECF5),
+val SwatchesCursos: List<SwatchCurso> = listOf(
+    SwatchCurso(
+        argb = ColorsCurso.INDIGO,
+        nameRes = R.string.course_color_indigo,
+        light = Color(ColorsCurso.INDIGO),
+        lightContainer = Color(0xFFE9ECF5),
     ),
-    MuestraCurso(
-        argb = ColoresCurso.FOREST,
-        recursoNombre = R.string.course_color_forest,
-        claro = Color(ColoresCurso.FOREST),
-        contenedorClaro = Color(0xFFE6EFE8),
+    SwatchCurso(
+        argb = ColorsCurso.FOREST,
+        nameRes = R.string.course_color_forest,
+        light = Color(ColorsCurso.FOREST),
+        lightContainer = Color(0xFFE6EFE8),
     ),
-    MuestraCurso(
-        argb = ColoresCurso.TERRACOTTA,
-        recursoNombre = R.string.course_color_terracotta,
-        claro = Color(ColoresCurso.TERRACOTTA),
-        contenedorClaro = Color(0xFFF4E8E2),
+    SwatchCurso(
+        argb = ColorsCurso.TERRACOTTA,
+        nameRes = R.string.course_color_terracotta,
+        light = Color(ColorsCurso.TERRACOTTA),
+        lightContainer = Color(0xFFF4E8E2),
     ),
-    MuestraCurso(
-        argb = ColoresCurso.LIME,
-        recursoNombre = R.string.course_color_lime,
-        claro = Color(ColoresCurso.LIME),
-        contenedorClaro = Color(0xFFF3F5E0),
+    SwatchCurso(
+        argb = ColorsCurso.LIME,
+        nameRes = R.string.course_color_lime,
+        light = Color(ColorsCurso.LIME),
+        lightContainer = Color(0xFFF3F5E0),
     ),
-    MuestraCurso(
-        argb = ColoresCurso.LAVENDER,
-        recursoNombre = R.string.course_color_lavender,
-        claro = Color(ColoresCurso.LAVENDER),
-        contenedorClaro = Color(0xFFF3EDF5),
+    SwatchCurso(
+        argb = ColorsCurso.LAVENDER,
+        nameRes = R.string.course_color_lavender,
+        light = Color(ColorsCurso.LAVENDER),
+        lightContainer = Color(0xFFF3EDF5),
     ),
-    MuestraCurso(
-        argb = ColoresCurso.PETROL,
-        recursoNombre = R.string.course_color_petrol,
-        claro = Color(ColoresCurso.PETROL),
-        contenedorClaro = Color(0xFFE3EEEE),
+    SwatchCurso(
+        argb = ColorsCurso.PETROL,
+        nameRes = R.string.course_color_petrol,
+        light = Color(ColorsCurso.PETROL),
+        lightContainer = Color(0xFFE3EEEE),
     ),
 )
 
@@ -220,33 +220,33 @@ val MuestrasCursos: List<MuestraCurso> = listOf(
  * suelto fuera de la paleta).
  */
 @Immutable
-class PaletaCursos internal constructor(
-    val muestras: List<MuestraCurso> = MuestrasCursos,
+class PaletteCursos internal constructor(
+    val swatches: List<SwatchCurso> = SwatchesCursos,
 ) {
-    private fun resolver(argb: Long): MuestraCurso {
+    private fun resolve(argb: Long): SwatchCurso {
         val normalized = argb and 0xFFFFFFFFL
-        muestras.firstOrNull { it.argb == normalized }?.let { return it }
-        return muestras.minBy { distanciaColor(normalized, it.argb) }
+        swatches.firstOrNull { it.argb == normalized }?.let { return it }
+        return swatches.minBy { colorDistance(normalized, it.argb) }
     }
 
-    fun colorCurso(argb: Long): Color = resolver(argb).claro
+    fun colorCurso(argb: Long): Color = resolve(argb).light
 
-    fun contenedorCurso(argb: Long): Color = resolver(argb).contenedorClaro
+    fun contenedorCurso(argb: Long): Color = resolve(argb).lightContainer
 
-    fun muestraCurso(argb: Long): MuestraCurso = resolver(argb)
+    fun swatchCurso(argb: Long): SwatchCurso = resolve(argb)
 
     companion object {
-        val Unica = PaletaCursos()
+        val Single = PaletteCursos()
     }
 }
 
 /** Paleta de curso del tema claro. */
-val LocalPaletaCursos = staticCompositionLocalOf { PaletaCursos.Unica }
+val LocalPaletteCursos = staticCompositionLocalOf { PaletteCursos.Single }
 
 /** Color de acento de curso resuelto para el tema claro. */
 @Composable
 @ReadOnlyComposable
-fun colorCurso(argb: Long): Color = LocalPaletaCursos.current.colorCurso(argb)
+fun colorCurso(argb: Long): Color = LocalPaletteCursos.current.colorCurso(argb)
 
 // ===========================================================================
 // Tipografia
@@ -456,15 +456,15 @@ val margenHorizontalPantalla: Dp
 /**
  * Tema de Notally.
  *
- * Un solo tema claro y fijo: siempre [esquemaColoresClaro] con la paleta de
+ * Un solo tema claro y fijo: siempre [lightColorsScheme] con la paleta de
  * cursos clara. No existe variante oscura, dinámica ni ajuste que altere los
  * roles M3.
  */
 @Composable
 fun TemaNotally(content: @Composable () -> Unit) {
-    CompositionLocalProvider(LocalPaletaCursos provides PaletaCursos.Unica) {
+    CompositionLocalProvider(LocalPaletteCursos provides PaletteCursos.Single) {
         MaterialTheme(
-            colorScheme = esquemaColoresClaro(),
+            colorScheme = lightColorsScheme(),
             typography = Tipografia,
             shapes = FormasNotally,
             content = content,

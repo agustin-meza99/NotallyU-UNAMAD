@@ -17,7 +17,7 @@ import com.example.notally.data.model.TareaConSubtareas
 import com.example.notally.data.repository.CursosRepository
 import com.example.notally.data.repository.ResultadoCurso
 import com.example.notally.data.repository.TareasRepository
-import com.example.notally.ui.theme.MuestrasCursos
+import com.example.notally.ui.theme.SwatchesCursos
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -410,9 +410,9 @@ class EditorViewModel(
     // Cursos y eliminación
     // ---------------------------------------------------------------------
 
-    fun colorCursoPorDefecto(): Long {
-        val muestras = MuestrasCursos
-        return muestras[_cursos.value.size % muestras.size].argb
+    fun defaultCursoColor(): Long {
+        val swatches = SwatchesCursos
+        return swatches[_cursos.value.size % swatches.size].argb
     }
 
     fun limpiarErrorNuevoCurso() {

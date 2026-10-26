@@ -14,8 +14,8 @@ import com.example.notally.data.model.Tarea
 import com.example.notally.data.repository.SettingsRepository
 import com.example.notally.data.repository.CursosRepository
 import com.example.notally.data.repository.TareasRepository
-import com.example.notally.ui.util.DateFormat
-import com.example.notally.ui.util.clockFlow
+import com.example.notally.ui.utils.DateFormat
+import com.example.notally.ui.utils.clockFlow
 import java.time.ZoneId
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow

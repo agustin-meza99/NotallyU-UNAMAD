@@ -70,7 +70,7 @@ import com.example.notally.R
 import com.example.notally.ui.theme.FormaNotally
 import com.example.notally.ui.theme.MovimientoNotally
 import com.example.notally.ui.theme.TipografiaNotally
-import com.example.notally.ui.util.DateFormat
+import com.example.notally.ui.utils.DateFormat
 
 /**
  * Estado vacío (§7.8): título, cuerpo y una acción real. Sin ilustración.

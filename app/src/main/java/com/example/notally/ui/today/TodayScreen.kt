@@ -67,8 +67,8 @@ import com.example.notally.ui.theme.EspaciadoNotally
 import com.example.notally.ui.theme.margenHorizontalPantalla
 import com.example.notally.ui.theme.MovimientoNotally
 import com.example.notally.ui.theme.TipografiaNotally
-import com.example.notally.ui.util.DateFormat
-import com.example.notally.ui.util.textoEtiquetaFecha
+import com.example.notally.ui.utils.DateFormat
+import com.example.notally.ui.utils.textoEtiquetaFecha
 import java.time.LocalDate
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest

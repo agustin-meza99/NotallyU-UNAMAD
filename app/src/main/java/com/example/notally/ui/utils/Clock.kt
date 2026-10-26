@@ -1,4 +1,4 @@
-package com.example.notally.ui.util
+package com.example.notally.ui.utils
 
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow

@@ -78,7 +78,7 @@ app/src/main/java/com/example/notally/
 │   ├── NotallyDatabase.kt           ✓ Room v1
 │   ├── Converters.kt                ✓ enums persistidos por nombre
 │   ├── DateRanges.kt                ✓ rangos de día en hora local
-│   └── ColoresCurso.kt              ✓ paleta de cursos (fuente única)
+│   └── ColorsCurso.kt               ✓ paleta de cursos (fuente única)
 ├── core/
 │   └── AppContainer.kt              ✓ punto de composición + utilidades transversales
 ├── ui/
@@ -114,7 +114,7 @@ arranca **vacía**, sin seed local.
 2. `data.local.**` **no** importa `ui.**`.
 3. `data.remote.firestore` no importa `com.google.firebase.*`: es Kotlin puro y se prueba en JVM.
 4. Los ViewModels no importan DAOs ni `FirebaseFirestore`; hablan con repositorios.
-5. Excepción documentada: `ui/theme/Theme.kt` consume `data/ColoresCurso.kt` para construir los swatches de curso. Es una dependencia de **tokens de color**, no de estado ni de persistencia; se mantiene para que la paleta tenga una sola fuente de verdad y no duplique hex en UI.
+5. Excepción documentada: `ui/theme/Theme.kt` consume `data/ColorsCurso.kt` para construir los swatches de curso. Es una dependencia de **tokens de color**, no de estado ni de persistencia; se mantiene para que la paleta tenga una sola fuente de verdad y no duplique hex en UI.
 
 ---
 
@@ -241,9 +241,9 @@ Para habilitarlo: activar Email/Password en la consola → añadir `ui/auth` y s
 - **Un ViewModel por pantalla.** Estado inmutable (`data class UiState`) expuesto con `StateFlow`.
 - **Eventos one-shot** (navegación, snackbar) por `SharedFlow`, nunca dentro del `UiState`.
 - **Textos:** todo lo visible en `res/values/strings.xml`. Nada hardcodeado en composables.
-- **Fechas:** solo con `ui/util/DateFormat` (y `DateText`). No formatear con `SimpleDateFormat` suelto en pantallas.
-- **Tema:** un solo tema claro (`EsquemaColoresClaro`) con tipografía y formas fijas. No hay modo oscuro, `values-night`, color dinámico ni preferencia de tema; `TemaNotally` solo recibe `content` y `Settings` no persiste ajustes de apariencia.
-- **Colores:** solo tokens de `ui/theme/Theme.kt`. Prohibido `Color(0xFF…)` en pantallas o componentes; los colores de curso salen de `data/ColoresCurso.kt`.
+- **Fechas:** solo con `ui/utils/DateFormat` (y `DateText`). No formatear con `SimpleDateFormat` suelto en pantallas.
+- **Tema:** un solo tema claro (`LightColorsScheme`) con tipografía y formas fijas. No hay modo oscuro, `values-night`, color dinámico ni preferencia de tema; `TemaNotally` solo recibe `content` y `Settings` no persiste ajustes de apariencia.
+- **Colores:** solo tokens de `ui/theme/Theme.kt`. Prohibido `Color(0xFF…)` en pantallas o componentes; los colores de curso salen de `data/ColorsCurso.kt`.
 - **Errores de contrato:** los mappers fallan con `require` y mensaje accionable; no se ignoran campos.
 
 ---

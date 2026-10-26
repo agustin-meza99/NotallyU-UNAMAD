@@ -74,10 +74,10 @@ import com.example.notally.R
 import com.example.notally.ui.theme.colorCurso
 import com.example.notally.ui.theme.FormaNotally
 import com.example.notally.ui.theme.MovimientoNotally
-import com.example.notally.ui.util.DateFormat
-import com.example.notally.ui.util.textoAtraso
-import com.example.notally.ui.util.textoEtiquetaFecha
-import com.example.notally.ui.util.textoFraseEntrega
+import com.example.notally.ui.utils.DateFormat
+import com.example.notally.ui.utils.textoAtraso
+import com.example.notally.ui.utils.textoEtiquetaFecha
+import com.example.notally.ui.utils.textoFraseEntrega
 
 /**
  * Fila de tarea (§7.2).

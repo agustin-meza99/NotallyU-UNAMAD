@@ -1,4 +1,4 @@
-package com.example.notally.ui.util
+package com.example.notally.ui.utils
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable

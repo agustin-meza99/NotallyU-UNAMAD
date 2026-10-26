@@ -73,8 +73,8 @@ import com.example.notally.ui.theme.EspaciadoNotally
 import com.example.notally.ui.theme.FormaNotally
 import com.example.notally.ui.theme.MovimientoNotally
 import com.example.notally.ui.theme.TipografiaNotally
-import com.example.notally.ui.util.DateFormat
-import com.example.notally.ui.util.textoEtiquetaFecha
+import com.example.notally.ui.utils.DateFormat
+import com.example.notally.ui.utils.textoEtiquetaFecha
 import java.time.ZoneId
 
 @Composable
