@@ -1,0 +1,172 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------------------------------------------------------------------
+    // Utilidades
+    // ---------------------------------------------------------------------
+
+    // Solo el usuario autenticado puede tocar su propio subarbol.
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    // Error si el cliente intenta escribir un campo fuera del esquema.
+    // (hasOnly actua como lista blanca de claves.)
+
+    // ---------------------------------------------------------------------
+    // Perfil: users/{uid}
+    // El esquema del perfil aun no esta definido; solo se acota el numero de
+    // campos y el tipo de las marcas de tiempo habituales.
+    // ---------------------------------------------------------------------
+    match /users/{uid} {
+      allow read: if isOwner(uid);
+
+      allow create: if isOwner(uid)
+        && request.resource.data.size() <= 15
+        && (!request.resource.data.keys().hasAny(['createdAt'])
+            || request.resource.data.createdAt is timestamp)
+        && (!request.resource.data.keys().hasAny(['updatedAt'])
+            || (request.resource.data.updatedAt is timestamp
+                && request.resource.data.updatedAt == request.time));
+
+      allow update: if isOwner(uid)
+        && request.resource.data.size() <= 15
+        && (!request.resource.data.keys().hasAny(['createdAt'])
+            || (request.resource.data.createdAt is timestamp
+                && request.resource.data.createdAt == resource.data.createdAt))
+        && (!request.resource.data.keys().hasAny(['updatedAt'])
+            || (request.resource.data.updatedAt is timestamp
+                && request.resource.data.updatedAt == request.time));
+
+      // Borrado duro permitido para limpieza; la app usa borrado suave.
+      allow delete: if isOwner(uid);
+
+      // -------------------------------------------------------------------
+      // Materias: users/{uid}/subjects/{subjectId}
+      // -------------------------------------------------------------------
+      match /subjects/{subjectId} {
+        allow read: if isOwner(uid);
+        allow delete: if isOwner(uid);
+
+        allow create: if isOwner(uid)
+          && validSubject(request.resource.data)
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.updatedAt == request.time;
+
+        allow update: if isOwner(uid)
+          && validSubject(request.resource.data)
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.updatedAt == request.time;
+      }
+
+      // -------------------------------------------------------------------
+      // Tareas: users/{uid}/tasks/{taskId}
+      // -------------------------------------------------------------------
+      match /tasks/{taskId} {
+        allow read: if isOwner(uid);
+        allow delete: if isOwner(uid);
+
+        allow create: if isOwner(uid)
+          && validTask(request.resource.data)
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.updatedAt == request.time;
+
+        allow update: if isOwner(uid)
+          && validTask(request.resource.data)
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.updatedAt == request.time;
+      }
+    }
+
+    // ---------------------------------------------------------------------
+    // Validadores de forma
+    // ---------------------------------------------------------------------
+
+    // Materia: name (<=120), colorArgb, professor (<=120 o null),
+    // credits (number o null), createdAt/updatedAt (timestamp),
+    // deletedAt (timestamp o null).
+    function validSubject(d) {
+      return d.keys().hasAll(['name', 'colorArgb', 'createdAt', 'updatedAt'])
+        && d.keys().hasOnly([
+             'name', 'colorArgb', 'professor', 'credits',
+             'createdAt', 'updatedAt', 'deletedAt'
+           ])
+        && d.name is string
+        && d.name.size() >= 1 && d.name.size() <= 120
+        && d.colorArgb is number
+        && (!d.keys().hasAny(['professor'])
+            || d.professor == null
+            || (d.professor is string && d.professor.size() <= 120))
+        && (!d.keys().hasAny(['credits'])
+            || d.credits == null
+            || (d.credits is number && d.credits >= 0))
+        && d.createdAt is timestamp
+        && d.updatedAt is timestamp
+        && (!d.keys().hasAny(['deletedAt'])
+            || d.deletedAt == null
+            || d.deletedAt is timestamp);
+    }
+
+    // Tarea: title (<=300), notes (<=20000), subjectId (string o null),
+    // dueAt (number o null), priority/status enumerados, subtasks (<=100),
+    // createdAt/updatedAt (timestamp), completedAt (number o null),
+    // deletedAt (timestamp o null).
+    function validTask(d) {
+      return d.keys().hasAll([
+               'title', 'notes', 'priority', 'status', 'subtasks',
+               'createdAt', 'updatedAt'
+             ])
+        && d.keys().hasOnly([
+             'title', 'notes', 'subjectId', 'dueAt', 'priority', 'status',
+             'subtasks', 'createdAt', 'updatedAt', 'completedAt', 'deletedAt'
+           ])
+        && d.title is string
+        && d.title.size() >= 1 && d.title.size() <= 300
+        && d.notes is string
+        && d.notes.size() <= 20000
+        && (!d.keys().hasAny(['subjectId'])
+            || d.subjectId == null
+            || (d.subjectId is string && d.subjectId.size() <= 128))
+        && (!d.keys().hasAny(['dueAt'])
+            || d.dueAt == null
+            || d.dueAt is number)
+        && d.priority in ['LOW', 'MEDIUM', 'HIGH']
+        && d.status in ['PENDING', 'IN_PROGRESS', 'DONE']
+        && d.subtasks is list
+        && d.subtasks.size() <= 100
+        // Firestore Rules no permite iterar listas: solo se valida la forma
+        // del primer elemento. El limite de 100 y la forma del resto quedan
+        // garantizados por la app; el tamano del documento lo acota Firestore.
+        && (d.subtasks.size() == 0 || validSubtask(d.subtasks[0]))
+        && d.createdAt is timestamp
+        && d.updatedAt is timestamp
+        && (!d.keys().hasAny(['completedAt'])
+            || d.completedAt == null
+            || d.completedAt is number)
+        && (!d.keys().hasAny(['deletedAt'])
+            || d.deletedAt == null
+            || d.deletedAt is timestamp);
+    }
+
+    // Subtarea embebida: {id, title, isDone, position}.
+    function validSubtask(s) {
+      return s.keys().hasOnly(['id', 'title', 'isDone', 'position'])
+        && s.keys().hasAll(['id', 'title', 'isDone', 'position'])
+        && s.id is string
+        && s.id.size() <= 128
+        && s.title is string
+        && s.title.size() <= 300
+        && s.isDone is bool
+        && s.position is number;
+    }
+
+    // ---------------------------------------------------------------------
+    // Cierre: nada fuera de users/{uid} es accesible desde el cliente.
+    // ---------------------------------------------------------------------
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

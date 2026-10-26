@@ -40,3 +40,11 @@ local.properties
 # Capturas de depuración
 *.png
 !app/src/main/res/**/*.png
+
+# Firebase / tooling de agentes
+.agents/
+.claude/
+skills-lock.json
+firebase-debug.log
+firebase-debug.*.log
+*.local
