@@ -11,7 +11,7 @@
 
 1. Un solo FAB en Hoy ("Nueva tarea"). Sin menú de FAB en V1.
 2. Sin sombras difusas. La jerarquía se expresa con superficie tonal, borde de 1 dp y espacio.
-3. Serif solo en títulos de pantalla. Cuerpo, controles y contenido editable en sans.
+3. Sin serif y sin títulos de pantalla visibles. La jerarquía la cargan la fecha, los conteos y las secciones; cuerpo, controles y contenido editable usan sans.
 4. El acento de interacción es el azul tinta (`tertiary`). El color de materia nunca colorea botones ni texto de cuerpo.
 5. Las tarjetas de materia no son clicables para "ver detalle": abren la hoja "Editar materia". No hay pantalla de materia en V1.
 6. Los estados de carga de Room no inventan latencia: sin skeletons animados.
@@ -57,11 +57,11 @@
 ### 2.1 Reglas
 - Tokens en un solo archivo (`Color.kt` / `NotallyColors`); prohibido hex suelto en pantallas.
 - `background` = `surface`; `onBackground` = `onSurface`.
-- El estado seleccionado nunca se comunica solo con `primaryContainer` (contraste 1.25:1 contra superficie): siempre añade borde, texto o indicador.
+- El estado seleccionado nunca se comunica solo con `primaryContainer` (contraste 1.25:1 contra superficie): siempre añade borde, texto o indicador. En el cluster de §6 el indicador es una cápsula rellena `primary`/`onPrimary`: la señal es la presencia de la forma (44 × 40 dp frente a ningún fondo) y el contraste del relleno contra la píldora (12.35:1), no un cambio de tono cercano ni una línea.
 - Los colores de materia se usan en: punto de 6 dp, barra de 3 dp, relleno de progreso y contenedor de la hoja de edición. Nunca en botones, FAB, nav ni texto largo.
-- Modo claro y oscuro son paletas propias; no se derivan por inversión automática.
+- Una sola paleta: no hay variante de tema ni ajuste que altere los roles M3.
 
-### 2.2 Paleta clara
+### 2.2 Paleta
 
 | Rol M3 | Hex | Uso |
 |---|---|---|
@@ -98,82 +98,45 @@
 | inverseOnSurface | `#F6F2EA` | Texto de snackbar |
 | inversePrimary | `#D6CEC0` | Acción de snackbar |
 
-### 2.3 Paleta oscura
+### 2.3 Contraste (WCAG 2.2)
 
-| Rol M3 | Hex | Uso |
-|---|---|---|
-| primary | `#E4DED3` | Acción primaria, checkbox marcado |
-| onPrimary | `#23201C` | Contenido sobre primary |
-| primaryContainer | `#3A342B` | Indicador de nav |
-| onPrimaryContainer | `#F0EAE0` | Texto/icono sobre primaryContainer |
-| secondary | `#C5BEB2` | Metadatos de énfasis |
-| onSecondary | `#2A2620` | Contenido sobre secondary |
-| secondaryContainer | `#37322A` | Swipe "Mañana" |
-| onSecondaryContainer | `#E4DDD2` | Contenido sobre secondaryContainer |
-| tertiary | `#A6CBE3` | Acento funcional |
-| onTertiary | `#0D2D40` | Contenido sobre tertiary |
-| tertiaryContainer | `#1D4157` | Selección de filtro |
-| onTertiaryContainer | `#CDE6F5` | Contenido sobre tertiaryContainer |
-| error | `#F2B8AD` | Vencimiento, prioridad alta |
-| onError | `#5C160C` | Contenido sobre error |
-| errorContainer | `#6E2418` | Banner de error |
-| onErrorContainer | `#F9DCD6` | Texto sobre errorContainer |
-| surface | `#151310` | Fondo (tinta cálida, no negra) |
-| onSurface | `#ECE7DE` | Texto principal (papel) |
-| surfaceDim | `#110F0D` | Fondo atenuado |
-| surfaceBright | `#3A342C` | Superficie más clara |
-| surfaceContainerLowest | `#100E0C` | Entradas y diálogos |
-| surfaceContainerLow | `#1C1916` | Fila presionada |
-| surfaceContainer | `#211E1A` | Contenedor por defecto |
-| surfaceContainerHigh | `#29251F` | Toolbar flotante |
-| surfaceContainerHighest | `#322D26` | Estados elevados puntuales |
-| surfaceVariant | `#3A352E` | Relleno de campos |
-| onSurfaceVariant | `#B3AB9F` | Texto secundario |
-| outline | `#8B8377` | Bordes interactivos |
-| outlineVariant | `#4A443C` | Separadores |
-| inverseSurface | `#ECE7DE` | Snackbar |
-| inverseOnSurface | `#322E28` | Texto de snackbar |
-| inversePrimary | `#4A4339` | Acción de snackbar |
+Fórmula usada: `(L1 + 0.05) / (L2 + 0.05)`, con luminancia relativa sRGB (canal ≤ 0.04045 → /12.92; si no → ((c+0.055)/1.055)^2.4), calculada sobre los hex exactos de arriba. Texto normal exige 4.5:1; texto grande 3:1; bordes/controles 3:1.
 
-### 2.4 Contraste (WCAG 2.2)
+| Par | Ratio | Requisito | Resultado |
+|---|---|---|---|
+| onSurface / surface | 16.26 | 4.5 | Pasa |
+| onSurfaceVariant / surface | 7.06 | 4.5 | Pasa |
+| onSurfaceVariant / surfaceContainerLow | 6.60 | 4.5 | Pasa |
+| onSurfaceVariant / surfaceVariant | 5.77 | 4.5 | Pasa |
+| onPrimary / primary | 14.99 | 4.5 | Pasa |
+| onPrimaryContainer / primaryContainer | 12.01 | 4.5 | Pasa |
+| onSecondary / secondary | 6.96 | 4.5 | Pasa |
+| onSecondaryContainer / secondaryContainer | 9.78 | 4.5 | Pasa |
+| onTertiary / tertiary | 7.74 | 4.5 | Pasa |
+| onTertiaryContainer / tertiaryContainer | 10.41 | 4.5 | Pasa |
+| error / surface | 6.29 | 4.5 | Pasa |
+| onError / error | 6.56 | 4.5 | Pasa |
+| onErrorContainer / errorContainer | 11.73 | 4.5 | Pasa |
+| tertiary / surface | 7.41 | 4.5 | Pasa |
+| outline / surface | 3.64 | 3.0 | Pasa |
+| outlineVariant / surface | 1.47 | — | Solo decorativo; nunca delimita un control |
+| inverseOnSurface / inverseSurface | 12.76 | 4.5 | Pasa |
+| inversePrimary / inverseSurface | 9.12 | 4.5 | Pasa |
 
-Fórmula usada: `(L_claro + 0.05) / (L_oscuro + 0.05)`, con luminancia relativa sRGB (canal ≤ 0.04045 → /12.92; si no → ((c+0.055)/1.055)^2.4), calculada sobre los hex exactos de arriba. Texto normal exige 4.5:1; texto grande 3:1; bordes/controles 3:1.
+### 2.4 Acentos de materia
 
-| Par | Claro | Oscuro | Requisito | Resultado |
-|---|---|---|---|---|
-| onSurface / surface | 16.26 | 15.06 | 4.5 | Pasa |
-| onSurfaceVariant / surface | 7.06 | 8.16 | 4.5 | Pasa |
-| onSurfaceVariant / surfaceContainerLow | 6.60 | 7.70 | 4.5 | Pasa |
-| onSurfaceVariant / surfaceVariant | 5.77 | 5.35 | 4.5 | Pasa |
-| onPrimary / primary | 14.99 | 12.12 | 4.5 | Pasa |
-| onPrimaryContainer / primaryContainer | 12.01 | 10.29 | 4.5 | Pasa |
-| onSecondary / secondary | 6.96 | 8.15 | 4.5 | Pasa |
-| onSecondaryContainer / secondaryContainer | 9.78 | 9.43 | 4.5 | Pasa |
-| onTertiary / tertiary | 7.74 | 8.37 | 4.5 | Pasa |
-| onTertiaryContainer / tertiaryContainer | 10.41 | 8.34 | 4.5 | Pasa |
-| error / surface | 6.29 | 10.80 | 4.5 | Pasa |
-| onError / error | 6.56 | 7.77 | 4.5 | Pasa |
-| onErrorContainer / errorContainer | 11.73 | 8.42 | 4.5 | Pasa |
-| tertiary / surface | 7.41 | 10.84 | 4.5 | Pasa |
-| outline / surface | 3.64 | 4.95 | 3.0 | Pasa |
-| outlineVariant / surface | 1.47 | 1.93 | — | Solo decorativo; nunca delimita un control |
-| inverseOnSurface / inverseSurface | 12.76 | 10.95 | 4.5 | Pasa |
-| inversePrimary / inverseSurface | 9.12 | 7.92 | 4.5 | Pasa |
+Seis swatches fijos de un solo tema. El texto sobre el contenedor del swatch (chip de selección en "Editar materia") también cumple AA. **Cambio aprobado 2026-10-26:** salen Ocre y Ciruela; entran Lima y Lavanda. La lima pura de referencia (~`#D4E86A`) queda rechazada: da 1.29:1 sobre `surface` y no puede usarse ni como swatch ni como texto.
 
-### 2.5 Acentos de materia
+| Token | Nombre UI | Acento | Contenedor | Texto sobre contenedor | Acento sobre surface |
+|---|---|---|---|---|---|
+| subjectIndigo | Índigo | `#3A5A9E` | `#E9ECF5` | 5.67 | 6.42 |
+| subjectForest | Bosque | `#2F6A4E` | `#E6EFE8` | 5.43 | 6.11 |
+| subjectTerracotta | Terracota | `#99482E` | `#F4E8E2` | 5.27 | 6.06 |
+| subjectLime | Lima | `#5F7300` | `#F3F5E0` | 4.81 | 5.11 |
+| subjectLavender | Lavanda | `#7A5F87` | `#F3EDF5` | 4.78 | 5.27 |
+| subjectPetrol | Petróleo | `#1D5F6A` | `#E3EEEE` | 6.12 | 6.94 |
 
-Seis swatches fijos, con variante clara y oscura. El texto sobre el contenedor del swatch (chip de selección en "Editar materia") también cumple AA. **Cambio aprobado 2026-10-26:** salen Ocre y Ciruela; entran Lima y Lavanda. La lima pura de referencia (~`#D4E86A`) queda rechazada: da 1.29:1 sobre `surface` claro y no puede usarse ni como swatch oscuro ni como texto. Se conserva el patrón de la tabla: tono oscuro y saturado en tema claro, pastel claro en tema oscuro.
-
-| Token | Nombre UI | Claro | Oscuro | Contenedor claro | Contenedor oscuro | Texto claro | Texto oscuro | Sobre surface claro/oscuro |
-|---|---|---|---|---|---|---|---|---|
-| subjectIndigo | Índigo | `#3A5A9E` | `#AFC3EE` | `#E9ECF5` | `#222B3F` | 5.67 | 7.99 | 6.42 / 10.48 |
-| subjectForest | Bosque | `#2F6A4E` | `#9FC9B2` | `#E6EFE8` | `#1D2C24` | 5.43 | 7.98 | 6.11 / 10.13 |
-| subjectTerracotta | Terracota | `#99482E` | `#E7AE97` | `#F4E8E2` | `#33231C` | 5.27 | 7.80 | 6.06 / 9.62 |
-| subjectLime | Lima | `#5F7300` | `#D8E5A0` | `#F3F5E0` | `#2A2B16` | 4.81 | 10.74 | 5.11 / 13.81 |
-| subjectLavender | Lavanda | `#7A5F87` | `#CAA8B8` | `#F3EDF5` | `#2B2233` | 4.78 | 7.11 | 5.27 / 8.66 |
-| subjectPetrol | Petróleo | `#1D5F6A` | `#96CDD6` | `#E3EEEE` | `#182B2E` | 6.12 | 8.43 | 6.94 / 10.60 |
-
-Los ratios se recalcularon el 2026-10-26 con la fórmula de §2.4 sobre los hex exactos. "Texto claro" es el acento claro sobre su contenedor claro; "Texto oscuro", el acento oscuro sobre su contenedor oscuro; "Sobre surface" es acento claro/surface claro y acento oscuro/surface oscuro.
+Los ratios se recalcularon el 2026-10-26 con la fórmula de §2.3 sobre los hex exactos. "Texto sobre contenedor" es el acento sobre su contenedor; "Acento sobre surface", el acento sobre `surface` (`#FBFAF7`). El contenedor solo aloja el acento como texto o borde, nunca como fondo de texto largo.
 
 **Por qué salen Ocre y Ciruela.** Ocre (`#7A5E14`) ya era un oliva sucio en la misma familia amarillo-verde que Lima; mantener los dos dejaba dos de seis swatches casi en el mismo tono. Ciruela (`#7B3F6D`) competía con Lavanda en la familia violeta: dos violetas entre seis reducen la discriminación, sobre todo en protanopía. Se conservan Terracota (naranja-rojo), Bosque (verde azulado) y Petróleo (cian) para que las seis familias sigan separadas.
 
@@ -181,43 +144,35 @@ Los ratios se recalcularon el 2026-10-26 con la fórmula de §2.4 sobre los hex 
 
 | Par | Normal | Deuteranopía | Protanopía |
 |---|---|---|---|
-| Lima / Bosque (claro) | 41.2 | 39.7 | 37.9 |
-| Lavanda / Índigo (claro) | 24.5 | 26.9 | 18.8 |
-| Lima / Bosque (oscuro) | 27.8 | 28.6 | 27.1 |
-| Lavanda / Índigo (oscuro) | 21.4 | 22.8 | 18.9 |
+| Lima / Bosque | 41.2 | 39.7 | 37.9 |
+| Lavanda / Índigo | 24.5 | 26.9 | 18.8 |
 
-Lima se eligió con L* 46 (claro), por encima de Bosque (L* 40) y Terracota (L* 41), precisamente para que el par amarillo-verde no dependa solo del tono. Lavanda se ajustó de un violeta azulado a un malva (`#7A5F87` claro / `#CAA8B8` oscuro) porque la variante azulada se confundía con Índigo en protanopía (ΔE 6.6 en claro, 2.1 en oscuro) y con Petróleo en oscuro. Quedan dos pares secundarios por debajo de 15: Lima/Terracota en deuteranopía (13.5 claro, 15.0 oscuro) y Lavanda/Petróleo (9.8–11.9). No se fuerza más el hex: los swatches siempre llevan su nombre visible en la hoja y el nombre de la materia siempre acompaña al punto en la fila, así que el color nunca es el único portador. Si se quisiera un umbral más estricto, habría que retirar otro swatch, no seguir retocando estos dos sin revalidar los cuatro restantes.
+Lima se eligió con L* 46, por encima de Bosque (L* 40) y Terracota (L* 41), precisamente para que el par amarillo-verde no dependa solo del tono. Lavanda se ajustó de un violeta azulado a un malva (`#7A5F87`) porque la variante azulada se confundía con Índigo en protanopía (ΔE 6.6) y con Petróleo. Quedan dos pares secundarios por debajo de 15: Lima/Terracota en deuteranopía (13.5) y Lavanda/Petróleo (9.8–11.9). No se fuerza más el hex: los swatches siempre llevan su nombre visible en la hoja y el nombre de la materia siempre acompaña al punto en la fila, así que el color nunca es el único portador. Si se quisiera un umbral más estricto, habría que retirar otro swatch, no seguir retocando estos dos sin revalidar los cuatro restantes.
 
-**Cambio esperado en código (no improvisar).** En `data/SubjectColors.kt` desaparecen `OCHRE` y `PLUM`; entran `LIME = 0xFF5F7300` y `LAVENDER = 0xFF7A5F87`, en las posiciones 4 y 5 de `all` para conservar el orden de esta tabla. `NotallySubjectSwatches` debe usar los pares claro/oscuro y contenedores de arriba, y los recursos de nombre pasan a `subject_color_lime` / `subject_color_lavender` ("Lima" / "Lavanda"). Los valores antiguos guardados en `Subject.colorArgb` no se migran: `SubjectPalette.resolve` ya resuelve por cercanía RGB, pero una materia Ocre existente cambiará de aspecto al swatch más próximo. No se añade un séptimo color ni un segundo acento de UI.
+**Cambio esperado en código (no improvisar).** En `data/ColoresCurso.kt` desaparecen `OCHRE` y `PLUM`; entran `LIME = 0xFF5F7300` y `LAVENDER = 0xFF7A5F87`, en las posiciones 4 y 5 de `todos` para conservar el orden de esta tabla. `MuestrasCursos` (en `ui/theme/Theme.kt`) usa el acento y el contenedor de arriba, y los recursos de nombre pasan a `course_color_lime` / `course_color_lavender` ("Lima" / "Lavanda"). Los valores antiguos guardados en `Curso.colorArgb` no se migran: `PaletaCursos` ya resuelve por cercanía RGB, pero un curso Ocre existente cambiará de aspecto al swatch más próximo. No se añade un séptimo color ni un segundo acento de UI.
 
 Reglas:
 - Asignación por defecto: orden de la lista, sin relación semántica con el nombre de la materia. El swatch es una elección del usuario, no una categoría.
 - El nombre del color ("Índigo") es la etiqueta accesible del swatch; no se muestra texto de color en la tarjeta. Los nombres son de swatch, no de categoría: el color no codifica el tipo de materia.
 - La barra de progreso usa el color de materia sobre `outlineVariant`; no requiere AA (no es texto), pero el porcentaje nunca se comunica solo con color: siempre hay "3 de 7 completadas".
 
-### 2.6 Paleta fija
+### 2.5 Paleta fija
 - No existe variante dinámica ni ajuste que la active: la paleta de §2 es la única identidad.
-- Los roles M3 (incluidas superficies) salen siempre de `EsquemaColoresClaro` / `EsquemaColoresOscuro`; los colores de materia no cambian.
+- Los roles M3 (incluidas superficies) salen siempre de `EsquemaColoresClaro`; los colores de materia no cambian.
 
 ---
 
 ## 3. Tipografía
 
 ### 3.1 Fuentes y justificación
-- **Display y títulos editoriales:** `FontFamily.Serif`. En AOSP resuelve a Noto Serif; no requiere assets ni red.
-- **Cuerpo, controles y contenido editable:** `FontFamily.SansSerif` (Roboto en AOSP).
+- **Toda la interfaz:** `FontFamily.SansSerif` (Roboto en AOSP). No hay familia editorial desde el retiro del serif (2026-10-26, §13.7).
 - No se descargan fuentes ni se empaquetan .ttf en V1. Motivo: offline garantizado, cero peso extra, y la app no depende de licencias ni de red en el primer arranque.
-- **Riesgo asumido:** algunos fabricantes sustituyen la familia `serif` y cambian métricas. Por eso el serif se limita a títulos de 1–2 líneas, sin tracking negativo agresivo y con line-height generoso.
+- **Sin riesgo de sustitución editorial:** al no usar `FontFamily.Serif`, la familia que instale el fabricante para serif ya no afecta a la interfaz. La sans es la del sistema y se comporta igual en Samsung/Xiaomi.
 
 ### 3.2 Escala y mapeo exacto a `Typography`
 
 | Slot M3 | Familia | Tamaño | Line-height | Tracking | Peso | Uso |
 |---|---|---|---|---|---|---|
-| displayLarge | Serif | 56 sp | 64 sp | -0.50 sp | 400 | Reservado; no usar en V1 |
-| displayMedium | Serif | 44 sp | 52 sp | -0.25 sp | 400 | Reservado; no usar en V1 |
-| displaySmall | Serif | 36 sp | 44 sp | -0.25 sp | 400 | Título de pantalla ("Hoy", "Materias", "Ajustes") |
-| headlineLarge | Serif | 32 sp | 40 sp | -0.20 sp | 400 | Reservado; no usar en V1 |
-| headlineMedium | Serif | 28 sp | 36 sp | -0.20 sp | 400 | Reservado; no usar en V1 |
 | headlineSmall | Sans | 24 sp | 32 sp | 0 sp | 500 | Título de diálogo y de estado vacío |
 | titleLarge | Sans | 22 sp | 28 sp | 0 sp | 500 | Título de bottom sheet |
 | titleMedium | Sans | 16 sp | 24 sp | 0.10 sp | 500 | Título de tarea y nombre de materia |
@@ -229,6 +184,8 @@ Reglas:
 | labelMedium | Sans | 12 sp | 16 sp | 0.40 sp | 500 | Chips |
 | labelSmall | Sans | 11 sp | 16 sp | 0.60 sp | 500 | Eyebrow de fecha y encabezados de sección (se aplica uppercase en uso) |
 
+Los slots `displayLarge`, `displayMedium`, `displaySmall`, `headlineLarge` y `headlineMedium` no se declaran en `Tipografia`: no tienen ningún uso y Material 3 aporta sus defaults.
+
 Estilos extra (fuera de `Typography`, en `NotallyType`):
 
 | Token | Familia | Tamaño | Line-height | Tracking | Peso | Uso |
@@ -238,8 +195,9 @@ Estilos extra (fuera de `Typography`, en `NotallyType`):
 | numeric | Sans | 12 sp | 16 sp | 0.20 sp | 500 | Conteos y progreso (`tnum` activado) |
 
 ### 3.3 Reglas de uso
-- Máximo **un** estilo serif visible por pantalla (el título). El serif no se usa en botones, chips, metadatos ni contenido editable.
-- El uppercase se aplica solo a `labelSmall` (fecha y secciones); nunca a títulos ni botones.
+- No se usa serif en ninguna parte de la interfaz (retirado el 2026-10-26). `headlineSmall` es el único slot de titular que se declara y se usa en estados vacíos, errores, hoja de curso y diálogo de borrado.
+- La jerarquía sin título se apoya en tres señales: la fecha como eyebrow `labelSmall` uppercase, los conteos como texto `numeric`/`bodyMedium` según el encabezado, y las secciones con `labelSmall` uppercase. Ninguna de las tres compite con el `titleMedium` de las filas.
+- El uppercase se aplica solo a `labelSmall` (fecha y secciones); nunca a botones ni a texto de conteo.
 - `editorTitle` y `editorBody` usan `BasicTextField` sin caja: placeholder en `onSurfaceVariant`, cursor y selección en `tertiary`.
 - Ancho de lectura máximo 680 dp; en pantallas anchas el contenido se centra.
 - Máximo 3 líneas en la lista, con elipsis; el `contentDescription` de TalkBack incluye el título completo. En el editor, sin límite de líneas.
@@ -257,10 +215,10 @@ Estilos extra (fuera de `Typography`, en `NotallyType`):
 | space3 | 12 | Padding interno de tarjeta compacta, gap entre tarjetas |
 | space4 | 16 | Padding interno estándar, gap entre propiedades |
 | space5 | 24 | Entre secciones, margen superior de encabezado |
-| space6 | 32 | Entre bloques mayores (título editorial → contenido) |
+| space6 | 32 | Entre bloques mayores; ya no separa títulos de pantalla |
 | space7 | 48 | Reserva superior en estados vacíos; target táctil |
 - Margen lateral de pantalla: 20 dp (24 dp en ≥ 600 dp).
-- Padding inferior de listas: 96 dp de base o 24 dp si no hay FAB. Con un FAB superpuesto se suma su banda (52 dp de alto + 16 dp de margen = 68 dp): Hoy usa 164 dp para que la última fila quede siempre por encima del FAB, a cualquier escala de fuente.
+- Padding inferior de listas: 96 dp con el cluster de §6 (56 del cluster + 16 de margen + 24 de aire) mediante `rellenoInferiorLista`; la banda de 68 dp que sumaba un FAB superpuesto ya no se aplica.
 - No se usa `Spacer` para separar secciones desplazables: va en `contentPadding`.
 
 ### 4.2 Radios
@@ -281,12 +239,14 @@ Estilos extra (fuera de `Typography`, en `NotallyType`):
 |---|---|---|---|
 | 0 | Pantallas, filas, tarjetas, secciones | 0 dp | surface / surfaceContainerLow |
 | 1 | Fila presionada, selección | 0 dp | surfaceContainerLow (borde opcional) |
-| 2 | FAB | 2 dp | primary |
+| — | FAB dentro del cluster (§6) | 3 dp (los aporta el cluster) | primary |
 | 2 | Toolbar flotante | 0 dp | surfaceContainerHigh + borde outlineVariant |
 | 2 | Snackbar | 3 dp | inverseSurface |
 | 3 | Diálogo | 3 dp | surfaceContainerLowest |
+| 3 | Cluster de navegación flotante (§6) | 3 dp | surfaceContainerHigh (píldora) + primary (FAB), sin borde |
 | — | Bottom sheet | 0 dp | surfaceContainerLow + scrim 32 % |
 - Regla: **sombra solo si el componente se superpone al contenido**, y el borde sustituye a la sombra cuando el contraste tonal basta. Nunca borde + sombra difusa a la vez. Una tarjeta dentro del flujo nunca lleva sombra.
+- **Cluster flotante — justificación y detalle:** es el único caso donde una pieza de navegación se superpone a contenido desplazable, así que la sombra está permitida; 3 dp es una sombra de contacto, no la niebla de 8+ dp prohibida en §1, y no lleva borde para no caer en "borde + sombra". La píldora y el FAB aplican el mismo `shadow(3.dp)` sobre su propia silueta; en anchos de 344 dp o más quedan separados al menos 12 dp, por lo que las sombras no se suman. A 320 dp el hueco es 0 (siluetas tangentes, sin solape) y las sombras pueden tocarse en la tangente; se acepta porque la alternativa es descentrar la píldora. El FAB no añade un segundo nivel: sigue siendo 3 dp, no 2 + 3.
 - Borde de 1 dp `outlineVariant` para agrupar; 1 dp `outline` para delimitar un control interactivo.
 - Altura táctil mínima 48×48 dp en todo control; el checkbox dibuja 20 dp pero su target es 48 dp.
 
@@ -307,14 +267,19 @@ Constantes propias (los valores de `MotionScheme` expressive de material3 están
 
 | Patrón | Interacción | Spec | Referencia |
 |---|---|---|---|
-| 1. Transición de contenido | Abrir editor / volver; cambio de pestaña | Fade-through 180 ms (`FastOutSlowInEasing`), sin slide en editor; en tabs, fade 120 ms | Debe sentirse inmediato; el editor no "vuela" desde abajo |
+| 1. Transición de contenido | Abrir editor / volver; cambio de pestaña | Fade-through 180 ms (`FastOutSlowInEasing`), sin slide en editor; en tabs, slide horizontal direccional 180 ms + fade-in 120 ms | Debe sentirse inmediato; el editor no "vuela" desde abajo |
 | 2. Expansión espacial | Expandir "Completadas", revelar subtareas, abrir hoja de FAB si existiera | `spatialDefault` sobre tamaño + fade 120 ms | ~300–400 ms hasta reposo; sin rebote en contenedores |
 | 3. Confirmación de estado | Marcar tarea/subtarea, seleccionar chip, check del checkbox | color 120 ms (`effectsDefault`); trazo del check 160 ms; escala del check 0.9→1.0 con `spatialFast` solo en el icono | El único rebote permitido, y solo en el check |
 
 Reglas:
+- **Cambio de pestaña (uso del patrón 1, no un patrón nuevo).** El contenido entra y sale con un slide horizontal de **ancho completo** (la distancia es el ancho del contenedor, `it` en `slideInHorizontally`/`slideOutHorizontally`) durante **180 ms** con `FastOutSlowInEasing`, más un fade-in de **120 ms** del contenido entrante. Las dos pantallas se desplazan en paralelo con la misma fracción de recorrido, así que en todo momento se reparten el ancho exactamente y nunca se ve un hueco de fondo entre ellas; por eso no hace falta `SizeTransform(clip = false)`. El contenido saliente **no** se desvanece: si lo hiciera, descubriría el papel antes de salir y el cambio parecería una pérdida de contenido. Sin escala, sin rebote, sin parallax y sin fundido de fondo a negro.
+- **Dirección por índice de navegación.** `Hoy = 0`, `Cursos = 1`, `Ajustes = 2` (`Destino.indicePestana`). Ir a un índice **mayor** (Hoy → Cursos) hace que la pantalla nueva entre **desde la derecha** y la anterior salga **hacia la izquierda**, la convención estándar de push en Android. Ir a un índice **menor** (Ajustes → Hoy) invierte la dirección.
+- **El cluster de §6 es fijo.** La píldora y el FAB viven fuera del contenido animado: no se desplazan, no cambian de opacidad ni reciben el slide. Su visibilidad por scroll sigue reiniciándose al cambiar de pestaña, sin sumar otro fade al de la pestaña.
+- **Primera composición sin animación.** `AnimatedContent` arranca con `initialState == targetState` (la pestaña restaurada), así que abrir la app o volver del editor no dispara el slide: la primera pestaña aparece ya en su sitio.
 - Sin animaciones de entrada por fila, sin parallax, sin stagger, sin animación de fondo.
+- **Indicador del cluster (§6):** es un **uso del patrón 2**, no un cuarto patrón. Un único indicador se desplaza en x con `spatialDefault`; el tinte del icono usa el mismo spring para llegar en paralelo. El tinte no sigue el patrón 3 (`effectsDefault` a 1600 de stiffness acabaría ~100 ms antes que la cápsula y se vería el icono "activado" sobre un relleno que aún viaja). No se animan el ancho de la cápsula, el FAB ni la posición del cluster, y los iconos no escalan ni rebotan.
 - La lista puede animar reubicación al cambiar de sección con `animateItem` 220 ms; no animar el alta inicial.
-- Se respeta la escala de animación del sistema (`MotionDurationScale` / "Quitar animaciones"): si es 0, todo es instantáneo. No se fuerza duración.
+- Se respeta la escala de animación del sistema (`MotionDurationScale` / "Quitar animaciones"): si es 0, todo es instantáneo. No se fuerza duración. En el cambio de pestaña, escala 0 significa salto directo al contenido destino, sin slide ni fade intermedio.
 - Mostrar/ocultar el FAB al hacer scroll: fade + escala 0.9→1 en 150 ms (patrón 2); se detiene si el scroll cambia de dirección.
 - Cambio de tema: sin crossfade largo; 150 ms como máximo.
 - Haptics: solo al completar (una vez) y al cruzar el umbral de swipe. Nunca en cada tick, scroll o apertura.
@@ -323,10 +288,26 @@ Reglas:
 
 ## 6. Navegación y composición
 
-- **Barra inferior:** `ShortNavigationBar` (público y estable en 1.4.0) con 3 destinos: Hoy, Materias, Ajustes. Icono arriba, etiqueta siempre visible. Altura 64 dp + inset de navegación. Fallback si el componente falla en QA: `NavigationBar`.
-- Colores de la barra: contenedor `surface`; indicador `primaryContainer`; icono seleccionado `onPrimaryContainer`; etiqueta seleccionada `onSurface`; inactivos `onSurfaceVariant`. Sin badges.
-- El editor es una ruta completa sin barra inferior.
-- Insets: edge-to-edge; `Scaffold` con `safeDrawing`; el editor aplica `imePadding` a la toolbar. Barras del sistema transparentes con iconos oscuros en tema claro y claros en oscuro.
+- **Cluster inferior flotante (implementado y cableado 2026-10-26).** Barra de navegación en píldora + FAB de Hoy como una sola pieza apoyada sobre el contenido. Sustituye a la barra inferior en flujo: la implementación activa es `FloatingNavBar` con 3 destinos (Hoy, Cursos, Ajustes), compuesta desde `NotallyRoot`; no queda barra inferior en flujo.
+  - **Composición (corregido 2026-10-26):** un `Box` con altura fija de 56 dp. La píldora va en `Alignment.Center` del ancho disponible y el FAB en `Alignment.CenterEnd`, **anclado** al margen lateral que aplica el root (20 dp; 24 dp en ≥ 600 dp). El FAB no participa del layout de la píldora: aparecer o desaparecer no mueve la píldora ni cambia la altura del cluster. Antes píldora y FAB eran hijos de un `Row` centrado; al faltar el FAB (Cursos/Ajustes) el centro del `Row` se desplazaba y todo el cluster saltaba.
+  - **Píldora:** alto 56 dp, radio `shapeFull`, contenedor `surfaceContainerHigh` (`#E9E4DC`), padding horizontal 8 dp, sin borde. No se estira: envuelve su contenido y mide 176 dp con 3 destinos.
+  - **Destino:** target 48 × 48 dp, separación 8 dp entre destinos; icono de 24 dp, `onSurfaceVariant` inactivo. Sin etiquetas visibles: la decisión y sus requisitos de TalkBack están en §9.2.
+  - **Indicador de selección (actualizado 2026-10-26):** **un solo** indicador compartido, cápsula **rellena** de 44 × 40 dp (radio 20 dp) con `primary` de fondo. Ocupa el centro del slot activo y **se desplaza** entre slots con `spatialDefault` (§5); no hay una cápsula por destino, así que nunca aparecen dos rellenos ni fundidos de entrada/salida. El destino que deja el indicador vuelve a `onSurfaceVariant` y el que lo recibe pasa a `onPrimary` con el mismo spring, en paralelo al desplazamiento. Su x es `índice × 56 + 2` (48 dp de target + 8 dp de hueco + 2 dp de aire), relativa a la fila de slots y no a la pantalla: la píldora ya no se recentra al faltar el FAB y el FAB no entra en la aritmética. No cambia de tamaño ni de posición vertical al pulsar. Sin trazo, sin borde y sin subrayado: la selección se lee por la **presencia de una forma rellena** más el salto de contraste, nunca por una línea. Se descartó el óvalo `primaryContainer` porque sobre `surfaceContainerHigh` da **1.03:1**, indistinguible a simple vista: era el trazo el que cargaba con la señal, y por eso se elimina junto con el óvalo. Ratios del relleno nuevo: `onPrimary`/`primary` = 14.99:1; `primary`/`surfaceContainerHigh` = 12.35:1.
+  - **Hueco píldora–FAB (corregido 2026-10-26):** deja de ser un `Spacer` de 12 dp fijo y pasa a ser emergente del anclaje: `hueco = ancho/2 − 160` con márgenes de 20 dp. A **360 dp** son 20 dp; a **344 dp** son 12 dp; a **320 dp** son 0 dp (siluetas tangentes, sin solape: 72→248 la píldora y 248→300 el FAB). Por debajo de 344 dp el hueco se cierra antes que descentrar la píldora o mover el FAB de su margen; es la única consecuencia aceptada de no compartir flujo.
+  - **FAB:** el de §7.10, anclado a `Alignment.CenterEnd`; no reserva hueco propio si `accionPrincipal` es nulo y su fade+escala de 150 ms no altera el layout.
+  - **Márgenes:** 16 dp por encima del inset de navegación y 20 dp laterales (24 dp en ≥ 600 dp). Los aplica el root por `modifier`; el componente no lee `WindowInsets`.
+  - **Sombra:** un solo nivel de 3 dp para las dos siluetas (§4.3).
+  - **≥ 600 dp:** el cluster se centra dentro del ancho de composición de 720 dp y no crece ni se estira; el ancho de lectura de 680 dp de §4.1 sigue rigiendo el contenido.
+  - **Sin FAB:** si la pantalla no ofrece acción principal (`accionPrincipal = null`, p. ej. Hoy sin tareas o Materias/Ajustes), el FAB no se compone; la píldora permanece exactamente en el mismo centro y el cluster conserva 56 dp de alto.
+  - **Ripple del destino (corregido 2026-10-26):** la indication vive en una cápsula de 44 × 40 recortada a radio 20, centrada en el target de 48 dp; el `selectable` del slot usa `indication = null` y conserva el gesto, el foco y la semántica. Es una sola indication por destino: el indicador compartido no tiene ripple propio. El pressed no cambia tamaño, padding ni la posición del icono.
+  - **Reserva de contenido:** el cluster se superpone al scroll. La lista reserva 96 dp desde el inset de navegación (56 del cluster + 16 de margen + 24 de aire), que es el `rellenoInferiorLista` existente. La banda extra de 68 dp de §4.1 ya no se aplica: el FAB forma parte del cluster.
+  - **Colores:** píldora `surfaceContainerHigh`; iconos inactivos `onSurfaceVariant`; selección `primary`/`onPrimary` en cápsula rellena; FAB `primary`/`onPrimary`. Sin badges y sin segundo acento.
+- El editor es una ruta completa sin barra inferior ni cluster.
+- **Cambio de pestaña (2026-10-26).** El orden es `Hoy → Cursos → Ajustes`; el slide usa ese índice (§5). Avanzar entra desde la derecha; retroceder entra desde la izquierda. La transición solo afecta al contenido: el cluster inferior (píldora + FAB) es fijo, no se mueve ni se desvanece con la pestaña, y su visibilidad por scroll se reinicia al cambiar de pestaña como antes.
+  - La primera composición **no anima**: la pestaña restaurada por `rememberSaveable` se pinta directamente, sin slide desde Hoy. Volver del editor tampoco anima la pestaña de origen; el fade del editor es la transición del nodo de ruta, no del tab.
+  - Cada pestaña conserva su scroll y su estado porque el `SaveableStateProvider` sigue envolviendo el contenido; el slide no recrea la pestaña, solo la desplaza. Al cambiar de pestaña se limpia `diaHoySeleccionado` (§7.1.1), de modo que al volver la tira de días no reaparece seleccionada.
+  - El contenido saliente se oculta de accesibilidad mientras dura el recorrido (§9.2).
+- Insets: edge-to-edge; `Scaffold` con `safeDrawing`; el editor aplica `imePadding` a la toolbar. Barras del sistema transparentes con iconos oscuros sobre el fondo claro.
 - Teléfono: una columna. ≥ 600 dp: mismo layout centrado a 720 dp; no se añade rail en V1.
 - Back: el editor guarda antes de salir; no se intercepta el gesto predictivo (sin `BackHandler` que bloquee).
 
@@ -334,19 +315,19 @@ Reglas:
 
 ## 7. Componentes
 
-### 7.1 Encabezado editorial de Hoy
+### 7.1 Encabezado de Hoy (sin título)
 **Anatomía**
-- Eyebrow: `labelSmall` uppercase, `onSurfaceVariant`, "DOMINGO, 25 DE OCTUBRE".
-- Título: `displaySmall` serif, `onSurface`, "Hoy".
-- Resumen: `bodySmall` + `numeric`, `onSurfaceVariant`, "3 de 7 completadas" (solo si hay tareas).
+- Sin título visible: el `displaySmall` "Hoy" se retiró el 2026-10-26 (§13.7).
+- Eyebrow: `labelSmall` uppercase, `onSurfaceVariant`, "LUNES, 26 DE OCTUBRE". Es la única línea de fecha y se conserva aunque la tira esté oculta: aporta mes y fecha completa, que la tira (día abreviado + número) no da.
+- Resumen: `numeric` (12/16, `tnum`), `onSurface`, "3 de 7 completadas" (solo si hay tareas). Es el dato de estado, no un título: va en 12 sp y sin peso editorial.
 - Tira de días: siete celdas, debajo del resumen y antes de los chips (§7.7).
 - Sin iconos, sin avatar, sin campana.
 
-**Medidas:** top 24 dp desde el inset; eyebrow → título 4 dp; título → resumen 8 dp; resumen → tira 16 dp; tira → chips 16 dp; chips → primer bloque 24 dp. Si la tira no se muestra, resumen → chips 16 dp. En ≥ 600 dp se mantienen los márgenes de 24 dp.
+**Medidas:** top 24 dp desde el inset; eyebrow → resumen 4 dp; resumen → tira 16 dp; tira → chips 16 dp; chips → primer bloque 24 dp. Si la tira no se muestra, resumen → chips 16 dp. Sin resumen (sin tareas), el eyebrow queda como única línea. En ≥ 600 dp se mantienen los márgenes de 24 dp.
 
-**Estados:** sin tareas → no se muestra resumen ni tira. Con tareas → el resumen se actualiza en el sitio, sin animación de conteo.
+**Estados:** sin tareas → no se muestra resumen ni tira; la fecha permanece como orientación. Con tareas → el resumen se actualiza en el sitio, sin animación de conteo.
 
-**Micro-interacción:** el título y el resumen no son interactivos; la tira sí, con las reglas siguientes. Ninguna animación de entrada.
+**Micro-interacción:** la fecha y el resumen no son interactivos; la tira sí, con las reglas siguientes. Ninguna animación de entrada.
 
 #### 7.1.1 Tira de días (aprobada 2026-10-26)
 
@@ -368,7 +349,7 @@ Reglas:
 | con pendientes | Barra inferior `outline` visible; el número no cambia |
 | today | Punto de 4 dp `tertiary` junto al día; no cambia el fondo |
 | selected | Fondo `primaryContainer` + borde 1 dp `onSurfaceVariant` + día y número `onPrimaryContainer`; la barra de pendientes pasa a `onPrimaryContainer`. El borde y el cambio de texto son el indicador exigido por §2.1: nunca solo `primaryContainer` |
-| today + selected | Fondo y borde de selected + punto `tertiary` visible (5.95:1 sobre `primaryContainer` claro; 7.19:1 en oscuro) |
+| today + selected | Fondo y borde de selected + punto `tertiary` visible (5.95:1 sobre `primaryContainer`) |
 | focused | Anillo de 2 dp `tertiary` por fuera, con offset 2 dp; se dibuja sobre `surface`, no sobre la celda, y no sustituye al borde de selección |
 | sin pendientes | No es clicable, sin ripple; día y número en `onSurfaceVariant`; TalkBack no anuncia acción |
 
@@ -378,7 +359,7 @@ Reglas:
 - Día futuro con pendientes → expande "Próximas" si está colapsada y baja a la primera fila con esa fecha.
 - Día sin pendientes → no hace nada y no es clicable.
 
-Motivo: filtrar por una fecha arbitraria obligaría a redefinir "Atrasadas", "Para hoy" y "Próximas", el resumen "3 de 7 completadas" y el propio título "Hoy"; además crearía un estado que el modelo de datos actual no necesita. La tira es un atajo a las secciones existentes, no un segundo modelo de agenda. El salto es inmediato, sin animación de scroll; solo el cambio de selección usa 120 ms de color (patrón 3). La selección se conserva hasta que se toca otro día o se cambia de pestaña; no altera secciones, conteos ni el resumen.
+Motivo: filtrar por una fecha arbitraria obligaría a redefinir "Atrasadas", "Para hoy" y "Próximas", el resumen "3 de 7 completadas" y el nombre accesible de la pantalla; además crearía un estado que el modelo de datos actual no necesita. La tira es un atajo a las secciones existentes, no un segundo modelo de agenda. El salto es inmediato, sin animación de scroll; solo el cambio de selección usa 120 ms de color (patrón 3). La selección se conserva hasta que se toca otro día o se cambia de pestaña; no altera secciones, conteos ni el resumen.
 
 **Accesibilidad y 200 %**
 - Etiqueta de celda: "Domingo, 26 de octubre, 4 tareas pendientes."; sin pendientes: "…, sin tareas pendientes." La acción: "Ver tareas en Atrasadas" / "Ver tareas en Para hoy" / "Ver tareas en Próximas".
@@ -399,7 +380,7 @@ Motivo: filtrar por una fecha arbitraria obligaría a redefinir "Atrasadas", "Pa
 
 **Medidas:** alto mínimo 56 dp (padding vertical 12), padding horizontal 0; 8 dp entre el checkbox y el riel, 3 dp de riel y 12 dp hasta el texto (15 dp de sangría reservada siempre); gap entre filas 4 dp; sin divisores.
 
-**Por qué un riel y no una barra.** Una barra de 2 dp × 20 dp pegada al primer glifo se lee como un cursor de texto, sobre todo en tema oscuro y en títulos de una línea. El riel mide 3 dp de grosor y al menos la altura del bloque de texto (≥ 48 dp a 1.0, más con varias líneas o a 200 %), con extremos redondeados y 12 dp de aire: supera con holgura el tamaño de un carácter y se lee como marca de margen. La cobertura (100 % vs 50 % centrada) distingue Alta de Media sin depender del color y el slot fijo conserva la ausencia de jitter.
+**Por qué un riel y no una barra.** Una barra de 2 dp × 20 dp pegada al primer glifo se lee como un cursor de texto, sobre todo en títulos de una línea. El riel mide 3 dp de grosor y al menos la altura del bloque de texto (≥ 48 dp a 1.0, más con varias líneas o a 200 %), con extremos redondeados y 12 dp de aire: supera con holgura el tamaño de un carácter y se lee como marca de margen. La cobertura (100 % vs 50 % centrada) distingue Alta de Media sin depender del color y el slot fijo conserva la ausencia de jitter.
 
 
 **Meta**
@@ -453,7 +434,7 @@ La prioridad manda dentro del bucket, aunque §7.3 ordene las secciones por fech
 **Posición.** Después de los chips, con 24 dp arriba y 24 dp hasta la primera sección. Si no hay candidata, la primera sección empieza a 24 dp de los chips. Ocupa el ancho de contenido, con los márgenes laterales de §4.1.
 
 **Anatomía**
-- Contenedor `inverseSurface`, radio `shapeL` 16, sin borde y sin sombra. En claro es el bloque casi negro (`#2E2A25`); en oscuro es papel sobre tinta (`#ECE7DE`). Se elige `inverseSurface` y no `primary` porque nombra el rol "inverso de la página" y no reutiliza el color de acción del FAB/checkbox. Un bloque fijo oscuro en tema oscuro quedaría a 1.19:1 de `surface` y rompería el límite de 3:1 para componentes no textuales.
+- Contenedor `inverseSurface`, radio `shapeL` 16, sin borde y sin sombra. Es el bloque casi negro (`#2E2A25`), el inverso de la página. Se elige `inverseSurface` y no `primary` porque nombra el rol "inverso de la página" y no reutiliza el color de acción del FAB/checkbox; además contrasta 13.65:1 contra `surface`, muy por encima del 3:1 que exige un componente no textual.
 - Padding 16 dp.
 - Riel de prioridad: 3 dp de ancho, 12 dp de aire hasta el título, extremos redondeados, color `inverseOnSurface`, sangría fija de 15 dp. Alta cubre el 100 % del bloque título + meta y Media el 50 % centrado; Baja no dibuja. Reutiliza la anatomía de §7.2: la cobertura, no el color, distingue alta de media; no hay píldora "Alta" ni borde de prioridad.
 - Eyebrow `labelSmall` uppercase, `inverseOnSurface`: "ATRASADAS", "PARA HOY", "SIN HORA" o "PRÓXIMAS".
@@ -461,14 +442,14 @@ La prioridad manda dentro del bucket, aunque §7.3 ordene las secciones por fech
 - 8 dp; meta `bodySmall`, `inverseOnSurface`: nombre de materia + " · " + etiqueta de entrega ("Hoy", "Vie 31 oct", "Sin fecha"). Sin punto de materia: sobre `inverseSurface` los acentos claros dan 1.97–2.67:1 (Lima 2.67, Lavanda 2.59), por debajo de 3:1; el nombre en texto conserva la identificación.
 - Sin checkbox, sin chevron, sin botón secundario. Toda la tarjeta abre el editor.
 - Alto mínimo 96 dp; crece con el contenido. A 360 dp y 60 caracteres ocupa unas tres líneas a 1.0; a 200 % crece en alto y la página hace scroll, sin recortes ni solapamientos.
-- Contraste real: `inverseOnSurface` / `inverseSurface` = 12.76 claro y 10.95 oscuro. Como referencia, `onPrimary` / `primary` = 14.99 y 12.12; ambos pasan, pero se usa `inverseSurface` por rol, no por urgencia de contraste. El límite del bloque contra `surface` es 13.65 claro / 15.06 oscuro.
+- Contraste real: `inverseOnSurface` / `inverseSurface` = 12.76. Como referencia, `onPrimary` / `primary` = 14.99; ambos pasan, pero se usa `inverseSurface` por rol, no por urgencia de contraste. El límite del bloque contra `surface` es 13.65.
 
 **Estados**
 | Estado | Cambio visual |
 |---|---|
 | default | `inverseSurface`, sin borde |
 | pressed | Ripple `inverseOnSurface`; sin cambio de tamaño ni de color de fondo |
-| focused | Anillo de 2 dp `tertiary` por fuera, offset 2 dp, dibujado sobre `surface` (7.41 claro / 10.84 oscuro); no se dibuja sobre el bloque |
+| focused | Anillo de 2 dp `tertiary` por fuera, offset 2 dp, dibujado sobre `surface` (7.41:1); no se dibuja sobre el bloque |
 | completada / eliminada | No es un estado de la tarjeta: desaparece y se recalcula la siguiente |
 | disabled | No existe |
 
@@ -501,7 +482,7 @@ La prioridad manda dentro del bucket, aunque §7.3 ordene las secciones por fech
 
 **Micro-interacción:** tap abre `ModalBottomSheet` "Editar materia" (nombre, 6 swatches, "Eliminar materia" en `error`). Sin animación de escala.
 
-**Materias — encabezado:** título `displaySmall` "Materias"; subtítulo `bodySmall` "4 materias · 12 pendientes"; línea "5 entregas esta semana" (conteo real, afectado por el inicio de semana). Acción "Nueva materia" como botón circular de 52 dp con `+` e icono de 24 dp (`contentDescription` "Nueva materia", §7.10), alineada al título; se oculta cuando el estado vacío ya ofrece esa acción. Orden de tarjetas: fecha de creación ascendente; sin reordenar en V1.
+**Cursos — encabezado (sin título, 2026-10-26):** primera línea `bodyMedium` (14/22) `onSurfaceVariant`: "4 cursos · 12 pendientes". A 2 dp, segunda línea `bodySmall` (12/16) del mismo color: "5 entregas esta semana" (conteo real, afectado por el inicio de semana). Sin uppercase, sin peso `title*` y sin salto de 8 dp: las dos líneas forman un bloque de metadatos de 40 dp, no un título camuflado. Acción "Nuevo curso" como botón circular de 52 dp con `+` e icono de 24 dp (`contentDescription` "Nuevo curso", §7.10), **centrada verticalmente** con el bloque de dos líneas y separada 16 dp del texto; se oculta cuando el estado vacío ya ofrece esa acción. Orden de tarjetas: fecha de creación ascendente; sin reordenar en V1.
 
 ---
 
@@ -560,7 +541,7 @@ La prioridad manda dentro del bucket, aunque §7.3 ordene las secciones por fech
 **Contador (aprobado 2026-10-26)**
 - Cada chip muestra un número a la derecha del texto, en `numeric` (12/16, `tnum`), separado por 4 dp y alineado a la línea base. Sin fondo: el contenedor del chip pasa a través, así que nunca compite con `tertiaryContainer`. No es una píldora ni un badge; no lleva borde propio.
 - Slot de ancho mínimo 24 dp, alineado a la derecha. El ancho del chip no cambia al alternar selección; al pasar de dos a tres cifras el slot crece lo necesario (a 1.0, tres dígitos caben en 24 dp; a 200 %, el chip crece y la fila se desplaza). No se abrevia, no se redondea y no se usa "99+": el número es el conteo real.
-- Color: `onSurfaceVariant` sin seleccionar; `onTertiaryContainer` seleccionado. Contrastes 7.06 / 10.41 en claro y 8.16 / 8.34 en oscuro (≥ 4.5).
+- Color: `onSurfaceVariant` sin seleccionar; `onTertiaryContainer` seleccionado. Contrastes 7.06 / 10.41 (≥ 4.5).
 - Qué cuenta cada chip, sobre el snapshot vigente:
   - "Todas": tareas distintas que renderiza la vista por secciones = Atrasadas + Para hoy + Sin hora + Próximas + Completadas de hoy. Incluye la focal una sola vez y cuenta también las secciones colapsadas.
   - "Pendientes": Atrasadas + Para hoy + Sin hora + Próximas.
@@ -589,17 +570,19 @@ La prioridad manda dentro del bucket, aunque §7.3 ordene las secciones por fech
 ---
 
 ### 7.10 FAB y menú de FAB
-- **V1 (actualizado 2026-10-26):** un solo `FloatingActionButton` de 52 dp, **circular** (`CircleShape`), `primary`/`onPrimary`, icono `+` de 24 dp, `contentDescription` "Nueva tarea", márgenes 16 dp sobre la barra de navegación, sombra 2 dp. Sin texto extendido (el contexto "Hoy" lo hace obvio). El target es el propio círculo de 52 dp; no se añade halo ni badge.
-- **"+" de Materias (§7.4):** mismo lenguaje circular de 52 dp, `primary`/`onPrimary`, icono 24 dp, `contentDescription` "Nueva materia", alineado al título. Sustituye al `IconButton` de 48 dp; el target sube a 52 y no lleva sombra porque vive en el flujo del encabezado, no se superpone.
-- Foco de ambos: anillo de 2 dp `tertiary` por fuera del círculo, offset 2 dp, dibujado sobre `surface`; no se depende del ripple. Pressed: ripple estándar, sin cambio de tamaño ni de color. No hay estado disabled; el "+" se oculta cuando el estado vacío ya ofrece "Nueva materia".
-- Se oculta al hacer scroll hacia abajo y reaparece al subir (solo en Hoy), con fade/scale 150 ms; nunca se mueve con el dedo. También se oculta cuando Hoy no tiene ninguna tarea: en ese caso la única acción es el CTA del estado vacío.
+- **V1 (actualizado 2026-10-26):** un solo `FloatingActionButton` de 52 dp, **circular** (`CircleShape`), `primary`/`onPrimary`, icono `+` de 24 dp, `contentDescription` "Nueva tarea". Sin texto extendido (el contexto "Hoy" lo hace obvio). El target es el propio círculo de 52 dp; no se añade halo ni badge.
+- **Ubicación (corregido 2026-10-26, implementado y cableado):** el FAB no se declara en `TodayScreen` como `floatingActionButton` del `Scaffold`; está **anclado** al borde final del cluster de §6 (`Alignment.CenterEnd`), centrado vertical con él (52 dp dentro de los 56 del cluster). Ya no es un hermano de la píldora en un `Row`: no empuja su centro ni interviene en su layout, así que aparecer o desaparecer no mueve la navegación. El margen lateral es el del cluster (20 dp; 24 dp en ≥ 600 dp) y el inferior lo aporta el cluster (16 dp sobre el inset de navegación). El hueco hasta la píldora es emergente (20 dp a 360, 12 dp a 344, 0 dp a 320); no es un `Spacer` fijo. La sombra la lleva el cluster con 3 dp (§4.3); el FAB no suma otro nivel.
+- **Scroll:** se oculta el **cluster completo** (píldora + FAB) como una unidad, con fade + escala 0.9→1 en 150 ms (§5), nunca traducción; reaparece al subir y se detiene si el scroll cambia de dirección. No se oculta solo el FAB: con el layout actual la píldora ya no se recentraría, pero ocultar solo la acción dejaría dos movimientos independientes sobre la misma pieza y la navegación quedaría sin su acción al volver. La navegación nunca queda inaccesible por scroll.
+- **Sin FAB disponible:** si Hoy no tiene ninguna tarea, la única acción es el CTA del estado vacío; entonces `accionPrincipal = null`, el FAB no se compone, no se reserva su hueco y la píldora se centra sola (§6). Lo mismo en pantallas sin acción principal.
+- **"+" de Cursos (§7.4):** mismo lenguaje circular de 52 dp, `primary`/`onPrimary`, icono 24 dp, `contentDescription` "Nuevo curso", **centrado verticalmente con el bloque de conteos** (no con una línea de título que ya no existe). Sustituye al `IconButton` de 48 dp; el target sube a 52 y no lleva sombra porque vive en el flujo del encabezado, no se superpone.
+- Foco de ambos: anillo de 2 dp `tertiary` por fuera del círculo, offset 2 dp, dibujado sobre `surface`; no se depende del ripple. Pressed: ripple estándar, sin cambio de tamaño ni de color. No hay estado disabled; el "+" se oculta cuando el estado vacío ya ofrece "Nuevo curso".
 - **Menú de FAB (solo si en V1.1 aparece una segunda acción global):** emulación con overlay propio: 1 acción principal + hasta 3 secundarias en columna sobre el FAB, etiquetas a la izquierda en `labelLarge`, contenedor `surfaceContainerHigh` radio 16. Apertura 180 ms (fade + escala 0.9→1, `spatialFast`), cierre 120 ms; sin stagger; scrim 0; cierra con back, tap fuera y al elegir. No se implementa en V1.
-- Estados del FAB y del "+": default, pressed (ripple, sin cambio de tamaño), focused (anillo 2 dp `tertiary` exterior); disabled no existe. Menú: cerrado, abierto, ítem pressed/focused; sin estado disabled. No hay nav flotante oscura ni badges en V1.
+- Estados del FAB y del "+": default, pressed (ripple, sin cambio de tamaño), focused (anillo 2 dp `tertiary` exterior); disabled no existe. Menú: cerrado, abierto, ítem pressed/focused; sin estado disabled. **Sin barra de 4 iconos ni badges:** la navegación aprobada es la píldora de 3 iconos de §6.
 
 ---
 
 ### 7.11 Iconografía
-- Material Symbols Outlined, 24 dp, peso 400, sin relleno. Se copian como vector XML locales (12 iconos): check, add, calendar, book, settings, more_horiz, arrow_back, delete, flag, checklist, close, chevron_right.
+- Material Symbols Outlined, 24 dp, peso 400, sin relleno. Se copian como vector XML locales (11 iconos): check, add, calendar, book, settings, more_horiz, arrow_back, delete, flag, checklist, chevron_right.
 - Motivo: `material3 1.4.0` ya no incluye la librería `material-icons`; añadirla engorda el build y está desaconsejada por Android. Sin red en runtime.
 - Color: `onSurfaceVariant` inactivo; `onSurface` activo; `error` solo para eliminar. Tamaño visual 20–24 dp dentro de target 48.
 
@@ -608,13 +591,12 @@ La prioridad manda dentro del bucket, aunque §7.3 ordene las secciones por fech
 ### 7.12 Ajustes
 
 **Anatomía**
-- Título `displaySmall` "Ajustes"; sin barra superior ni iconos decorativos. Márgenes 20 dp; top 24 dp desde el inset; título → primera sección 32 dp.
-- Secciones con eyebrow `labelSmall` uppercase: "APARIENCIA", "AGENDA", "ACERCA DE"; 24 dp entre secciones.
+- Sin título visible (retirado el 2026-10-26). Sin barra superior ni iconos decorativos. Márgenes 20 dp; top 24 dp desde el inset; la primera sección arranca directamente, sin el salto editorial de 32 dp que separaba el título.
+- Secciones con eyebrow `labelSmall` uppercase; 24 dp entre secciones.
 - Filas de 56 dp: etiqueta `bodyLarge` a la izquierda; valor `bodyMedium` `onSurfaceVariant` y control a la derecha. Sin iconos a la izquierda. Los switches tienen target de 48×48 dp aunque su dibujo sea 52×32.
 - Separador de 1 dp `outlineVariant` entre filas de una misma sección; ninguno antes de la primera ni después de la última.
 
 **Contenido**
-- Apariencia → "Tema" (valor: Sistema / Claro / Oscuro) abre bottom sheet con 3 opciones y check `tertiary`.
 - Agenda → "La semana inicia en lunes" con switch, activado por defecto; soporte "Cambia el conteo de entregas de la semana.".
 - Acerca de → "Versión 1.0" como texto no interactivo. Sin enlaces falsos ni redes.
 
@@ -628,7 +610,7 @@ La prioridad manda dentro del bucket, aunque §7.3 ordene las secciones por fech
 | switch on | Track `primary`, thumb `onPrimary` |
 | disabled (API 30) | Etiqueta y switch al 38 %; soporte legible al 100 % |
 
-**Micro-interacción:** el switch conmuta sin animación de tamaño de fila; el thumb usa la animación estándar del componente. Cambiar tema no reinicia la pantalla ni pierde la posición de scroll.
+**Micro-interacción:** el switch conmuta sin animación de tamaño de fila; el thumb usa la animación estándar del componente.
 
 ---
 
@@ -716,8 +698,6 @@ La prioridad manda dentro del bucket, aunque §7.3 ordene las secciones por fech
 | confirm.deleteSubject.title | "¿Eliminar la materia?" |
 | confirm.deleteSubject.body | "«%1$s» tiene %2$d tareas. Quedarán sin materia." |
 | confirm.deleteSubject.bodyNoTasks | "Se eliminará «%s»." |
-| settings.appearance | "Apariencia" |
-| settings.theme / system / light / dark | "Tema" / "Sistema" / "Claro" / "Oscuro" |
 | settings.agenda | "Agenda" |
 | settings.week | "La semana inicia en lunes" |
 | settings.week.support | "Cambia el conteo de entregas de la semana." |
@@ -736,8 +716,8 @@ Reglas de formato:
 ## 9. Accesibilidad
 
 ### 9.1 Contraste y tamaño
-- Texto normal ≥ 4.5:1; texto ≥ 18 sp regular o ≥ 14 sp bold ≥ 3:1. Todos los pares de la sección 2.4 pasan.
-- `outlineVariant` no se usa como único límite de un control (1.47:1); para inputs y checkbox se usa `outline` (3.64:1 claro).
+- Texto normal ≥ 4.5:1; texto ≥ 18 sp regular o ≥ 14 sp bold ≥ 3:1. Todos los pares de la sección 2.3 pasan.
+- `outlineVariant` no se usa como único límite de un control (1.47:1); para inputs y checkbox se usa `outline` (3.64:1).
 - Targets de 48×48 dp; separación mínima entre targets 8 dp. Chips y checkboxes usan `minimumInteractiveComponentSize`.
 - No se usa el color como único portador de estado: "Atrasada" lleva texto, "Completada" lleva tachado + check, y la prioridad cambia la cobertura del riel además de su color.
 
@@ -748,8 +728,16 @@ Reglas de formato:
 - **Acciones personalizadas de la fila:** "Completar", "Posponer a mañana", "Eliminar".
 - **SubjectCard:** "Cálculo diferencial. 3 de 7 tareas completadas."; `onClickLabel` "Editar materia".
 - **Progreso:** la barra se marca como decorativa; el conteo "3 de 7" es el texto que se anuncia. No se crea un nodo de progreso duplicado.
-- **Encabezados:** `heading()` en títulos de pantalla y de sección ("Atrasadas", "Para hoy").
+- **Identidad de pantalla:** cada pestaña declara `Modifier.semantics { paneTitle = … }` en su raíz con el nombre de `nav_hoy` / `nav_cursos` / `nav_ajustes`. TalkBack anuncia en qué pantalla está aunque no haya título visible; el `clearAndSetSemantics` del tránsito elimina el subárbol saliente, así que el panel no se duplica. `heading()` se reserva a encabezados de sección ("Atrasadas", "Para hoy") y a títulos internos de diálogos y estados vacíos (`headlineSmall`), nunca a la pantalla.
 - **FAB:** "Nueva tarea" (no "Agregar", que es ambiguo).
+- **Cluster de navegación (§6):** decisión cerrada el 2026-10-26: **solo iconos, sin etiquetas visibles**. Para que eso no degrade TalkBack:
+  - Cada destino es un nodo propio (`selectable`, `role = Tab`) con `contentDescription` igual a su etiqueta visible histórica ("Hoy", "Cursos", "Ajustes"), tomada de `strings.xml`; no se usa el nombre del icono ni una descripción inventada.
+  - El estado se anuncia: el nodo expone `selected` y `stateDescription` "Seleccionada" / "No seleccionada" (este último sustituye el texto automático, por eso se escribe en español y no se duplica). Sin el estado, un lector de pantalla no puede distinguir la pestaña actual.
+  - El FAB del cluster conserva "Nueva tarea" y rol botón; la píldora en sí no crea nodo contenedor (no hay `mergeDescendants` en el `Row`) para no fusionar los tres destinos.
+  - La cápsula de selección es decorativa: no añade descripciones. Al ser única y desplazarse, el cambio de pestaña no anuncia nada extra; el estado ya viaja en `selected`/`stateDescription`.
+  - **Con animaciones del sistema desactivadas** (`MotionDurationScale` = 0 / "Quitar animaciones"): el indicador salta directo al slot destino y el tinte del icono cambia sin transición, en el mismo frame. No se pierde información: la pestaña activa sigue expuesta por `selected`, `stateDescription` y el contraste `primary`/`onPrimary` en reposo.
+  - Consecuencia para QA: la etiqueta accesible no puede depender de la etiqueta visual, así que se verifica con TalkBack que se anuncien tres destinos, sus nombres y cuál está seleccionado.
+  - **Cambio de pestaña y TalkBack (2026-10-26).** Durante el slide conviven dos subárboles en composición. El saliente se envuelve en `clearAndSetSemantics {}` en cuanto deja de ser el destino, de modo que TalkBack solo encuentra la pantalla entrante y no lee el contenido en tránsito dos veces ni anuncia la pantalla que se va. El foco no se mueve al contenido automáticamente: el anuncio del cambio lo da el destino de la píldora con su `selected`/`stateDescription`, y el usuario recorre la pantalla nueva cuando quiera. Con `MotionDurationScale = 0` no hay subárbol saliente que ocultar: el cambio es inmediato y la semántica queda solo en el destino, igual que en reposo.
 - **Snackbar:** `liveRegion = Polite`; "Tarea completada" se anuncia con la acción "Deshacer".
 - **Errores inline:** `liveRegion = Assertive` solo para el banner de error; el texto no desaparece solo.
 - Iconos decorativos con `contentDescription = null`; iconos de acción con descripción en español.
@@ -759,7 +747,7 @@ Reglas de formato:
 - Título de tarea: máximo 3 líneas; meta: máximo 2 líneas; sin truncar el nombre de la materia en el editor. La tarjeta focal (§7.3.1) es la excepción: crece sin `maxLines` para no truncar un título de 60 caracteres.
 - Fila de propiedad: si `fontScale ≥ 1.3`, etiqueta arriba y valor debajo (columna), no en dos columnas.
 - Toolbar flotante: si `fontScale ≥ 1.5`, iconos sin etiqueta, manteniendo `contentDescription`.
-- Barra de navegación: etiquetas en 1–2 líneas; la barra puede crecer hasta 88 dp. Prohibido ellipsis en "Materias"/"Ajustes".
+- Barra de navegación: etiquetas en 1–2 líneas; la barra puede crecer hasta 88 dp. Prohibido ellipsis en "Materias"/"Ajustes". Con el cluster de §6 no hay etiquetas que escalar: a 200 % los iconos siguen en 24 dp, el target en 48 × 48 y la píldora en 56 dp; no se recorta nada y la navegación no pierde área táctil.
 - `maxLines` nunca en notas ni en el título del editor.
 - Probar 1.0, 1.3, 1.5 y 2.0 en 360 dp de ancho; sin recortes. El único scroll horizontal permitido es el de chips a 200 %.
 
@@ -787,14 +775,14 @@ Regla de decisión: **usar** si el símbolo compila con material3 1.4.0; **emula
 | `ButtonGroup`, `SplitButton` | no existen | `SegmentedButton` (estable) o `Row` |
 | `LoadingIndicator` / wavy | no existen | `CircularProgressIndicator` solo si hace falta |
 | `LargeFlexibleTopAppBar`, `TwoRowsTopAppBar` | internal; no públicos | Encabezado propio (sección 7.1) |
-| `ShortNavigationBar` | público y estable | Usar; fallback `NavigationBar` |
+| `NavigationBar` | público y estable | No se usa: el cluster de §6 es un composable propio |
 | List items Expressive / `SegmentedListItem` | no disponibles | Filas propias; `ListItem` estándar donde encaje |
 
 **Alternativa si el orquestador decide subir a `material3 1.5.0-alpha`:** sobrescribir solo `androidx.compose.material3:material3` (no todo el BOM) y usar `MaterialExpressiveTheme`, `MotionScheme`, `MaterialShapes`, `FAB menu` y `HorizontalFloatingToolbar`. Riesgo: cambio de API entre alphas y QA visual; la paleta y la tipografía de este documento siguen siendo válidas. No mezclar ambas rutas en la misma entrega.
 
 **Otros riesgos**
 1. **Iconos:** `material3 1.4.0` ya no arrastra `material-icons-core`; `Icons.Default.*` no compila sin dependencia. Añadir 12 vector XML de Material Symbols; no añadir la librería completa.
-2. **Serif del sistema:** fabricantes pueden sustituir la familia. Validar en Samsung/Xiaomi; si las métricas rompen, el fallback es `SansSerif` solo en `displaySmall`, nunca en toda la escala.
+2. **Serif del sistema (riesgo retirado el 2026-10-26):** la app no usa `FontFamily.Serif` ni declara slots `display*`/`headlineLarge`/`headlineMedium`; la sustitución de la familia serif por el fabricante no afecta a la interfaz.
 3. **`enableEdgeToEdge` + IME:** el editor debe usar `imePadding` y `Scaffold` con insets; sin esto la toolbar queda debajo del teclado.
 4. **Autosave y back predictivo:** guardar con debounce y flush en `DisposableEffect`/`onStop`; no bloquear el gesto del sistema.
 5. **Ajuste "semana inicia lunes":** debe afectar el conteo "entregas esta semana" de Materias. Si ese conteo no se implementa, el interruptor se oculta: no se publican ajustes muertos.
@@ -807,18 +795,18 @@ Regla de decisión: **usar** si el símbolo compila con material3 1.4.0; **emula
 
 - [ ] No hay ningún gradiente en la app (buscar `Brush.` / `linearGradient`).
 - [ ] No hay `blur`, `graphicsLayer` con blur ni superficies translúcidas.
-- [ ] Ninguna tarjeta usa sombra > 0 dp; solo FAB, snackbar y diálogo tienen 2–3 dp; la toolbar flotante usa borde, no sombra.
+- [ ] Ninguna tarjeta usa sombra > 0 dp; solo el cluster de navegación (con su FAB), snackbar y diálogo tienen 2–3 dp; la toolbar flotante usa borde, no sombra.
 - [ ] No hay emojis en strings ni en iconos; todos los iconos son vector XML de 24 dp.
 - [ ] Ninguna cifra mostrada es constante o de ejemplo: todos los conteos vienen de Room.
 - [ ] Los empty states tienen texto + acción y no ilustración.
 - [ ] No existe shimmer ni skeleton animado; la carga local no simula latencia.
 - [ ] No hay badges "Beta", "Nuevo" ni "AI".
-- [ ] Ningún título de sección usa serif; solo los títulos de pantalla.
+- [ ] No queda ningún uso de serif y no quedan `display*` ni `headlineLarge`/`headlineMedium`; esos slots no se declaran y la jerarquía usa fecha, conteos y secciones.
 - [ ] Máximo un color de acento de interacción (`tertiary`); las materias no colorean botones ni nav.
 - [ ] No hay dos CTAs primarios en la misma vista.
 - [ ] Ninguna animación de entrada por fila, parallax ni stagger.
 - [ ] El radio máximo en contenido es 28 dp (solo sheets/diálogos); las filas usan 0–12.
-- [ ] `surface` no es `#FFFFFF` y `onSurface` no es `#000000` en claro; en oscuro tampoco.
+- [ ] `surface` no es `#FFFFFF` y `onSurface` no es `#000000`.
 - [ ] Todos los textos de UI están en español y sin signos de exclamación.
 - [ ] Todo control mide al menos 48×48 dp y tiene etiqueta accesible.
 - [ ] "Atrasada" y "Completada" se distinguen sin depender solo del color.
@@ -835,28 +823,32 @@ Regla de decisión: **usar** si el símbolo compila con material3 1.4.0; **emula
 |---|---|---|
 | BOM `2026.02.01` → `material3 1.4.0` | POM oficial: `https://dl.google.com/dl/android/maven2/androidx/compose/compose-bom/2026.02.01/compose-bom-2026.02.01.pom` | consultado 2026-10-25 |
 | 1.4.0 estable; eliminación de `ExperimentalMaterial3ExpressiveApi` en beta01; fin de `material-icons` | Release notes de Compose Material 3: `https://developer.android.com/jetpack/androidx/releases/compose-material3` (1.4.0: 2025-09-24; beta01: 2025-07-30) | consultado 2026-10-25 |
-| `MaterialExpressiveTheme`/`MotionScheme` internal; shapes 4/8/12/16/28/48; springs expressive 0.8/380, 0.6/800, 1.0/1600, 1.0/3800; `ShortNavigationBar` público | Inspección del artefacto `material3-android-1.4.0-sources.jar` (Maven de Google) | 2026-10-25 |
+| `MaterialExpressiveTheme`/`MotionScheme` internal; shapes 4/8/12/16/28/48; springs expressive 0.8/380, 0.6/800, 1.0/1600, 1.0/3800; `NavigationBar` público | Inspección del artefacto `material3-android-1.4.0-sources.jar` (Maven de Google) | 2026-10-25 |
 | Fórmula de contraste y umbrales 4.5/3.0 | WCAG 2.2, `https://www.w3.org/TR/WCAG22/#dfn-contrast-ratio` | consultado 2026-10-25 |
 | Simulación de deuteranopía/protanopía (severidad 1.0) y ΔE76 | Machado, Oliveira y Fernandes, "A Physiologically-based Model for Simulation of Color Vision Deficiency", IEEE TVCG 15(6), `doi:10.1109/TVCG.2009.113` | consultado 2026-10-26 |
 | Intención de Material 3 Expressive (motion/shapes) | `https://m3.material.io/blog/building-with-m3-expressive` | 2025-05 (consulta 2026-10-25) |
 
-Los ratios de la sección 2.4 y 2.5 se calcularon con la fórmula anterior sobre los hex listados, no se copiaron de una herramienta externa. Los ratios de los swatches Lima y Lavanda se recalcularon el 2026-10-26; las simulaciones CVD usan sRGB lineal y CIELAB ΔE76.
+Los ratios de la sección 2.3 y 2.4 se calcularon con la fórmula anterior sobre los hex listados, no se copiaron de una herramienta externa. Los ratios de los swatches Lima y Lavanda se recalcularon el 2026-10-26; las simulaciones CVD usan sRGB lineal y CIELAB ΔE76.
 
 ---
 
 ## 13. Desviaciones aprobadas (2026-10-25; ampliado 2026-10-26)
 
-Las excepciones 1–5 están implementadas y verificadas (2026-10-26). El resto del documento sigue vigente.
+Las excepciones 1–5 están implementadas y verificadas (2026-10-26); la 6 está implementada y cableada (2026-10-26); la 7 es la retirada de los títulos visibles y del serif (2026-10-26). El resto del documento sigue vigente.
 
 1. **Hoja de Entrega abierta para elegir hora (§7.9).** La hoja de Entrega no se cierra al elegir la fecha: permanece abierta para ofrecer "Elegir hora"/"Quitar hora" y solo se cierra al tocar fuera, con el gesto de vuelta o al elegir "Sin fecha". Se mantiene porque la hora es opcional y el date picker no debe forzar una segunda apertura.
 2. **`SwipeTaskRow` usa el constructor deprecado de `SwipeToDismissBoxState`.** En material3 1.4.0 el constructor principal perdió `confirmValueChange`; la alternativa pública es `onDismiss` + `reset()`, que deja que la fila llegue al ancho completo antes de volver (salto visible). Se usa el constructor deprecado, todavía público en 1.4.0, con `confirmValueChange` devolviendo `false` para ejecutar la acción y volver a `Settled` sin expulsar la fila. Se retirará cuando el componente estable ofrezca el mismo control sin parpadeo.
 3. **Navegación y back.** El editor no intercepta el gesto predictivo: `PredictiveBackHandler` hace el flush y sale. En las pestañas secundarias se conserva un `BackHandler` únicamente para volver a Hoy (navegación interna); en Hoy el back lo gestiona el sistema. Esta excepción no aplica al editor, donde §6/§10.5 se cumple literalmente.
 4. **Etiqueta "Atrasada · ayer".** Se implementa con `<plurals quantity="one">` en lugar de la clave única `task.overdue` de §8, para que singular y plural compartan una sola fuente de verdad.
 5. **Vocabulario visual aprobado el 2026-10-26 (vocabulario, no layout).** Se adopta de la referencia el repertorio de formas y señales, sin copiar su composición:
-   - **Tira de 7 días (§7.1.1).** Celdas de 48 × 64 dp, scroll horizontal porque 7 × 48 + 6 × 8 = 384 dp no cabe en 320; el tap navega a la sección existente (Atrasadas / Para hoy / Próximas), no filtra. Mantiene el título serif "Hoy" y el modelo de datos actual.
-   - **Tarea focal (§7.3.1).** Un solo bloque `inverseSurface` por pantalla, radio 16, sin sombra, con texto `inverseOnSurface` (12.76 / 10.95). No es una tarjeta tipo ticket ni duplica la fila: se excluye de su sección y de sus contadores. En tema oscuro el bloque es claro (papel sobre tinta), no negro, porque un bloque oscuro fijo quedaría por debajo de 3:1 contra `#151310`.
+   - **Tira de 7 días (§7.1.1).** Celdas de 48 × 64 dp, scroll horizontal porque 7 × 48 + 6 × 8 = 384 dp no cabe en 320; el tap navega a la sección existente (Atrasadas / Para hoy / Próximas), no filtra. No mantiene título visible: se retira en la entrada 7; conserva el modelo de datos actual.
+   - **Tarea focal (§7.3.1).** Un solo bloque `inverseSurface` por pantalla, radio 16, sin sombra, con texto `inverseOnSurface` (12.76). No es una tarjeta tipo ticket ni duplica la fila: se excluye de su sección y de sus contadores. El bloque es el inverso de la página por rol, no un segundo tema: `inverseSurface` (`#2E2A25`) contrasta 13.65:1 con `surface`.
    - **Contadores en chips (§7.7).** Número `numeric` sin fondo, con slot de 24 dp mínimo; se define qué cuenta cada chip y se acepta que los tres no sean sumables porque "Completadas" abarca historial.
-   - **FAB y "+" de Materias de 52 dp circulares (§7.10, §7.4).** Sustituyen al FAB de 56 dp con radio 16 y al `IconButton` de 48 dp; icono 24 dp, target 52, foco exterior de 2 dp `tertiary`. Esto ajusta §4.2 (el FAB deja `shapeL` y pasa a `shapeFull`) y no cambia la sombra de 2 dp del FAB.
-   - **Swatches Lima y Lavanda (§2.5).** Entran por Ocre y Ciruela, solo como acentos de materia y con los hex y ratios de §2.5. No se añade un segundo acento de UI: `tertiary` sigue siendo el único acento funcional. El papel cálido y la tinta no cambian.
+   - **FAB y "+" de Materias de 52 dp circulares (§7.10, §7.4).** Sustituyen al FAB de 56 dp con radio 16 y al `IconButton` de 48 dp; icono 24 dp, target 52, foco exterior de 2 dp `tertiary`. Esto ajusta §4.2 (el FAB deja `shapeL` y pasa a `shapeFull`) y no cambia la sombra del FAB, que ahora aporta el cluster con 3 dp (§4.3).
+   - **Swatches Lima y Lavanda (§2.4).** Entran por Ocre y Ciruela, solo como acentos de materia y con los hex y ratios de §2.4. No se añade un segundo acento de UI: `tertiary` sigue siendo el único acento funcional. El papel cálido y la tinta no cambian.
    - **Riel de prioridad (2026-10-26).** La barra de 2 dp × 20/12 dp se sustituye por un riel de 3 dp con extremos redondeados y 12 dp de aire, cuya altura sigue al bloque de texto (Alta 100 %, Media 50 % centrado). En la captura real la barra corta pegada al primer glifo se leía como un cursor; el riel conserva la diferencia estructural Alta/Media, el hueco fijo sin jitter y funciona a 200 % con títulos de 1–3 líneas. Ajusta §4.1, §7.2, §7.3.1 y §9.1.
-   **No adoptado de la referencia:** fondo blanco frío (se mantiene `#FBFAF7` / `#151310`), nav flotante oscura de 4 iconos (se mantiene `ShortNavigationBar` de 3 destinos, §6), tarjetas tipo ticket con muesca (se mantienen las filas de §7.2), píldoras de estado "In review / In progress" (se mantienen "Pendiente / En curso / Completada" como texto y el punto de prioridad), texto blanco sobre lima (prohibido: lima solo como swatch y con variante oscura), y sombras decorativas (solo FAB, snackbar y diálogo; la tarjeta focal no lleva).
+6. **Cluster inferior flotante: píldora + FAB (implementado y cableado 2026-10-26).** Barra de navegación en píldora de 3 iconos con el FAB de Hoy integrado a su derecha (§6, §7.10, §4.3). **Deroga** el punto "no adoptado: barra flotante de 4 iconos": lo aprobado no es esa barra, sino una píldora `surfaceContainerHigh` de 56 dp con 3 destinos de 48 × 48 sin etiquetas y un círculo `primary` de 52 dp. El destino activo se marca con **una única cápsula rellena** `primary`/`onPrimary` de 44 × 40 dp (§6) que **se desplaza** entre los slots de 48 dp con `spatialDefault` en lugar de aparecer y desaparecer, no con trazo ni subrayado. Ajusta §4.1 (Hoy vuelve a 96 dp), §4.3 (nivel 3 dp propio del cluster) y §9.2 (iconos sin etiqueta con nombre y estado accesibles). El componente vive en `ui/components/FloatingNavBar.kt` y `NotallyRoot` lo compone con 3 destinos; es la navegación activa en producción.
+   - **Corrección 2026-10-26 (capturas del emulador).** (a) El FAB deja de ser hijo del `Row`: el cluster es un `Box` de 56 dp con la píldora en `Alignment.Center` y el FAB en `Alignment.CenterEnd`. La píldora ocupa la misma caja en Hoy, Cursos y Ajustes, y el cluster no cambia de alto. El `Spacer` de 12 dp desaparece: el hueco es `ancho/2 − 160` (20 dp a 360, 12 dp a 344, 0 dp a 320, sin solape). (b) El cuadrado al pulsar era el ripple *bounded* del `selectable`, dibujado sobre el slot de 48 × 48 y recortado por el `clip` de la píldora. Ahora el `selectable` del slot usa `indication = null` y la única indication se dibuja en la cápsula de 44 × 40, recortada a radio 20, con `ripple(color = onSurfaceVariant)`. El anillo de foco usa `offset = 0` en los destinos: el trazo exterior de 2 dp se recortaba contra el clip de la píldora en los slots extremos; pegado a la cápsula queda dentro y conserva la forma. (c) Regresión verificada por lectura: el indicador sigue calculando `índice × 56 + 2` dentro de la fila de slots y no consulta al FAB; el desplazamiento y el tinte usan `animateDpAsState`/`animateColorAsState` con `spatialDefault`, que respetan `MotionDurationScale = 0` (salto directo al destino, sin duración forzada); la píldora mide 176 dp con 3 destinos en Hoy y en Ajustes porque su tamaño solo depende de `items`.
+7. **Títulos de pantalla retirados y serif fuera de la interfaz (2026-10-26).** Hoy, Cursos y Ajustes ya no muestran un título `displaySmall`: la identidad de la pantalla se declara solo en accesibilidad con `Modifier.semantics { paneTitle = … }` (`nav_hoy`, `nav_cursos`, `nav_ajustes`). Se elimina la constante `Serif` y los slots `displayLarge`, `displayMedium`, `displaySmall`, `headlineLarge` y `headlineMedium` dejan de declararse en `Tipografia` (Material 3 aporta sus defaults); `headlineSmall` se conserva en sans para estados vacíos, errores, hoja de curso y diálogo de borrado. Motivo: el título de 36 sp competía con el contenido y ocupaba la primera franja sin aportar información que la fecha y los conteos no dieran; al quitarlo, Hoy arranca con la fecha y el resumen, Cursos con sus dos conteos y Ajustes con su primera sección. **Lo que se pierde:** la firma editorial serif y un ancla tipográfica de 36 sp; se compensa con la fecha (`labelSmall` uppercase) y los conteos, y con `paneTitle` para que TalkBack siga anunciando la pantalla. Ajusta §0.3, §3.1–§3.3, §4.1, §7.1, §7.1.1, §7.4, §7.10, §7.12, §9.2, §10 y §11.
+
+**No adoptado de la referencia:** fondo blanco frío (se mantiene `#FBFAF7`), barra flotante de 4 iconos (derogada por el punto 6: píldora de 3 iconos + FAB integrado), tarjetas tipo ticket con muesca (se mantienen las filas de §7.2), píldoras de estado "In review / In progress" (se mantienen "Pendiente / En curso / Completada" como texto y el punto de prioridad), texto blanco sobre lima (prohibido: lima solo como swatch) y sombras decorativas (solo cluster, snackbar y diálogo; la tarjeta focal no lleva).

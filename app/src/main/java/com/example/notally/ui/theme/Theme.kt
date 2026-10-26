@@ -2,10 +2,8 @@ package com.example.notally.ui.theme
 
 import androidx.annotation.StringRes
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.SpringSpec
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
@@ -16,9 +14,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -73,7 +73,18 @@ internal val LightError = Color(0xFFA33A2C)
 internal val LightOnError = Color(0xFFFFFFFF)
 internal val LightErrorContainer = Color(0xFFF7DDD8)
 internal val LightOnErrorContainer = Color(0xFF4A130B)
-internal val LightSurface = Color(0xFFFBFAF7)
+
+/**
+ * Superficie base del tema claro.
+ *
+ * La fuente única del valor es `res/values/colors.xml`: `themes.xml` la usa
+ * para el `windowBackground` y aquí se lee de ahí para el esquema M3.
+ */
+internal val LightSurface: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = colorResource(R.color.notally_surface)
+
 internal val LightOnSurface = Color(0xFF1F1C18)
 internal val LightSurfaceDim = Color(0xFFE6E1D8)
 internal val LightSurfaceBright = Color(0xFFFFFDF9)
@@ -95,7 +106,13 @@ internal val Scrim = Color(0xFF000000)
 // Esquemas Material 3
 // ---------------------------------------------------------------------------
 
-internal val EsquemaColoresClaro: ColorScheme = lightColorScheme(
+@Composable
+internal fun esquemaColoresClaro(): ColorScheme {
+    val superficie = LightSurface
+    return remember(superficie) { esquemaClaro(superficie) }
+}
+
+private fun esquemaClaro(superficie: Color): ColorScheme = lightColorScheme(
     primary = LightPrimary,
     onPrimary = LightOnPrimary,
     primaryContainer = LightPrimaryContainer,
@@ -113,9 +130,9 @@ internal val EsquemaColoresClaro: ColorScheme = lightColorScheme(
     onError = LightOnError,
     errorContainer = LightErrorContainer,
     onErrorContainer = LightOnErrorContainer,
-    background = LightSurface,
+    background = superficie,
     onBackground = LightOnSurface,
-    surface = LightSurface,
+    surface = superficie,
     onSurface = LightOnSurface,
     surfaceVariant = LightSurfaceVariant,
     onSurfaceVariant = LightOnSurfaceVariant,
@@ -158,37 +175,37 @@ data class MuestraCurso(
 val MuestrasCursos: List<MuestraCurso> = listOf(
     MuestraCurso(
         argb = ColoresCurso.INDIGO,
-        recursoNombre = R.string.subject_color_indigo,
+        recursoNombre = R.string.course_color_indigo,
         claro = Color(ColoresCurso.INDIGO),
         contenedorClaro = Color(0xFFE9ECF5),
     ),
     MuestraCurso(
         argb = ColoresCurso.FOREST,
-        recursoNombre = R.string.subject_color_forest,
+        recursoNombre = R.string.course_color_forest,
         claro = Color(ColoresCurso.FOREST),
         contenedorClaro = Color(0xFFE6EFE8),
     ),
     MuestraCurso(
         argb = ColoresCurso.TERRACOTTA,
-        recursoNombre = R.string.subject_color_terracotta,
+        recursoNombre = R.string.course_color_terracotta,
         claro = Color(ColoresCurso.TERRACOTTA),
         contenedorClaro = Color(0xFFF4E8E2),
     ),
     MuestraCurso(
         argb = ColoresCurso.LIME,
-        recursoNombre = R.string.subject_color_lime,
+        recursoNombre = R.string.course_color_lime,
         claro = Color(ColoresCurso.LIME),
         contenedorClaro = Color(0xFFF3F5E0),
     ),
     MuestraCurso(
         argb = ColoresCurso.LAVENDER,
-        recursoNombre = R.string.subject_color_lavender,
+        recursoNombre = R.string.course_color_lavender,
         claro = Color(ColoresCurso.LAVENDER),
         contenedorClaro = Color(0xFFF3EDF5),
     ),
     MuestraCurso(
         argb = ColoresCurso.PETROL,
-        recursoNombre = R.string.subject_color_petrol,
+        recursoNombre = R.string.course_color_petrol,
         claro = Color(ColoresCurso.PETROL),
         contenedorClaro = Color(0xFFE3EEEE),
     ),
@@ -216,10 +233,6 @@ class PaletaCursos internal constructor(
 
     fun contenedorCurso(argb: Long): Color = resolver(argb).contenedorClaro
 
-    fun sobreContenedorCurso(argb: Long): Color = resolver(argb).claro
-
-    fun recursoNombreCurso(argb: Long): Int = resolver(argb).recursoNombre
-
     fun muestraCurso(argb: Long): MuestraCurso = resolver(argb)
 
     companion object {
@@ -239,51 +252,16 @@ fun colorCurso(argb: Long): Color = LocalPaletaCursos.current.colorCurso(argb)
 // Tipografia
 // ===========================================================================
 
-private val Serif = FontFamily.Serif
 private val Sans = FontFamily.SansSerif
 
 /**
  * Escala tipográfica del DESIGN.md §3.2.
  *
- * El serif se reserva para títulos de pantalla; cuerpo, controles y contenido
- * editable usan sans.
+ * Sin serif (retirado el 2026-10-26 junto con los títulos de pantalla). Los
+ * slots `display*` y `headlineLarge/Medium` no se declaran: nadie los usa y
+ * Material 3 aporta sus defaults.
  */
 val Tipografia = Typography(
-    displayLarge = TextStyle(
-        fontFamily = Serif,
-        fontWeight = FontWeight.Normal,
-        fontSize = 56.sp,
-        lineHeight = 64.sp,
-        letterSpacing = (-0.50).sp,
-    ),
-    displayMedium = TextStyle(
-        fontFamily = Serif,
-        fontWeight = FontWeight.Normal,
-        fontSize = 44.sp,
-        lineHeight = 52.sp,
-        letterSpacing = (-0.25).sp,
-    ),
-    displaySmall = TextStyle(
-        fontFamily = Serif,
-        fontWeight = FontWeight.Normal,
-        fontSize = 36.sp,
-        lineHeight = 44.sp,
-        letterSpacing = (-0.25).sp,
-    ),
-    headlineLarge = TextStyle(
-        fontFamily = Serif,
-        fontWeight = FontWeight.Normal,
-        fontSize = 32.sp,
-        lineHeight = 40.sp,
-        letterSpacing = (-0.20).sp,
-    ),
-    headlineMedium = TextStyle(
-        fontFamily = Serif,
-        fontWeight = FontWeight.Normal,
-        fontSize = 28.sp,
-        lineHeight = 36.sp,
-        letterSpacing = (-0.20).sp,
-    ),
     headlineSmall = TextStyle(
         fontFamily = Sans,
         fontWeight = FontWeight.Medium,
@@ -393,32 +371,26 @@ object TipografiaNotally {
 // Formas
 // ===========================================================================
 
-/**
- * Formas del DESIGN.md §4.2.
- *
- * Mapeo a los slots de Material 3: extraSmall = 4, small = 8, medium = 12,
- * large = 16, extraLarge = 28. `full` no existe como slot y se usa CircleShape.
- */
-val FormasNotally = Shapes(
-    extraSmall = RoundedCornerShape(4.dp),
-    small = RoundedCornerShape(8.dp),
-    medium = RoundedCornerShape(12.dp),
-    large = RoundedCornerShape(16.dp),
-    extraLarge = RoundedCornerShape(28.dp),
-)
-
-/** Acceso directo a los tokens de forma, para componentes que no usan slots. */
+/** Acceso directo a los tokens de forma del DESIGN.md §4.2. */
 object FormaNotally {
     val xs = RoundedCornerShape(4.dp)
     val s = RoundedCornerShape(8.dp)
     val m = RoundedCornerShape(12.dp)
     val l = RoundedCornerShape(16.dp)
     val xl = RoundedCornerShape(28.dp)
-    val full = CircleShape
-
-    /** Radio de fila: nunca 28 dp en una fila de lista. */
-    val row = RoundedCornerShape(12.dp)
 }
+
+/**
+ * Slots de Material 3, derivados de [FormaNotally]: extraSmall = 4,
+ * small = 8, medium = 12, large = 16, extraLarge = 28.
+ */
+val FormasNotally = Shapes(
+    extraSmall = FormaNotally.xs,
+    small = FormaNotally.s,
+    medium = FormaNotally.m,
+    large = FormaNotally.l,
+    extraLarge = FormaNotally.xl,
+)
 
 // ===========================================================================
 // Movimiento
@@ -441,16 +413,8 @@ object MovimientoNotally {
     fun <T> espacialRapida(): SpringSpec<T> =
         spring(dampingRatio = 0.6f, stiffness = 800f)
 
-    // Springs de efectos: color, alpha, confirmación.
-    fun <T> efectoNormal(): SpringSpec<T> =
-        spring(dampingRatio = 1.0f, stiffness = 1600f)
-
-    fun <T> efectoRapida(): SpringSpec<T> =
-        spring(dampingRatio = 1.0f, stiffness = 3800f)
-
     // Duraciones puntuales (§5, excepciones permitidas).
     const val colorMs = 120
-    const val dibujoMarcaMs = 160
     const val fabMs = 150
     const val chevronMs = 180
     const val movimientoElementoMs = 220
@@ -460,9 +424,6 @@ object MovimientoNotally {
     const val snackbarMs = 5_000L
 
     val fundidoEasing = FastOutSlowInEasing
-
-    /** Atajo para `animateContentSize`. */
-    fun tamanoContenido(): FiniteAnimationSpec<androidx.compose.ui.unit.IntSize> = espacialNormal()
 }
 
 // ===========================================================================
@@ -471,13 +432,6 @@ object MovimientoNotally {
 
 /** Espaciado del DESIGN.md §4.1 (múltiplos de 4). */
 object EspaciadoNotally {
-    val x1 = 4.dp
-    val x2 = 8.dp
-    val x3 = 12.dp
-    val x4 = 16.dp
-    val x5 = 24.dp
-    val x6 = 32.dp
-    val x7 = 48.dp
 
     /** Padding inferior de listas que comparten espacio con el cluster (§4.1, §6). */
     val rellenoInferiorLista = 96.dp
@@ -502,7 +456,7 @@ val margenHorizontalPantalla: Dp
 /**
  * Tema de Notally.
  *
- * Un solo tema claro y fijo: siempre [EsquemaColoresClaro] con la paleta de
+ * Un solo tema claro y fijo: siempre [esquemaColoresClaro] con la paleta de
  * cursos clara. No existe variante oscura, dinámica ni ajuste que altere los
  * roles M3.
  */
@@ -510,7 +464,7 @@ val margenHorizontalPantalla: Dp
 fun TemaNotally(content: @Composable () -> Unit) {
     CompositionLocalProvider(LocalPaletaCursos provides PaletaCursos.Unica) {
         MaterialTheme(
-            colorScheme = EsquemaColoresClaro,
+            colorScheme = esquemaColoresClaro(),
             typography = Tipografia,
             shapes = FormasNotally,
             content = content,

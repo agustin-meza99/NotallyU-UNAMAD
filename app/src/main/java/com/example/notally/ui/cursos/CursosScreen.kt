@@ -53,7 +53,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -97,10 +97,11 @@ fun CursosScreen(
 
     var objetivoHoja by remember { mutableStateOf<ObjetivoCursoSheet?>(null) }
 
-    val errorEliminar = stringResource(R.string.subject_delete_error)
+    val errorEliminar = stringResource(R.string.course_delete_error)
     val etiquetaReintentar = stringResource(R.string.action_retry)
-    val errorCargar = stringResource(R.string.error_loadSubjects)
+    val errorCargar = stringResource(R.string.error_load_courses)
     val errorRefrescar = stringResource(R.string.error_refresh)
+    val tituloPantalla = stringResource(R.string.nav_cursos)
 
     LaunchedEffect(viewModel, errorEliminar, etiquetaReintentar) {
         viewModel.eventos.collectLatest { evento ->
@@ -135,7 +136,9 @@ fun CursosScreen(
     }
 
     Scaffold(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier
+            .fillMaxSize()
+            .semantics { paneTitle = tituloPantalla },
         containerColor = MaterialTheme.colorScheme.surface,
         contentWindowInsets = WindowInsets.safeDrawing,
         snackbarHost = { SnackbarHost(estadoSnackbar) },
@@ -208,9 +211,9 @@ fun CursosScreen(
                     estado.cursos.isEmpty() -> {
                         item(key = "empty") {
                             EmptyState(
-                                titulo = stringResource(R.string.subjects_empty_title),
-                                cuerpo = stringResource(R.string.subjects_empty_body),
-                                etiquetaAccion = stringResource(R.string.subjects_empty_cta),
+                                titulo = stringResource(R.string.courses_empty_title),
+                                cuerpo = stringResource(R.string.courses_empty_body),
+                                etiquetaAccion = stringResource(R.string.courses_new),
                                 alAccionar = {
                                     viewModel.limpiarErrorFormulario()
                                     objetivoHoja = ObjetivoCursoSheet.Nueva
@@ -281,36 +284,30 @@ private fun EncabezadoCursos(
     val colores = MaterialTheme.colorScheme
     Row(
         modifier = modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.Top,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = stringResource(R.string.nav_materias),
-                style = MaterialTheme.typography.displaySmall,
-                color = colores.onSurface,
-                modifier = Modifier.semantics { heading() },
-            )
-            Spacer(Modifier.height(8.dp))
+            // Sin título visible (§7.4): el primer dato es el conteo real.
             if (mostrarConteos) {
                 val textoPendientes = pluralStringResource(
-                    R.plurals.subjects_pending,
+                    R.plurals.courses_pending,
                     totalPendientes,
                     totalPendientes,
                 )
                 Text(
                     text = pluralStringResource(
-                        R.plurals.subjects_summary,
+                        R.plurals.courses_summary,
                         cantidadCursos,
                         cantidadCursos,
                         textoPendientes,
                     ),
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = colores.onSurfaceVariant,
                 )
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(2.dp))
                 Text(
                     text = pluralStringResource(
-                        R.plurals.subjects_week,
+                        R.plurals.courses_week,
                         entregasSemanales,
                         entregasSemanales,
                     ),
@@ -320,6 +317,7 @@ private fun EncabezadoCursos(
             }
         }
         if (mostrarAgregar) {
+            Spacer(Modifier.width(16.dp))
             BotonAgregarCurso(alPulsar = alAgregar)
         }
     }
@@ -330,7 +328,7 @@ private fun EncabezadoCursos(
 private fun BotonAgregarCurso(alPulsar: () -> Unit) {
     val colores = MaterialTheme.colorScheme
     var enfocado by remember { mutableStateOf(false) }
-    val descripcion = stringResource(R.string.subjects_new)
+    val descripcion = stringResource(R.string.courses_new)
     Box(
         modifier = Modifier
             .size(52.dp)
@@ -377,7 +375,7 @@ private fun TarjetaCurso(
     val completa = tarjeta.totalTareas > 0 && tarjeta.tareasHechas == tarjeta.totalTareas
     val textoCompleta = if (completa) {
         pluralStringResource(
-            R.plurals.subject_progress_complete,
+            R.plurals.course_progress_complete,
             tarjeta.totalTareas,
             tarjeta.tareasHechas,
             tarjeta.totalTareas,
@@ -386,16 +384,16 @@ private fun TarjetaCurso(
         null
     }
     val estadisticas = when {
-        tarjeta.totalTareas == 0 -> stringResource(R.string.subject_noTasks)
+        tarjeta.totalTareas == 0 -> stringResource(R.string.course_noTasks)
         textoCompleta != null -> textoCompleta
         else -> {
             val tareas = pluralStringResource(
-                R.plurals.subject_tasks,
+                R.plurals.course_tasks,
                 tarjeta.totalTareas,
                 tarjeta.totalTareas,
             )
             val hechas = pluralStringResource(
-                R.plurals.subject_done,
+                R.plurals.course_done,
                 tarjeta.tareasHechas,
                 tarjeta.tareasHechas,
             )
@@ -403,16 +401,16 @@ private fun TarjetaCurso(
         }
     }
     val descripcionProgreso = when {
-        tarjeta.totalTareas == 0 -> stringResource(R.string.subject_noTasks)
+        tarjeta.totalTareas == 0 -> stringResource(R.string.course_noTasks)
         textoCompleta != null -> textoCompleta
         else -> pluralStringResource(
-            R.plurals.subject_progress,
+            R.plurals.course_progress,
             tarjeta.totalTareas,
             tarjeta.tareasHechas,
             tarjeta.totalTareas,
         )
     }
-    val etiquetaAbrir = stringResource(R.string.a11y_editSubject)
+    val etiquetaAbrir = stringResource(R.string.a11y_edit_course)
     val descripcion = "${tarjeta.curso.nombre}. $descripcionProgreso."
 
     Surface(
@@ -476,7 +474,7 @@ private fun TarjetaCurso(
                         Spacer(Modifier.width(8.dp))
                         Text(
                             text = stringResource(
-                                R.string.subject_progress_ratio,
+                                R.string.course_progress_ratio,
                                 tarjeta.tareasHechas,
                                 tarjeta.totalTareas,
                             ),

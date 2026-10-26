@@ -33,7 +33,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -60,6 +60,7 @@ fun SettingsScreen(
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val margen = margenHorizontalPantalla
     val contexto = LocalContext.current
+    val tituloPantalla = stringResource(R.string.nav_ajustes)
 
     val nombreVersion = remember(contexto) {
         runCatching {
@@ -71,7 +72,8 @@ fun SettingsScreen(
         modifier = modifier
             .fillMaxSize()
             .windowInsetsPadding(WindowInsets.safeDrawing)
-            .padding(top = 24.dp),
+            .padding(top = 24.dp)
+            .semantics { paneTitle = tituloPantalla },
         contentAlignment = Alignment.TopCenter,
     ) {
         LazyColumn(
@@ -81,17 +83,6 @@ fun SettingsScreen(
                 .fillMaxWidth(),
             contentPadding = PaddingValues(start = margen, end = margen, bottom = 32.dp),
         ) {
-            item(key = "title") {
-                Text(
-                    text = stringResource(R.string.nav_ajustes),
-                    style = MaterialTheme.typography.displaySmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier
-                        .padding(bottom = 32.dp)
-                        .semantics { heading() },
-                )
-            }
-
             item(key = "agenda_label") {
                 EtiquetaSeccion(stringResource(R.string.settings_agenda))
             }
@@ -100,7 +91,6 @@ fun SettingsScreen(
                     etiqueta = stringResource(R.string.settings_week),
                     soporte = stringResource(R.string.settings_week_support),
                     marcado = settings.semanaEmpiezaLunes,
-                    activo = true,
                     alCambiar = viewModel::cambiarSemanaEmpiezaLunes,
                 )
             }
@@ -148,11 +138,9 @@ private fun FilaInterruptorSettings(
     etiqueta: String,
     soporte: String?,
     marcado: Boolean,
-    activo: Boolean,
     alCambiar: (Boolean) -> Unit,
 ) {
     val colores = MaterialTheme.colorScheme
-    val alfa = if (activo) 1f else 0.38f
     var enfocada by remember { mutableStateOf(false) }
     Row(
         modifier = Modifier
@@ -162,7 +150,6 @@ private fun FilaInterruptorSettings(
             .onFocusChanged { enfocada = it.isFocused }
             .toggleable(
                 value = marcado,
-                enabled = activo,
                 role = Role.Switch,
                 onValueChange = alCambiar,
             )
@@ -173,7 +160,7 @@ private fun FilaInterruptorSettings(
             Text(
                 text = etiqueta,
                 style = MaterialTheme.typography.bodyLarge,
-                color = colores.onSurface.copy(alpha = alfa),
+                color = colores.onSurface,
             )
             if (soporte != null) {
                 Spacer(Modifier.height(2.dp))
@@ -189,7 +176,6 @@ private fun FilaInterruptorSettings(
         Switch(
             checked = marcado,
             onCheckedChange = null,
-            enabled = activo,
             colors = SwitchDefaults.colors(
                 uncheckedTrackColor = colores.surfaceVariant,
                 uncheckedBorderColor = colores.outline,

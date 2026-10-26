@@ -1,87 +1,67 @@
 package com.example.notally.ui.today
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.FloatingActionButtonDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.notally.R
+import com.example.notally.data.DateRanges
 import com.example.notally.ui.components.AvisoError
 import com.example.notally.ui.components.BloqueError
-import com.example.notally.ui.components.DiaTira
 import com.example.notally.ui.components.SectionHeader
-import com.example.notally.ui.components.EmptyState
-import com.example.notally.ui.components.FilterChipRow
 import com.example.notally.ui.components.SwipeTaskRow
 import com.example.notally.ui.components.FilasCargando
-import com.example.notally.ui.components.OpcionFiltro
 import com.example.notally.ui.components.FocalTaskCard
-import com.example.notally.ui.components.DayStrip
-import com.example.notally.ui.components.anilloFoco
 import com.example.notally.ui.theme.EspaciadoNotally
 import com.example.notally.ui.theme.MovimientoNotally
-import com.example.notally.ui.theme.TipografiaNotally
 import com.example.notally.ui.theme.margenHorizontalPantalla
 import com.example.notally.ui.util.DateFormat
 import com.example.notally.ui.util.textoEtiquetaFecha
-import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.withTimeoutOrNull
@@ -91,6 +71,11 @@ import kotlinx.coroutines.withTimeoutOrNull
  *
  * @param alCrearTarea abre el editor (la fase 4 conecta la navegación real).
  * @param alAbrirTarea recibe el id de la tarea para abrir el editor.
+ * @param alCambiarVisibilidadCluster reporta al root si el cluster inferior
+ * debe mostrarse según la dirección del scroll (§7.10).
+ * @param alCambiarDisponibilidadAccion reporta al root si el estado permite
+ * crear tarea: `false` solo en el vacío total, donde el CTA es la única
+ * acción (§7.8).
  */
 @Composable
 fun TodayScreen(
@@ -99,6 +84,8 @@ fun TodayScreen(
     alAbrirTarea: (Long) -> Unit = {},
     diaSeleccionadoEpoch: Long? = null,
     alSeleccionarDia: (Long?) -> Unit = {},
+    alCambiarVisibilidadCluster: (Boolean) -> Unit = {},
+    alCambiarDisponibilidadAccion: (Boolean) -> Unit = {},
     viewModel: TodayViewModel = viewModel(
         factory = TodayViewModel.factory(LocalContext.current),
     ),
@@ -116,6 +103,7 @@ fun TodayScreen(
     val etiquetaReintentar = stringResource(R.string.action_retry)
     val errorCargar = stringResource(R.string.error_load)
     val errorRefrescar = stringResource(R.string.error_refresh)
+    val tituloPantalla = stringResource(R.string.nav_hoy)
 
     // Snackbars de 5 s exactos: Indefinite + timeout, con acción real.
     LaunchedEffect(
@@ -180,27 +168,12 @@ fun TodayScreen(
     }
 
     val fechaHoy = remember(estado.ahora) {
-        Instant.ofEpochMilli(estado.ahora).atZone(ZoneId.systemDefault()).toLocalDate()
+        DateRanges.fechaLocal(estado.ahora)
     }
     val diasTira = remember(estado.diasSemana, fechaHoy) {
-        estado.diasSemana.map { dia ->
-            val recursoSeccion = when {
-                dia.pendientes == 0 -> null
-                dia.fecha.isBefore(fechaHoy) -> R.string.today_section_overdue
-                dia.fecha == fechaHoy -> R.string.today_section_today
-                else -> R.string.today_section_upcoming
-            }
-            DiaTira(
-                fecha = dia.fecha,
-                pendientes = dia.pendientes,
-                esHoy = dia.fecha == fechaHoy,
-                recursoEtiquetaSeccion = recursoSeccion,
-            )
-        }
+        diasTiraHoy(estado, fechaHoy)
     }
-    val mostrarTira = estado.tieneDatosEnCache && !estado.cargando &&
-        estado.filtro != FiltroHoy.COMPLETADAS &&
-        diasTira.any { it.pendientes > 0 }
+    val mostrarTira = mostrarTiraHoy(estado, diasTira)
 
     // La selección de la tira vive en la raíz de pestañas con
     // `rememberSaveable`: sobrevive a la recreación de la Activity y se limpia
@@ -289,11 +262,13 @@ fun TodayScreen(
         saltoPendiente = null
     }
 
-    // FAB: se oculta al bajar y reaparece al subir (fade + escala 150 ms).
-    var fabVisible by remember { mutableStateOf(true) }
+    // Visibilidad del cluster (§7.10): se oculta al bajar y reaparece al subir.
+    // El estado vive en la raíz de pestañas; aquí solo se reportan los cambios.
+    val reportarVisibilidadCluster by rememberUpdatedState(alCambiarVisibilidadCluster)
     LaunchedEffect(estadoLista) {
         var indicePrevio = 0
         var desplazamientoPrevio = 0
+        var visible = true
         snapshotFlow {
             Triple(
                 estadoLista.firstVisibleItemIndex,
@@ -306,61 +281,36 @@ fun TodayScreen(
                     (indice == indicePrevio && desplazamiento > desplazamientoPrevio)
                 val subiendo = indice < indicePrevio ||
                     (indice == indicePrevio && desplazamiento < desplazamientoPrevio)
-                if (bajando) fabVisible = false
-                if (subiendo) fabVisible = true
+                val nuevo = when {
+                    bajando -> false
+                    subiendo -> true
+                    else -> visible
+                }
+                if (nuevo != visible) {
+                    visible = nuevo
+                    reportarVisibilidadCluster(nuevo)
+                }
             }
             indicePrevio = indice
             desplazamientoPrevio = desplazamiento
         }
     }
 
-    val mostrarFab = fabVisible && estado.vacio != VacioHoy.Total && !estado.cargando &&
-        !(estado.error && !estado.tieneDatosEnCache)
-    var fabEnfocado by remember { mutableStateOf(false) }
+    // En el vacío total el CTA del estado vacío es la única acción (§7.8):
+    // el root oculta el FAB mientras este predicado sea cierto.
+    val accionDisponible = vacio != VacioHoy.Total
+    val reportarDisponibilidadAccion by rememberUpdatedState(alCambiarDisponibilidadAccion)
+    LaunchedEffect(accionDisponible) {
+        reportarDisponibilidadAccion(accionDisponible)
+    }
 
     Scaffold(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier
+            .fillMaxSize()
+            .semantics { paneTitle = tituloPantalla },
         containerColor = MaterialTheme.colorScheme.surface,
         contentWindowInsets = WindowInsets.safeDrawing,
         snackbarHost = { SnackbarHost(estadoSnackbar) },
-        floatingActionButton = {
-            AnimatedVisibility(
-                visible = mostrarFab,
-                enter = fadeIn(tween(MovimientoNotally.fabMs)) +
-                    scaleIn(
-                        animationSpec = tween(MovimientoNotally.fabMs),
-                        initialScale = 0.9f,
-                    ),
-                exit = fadeOut(tween(MovimientoNotally.fabMs)) +
-                    scaleOut(
-                        animationSpec = tween(MovimientoNotally.fabMs),
-                        targetScale = 0.9f,
-                    ),
-            ) {
-                FloatingActionButton(
-                    onClick = alCrearTarea,
-                    modifier = Modifier
-                        .size(52.dp)
-                        .onFocusChanged { fabEnfocado = it.isFocused }
-                        .anilloFoco(visible = fabEnfocado, shape = CircleShape),
-                    shape = CircleShape,
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                    elevation = FloatingActionButtonDefaults.elevation(
-                        defaultElevation = 2.dp,
-                        pressedElevation = 2.dp,
-                        focusedElevation = 2.dp,
-                        hoveredElevation = 2.dp,
-                    ),
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_add),
-                        contentDescription = stringResource(R.string.a11y_newTask),
-                        modifier = Modifier.size(24.dp),
-                    )
-                }
-            }
-        },
     ) { rellenoInterior ->
         Box(
             modifier = Modifier
@@ -379,7 +329,7 @@ fun TodayScreen(
                     start = margen,
                     end = margen,
                     top = 24.dp,
-                    bottom = EspaciadoNotally.rellenoInferiorListaConFab,
+                    bottom = EspaciadoNotally.rellenoInferiorLista,
                 ),
             ) {
                 item(key = "header") {
@@ -402,325 +352,43 @@ fun TodayScreen(
 
                 if (mostrarTira) {
                     item(key = "day_strip") {
-                        DayStrip(
+                        TiraDiasHoy(
                             dias = diasTira,
                             fechaSeleccionada = fechaSeleccionada,
                             alElegirDia = { dia ->
                                 alSeleccionarDia(dia.fecha.toEpochDay())
                                 saltoPendiente = resolverSaltoDia(dia, fechaHoy)
                             },
-                            modifier = Modifier.padding(top = 16.dp),
                         )
                     }
                 }
 
                 if (!estado.estaVacioTotal) {
                     item(key = "filters") {
-                        FilterChipRow(
+                        FiltrosHoy(
                             opciones = opcionesFiltro(estado.conteosFiltro),
                             idSeleccionado = estado.filtro.id,
                             alSeleccionar = { id ->
-                                viewModel.cambiarFiltro(
-                                    when (id) {
-                                        "pending" -> FiltroHoy.PENDIENTES
-                                        "done" -> FiltroHoy.COMPLETADAS
-                                        else -> FiltroHoy.TODAS
-                                    },
-                                )
+                                viewModel.cambiarFiltro(FiltroHoy.desdeId(id))
                             },
-                            modifier = Modifier.padding(top = 16.dp),
                         )
                     }
                 }
 
-                if (focal != null) {
-                    item(key = "focal_task") {
-                        AnimatedContent(
-                            targetState = focal,
-                            transitionSpec = {
-                                fadeIn(
-                                    animationSpec = tween(
-                                        durationMillis = MovimientoNotally.fundidoMs / 2,
-                                        delayMillis = MovimientoNotally.fundidoMs / 2,
-                                        easing = MovimientoNotally.fundidoEasing,
-                                    ),
-                                ) togetherWith fadeOut(
-                                    animationSpec = tween(
-                                        durationMillis = MovimientoNotally.fundidoMs / 2,
-                                        easing = MovimientoNotally.fundidoEasing,
-                                    ),
-                                )
-                            },
-                            label = "focalTask",
-                            modifier = Modifier.padding(top = 24.dp),
-                        ) { objetivo ->
-                            val tarea = objetivo.elemento.tarea
-                            FocalTaskCard(
-                                titulo = tarea.titulo,
-                                antetitulo = tituloSeccion(objetivo.grupo),
-                                textoCurso = objetivo.elemento.curso?.nombre
-                                    ?: stringResource(R.string.task_noSubject),
-                                textoEntrega = tarea.entregaEn?.let {
-                                    textoEtiquetaFecha(it, estado.ahora)
-                                } ?: stringResource(R.string.task_noDate),
-                                prioridad = tarea.prioridad,
-                                modifier = Modifier.onGloballyPositioned {
-                                    coordenadasFila[objetivo.tareaId] = it
-                                },
-                                alPulsar = { alAbrirTarea(tarea.id) },
-                            )
-                        }
-                    }
-                }
+                elementosHoy(
+                    focal = focal,
+                    estado = estado,
+                    mostrarCarga = mostrarCarga,
+                    errorCargar = errorCargar,
+                    etiquetaReintentar = etiquetaReintentar,
+                    vacio = vacio,
+                    alCrearTarea = alCrearTarea,
+                    alAbrirTarea = alAbrirTarea,
+                    viewModel = viewModel,
+                    coordenadasFila = coordenadasFila,
+                )
 
-                when {
-                    mostrarCarga -> {
-                        item(key = "loading") {
-                            FilasCargando(modifier = Modifier.padding(top = 24.dp))
-                        }
-                    }
-
-                    estado.error && !estado.tieneDatosEnCache -> {
-                        item(key = "error_block") {
-                            BloqueError(
-                                titulo = errorCargar,
-                                etiquetaReintentar = etiquetaReintentar,
-                                alReintentar = viewModel::reintentar,
-                                modifier = Modifier.padding(top = 48.dp),
-                            )
-                        }
-                    }
-
-                    vacio != null -> {
-                        item(key = "empty") {
-                            EmptyStateHoy(
-                                vacio = vacio,
-                                alCrearTarea = alCrearTarea,
-                                alMostrarTodas = {
-                                    viewModel.cambiarFiltro(FiltroHoy.TODAS)
-                                },
-                                alMostrarPendientes = {
-                                    viewModel.cambiarFiltro(FiltroHoy.PENDIENTES)
-                                },
-                                modifier = Modifier.padding(top = 48.dp),
-                            )
-                        }
-                    }
-
-                    estado.filtro == FiltroHoy.COMPLETADAS -> {
-                        item(key = "flat_completed") {
-                            Column(
-                                modifier = Modifier
-                                    .animateItem(
-                                        placementSpec = tween(
-                                            MovimientoNotally.movimientoElementoMs,
-                                        ),
-                                    )
-                                    .animateContentSize(
-                                        MovimientoNotally.espacialNormal(),
-                                    )
-                                    .padding(top = 24.dp),
-                                verticalArrangement = Arrangement.spacedBy(4.dp),
-                            ) {
-                                estado.completadasPlanas.forEach { elemento ->
-                                    ElementoTarea(
-                                        elemento = elemento,
-                                        ahora = estado.ahora,
-                                        viewModel = viewModel,
-                                        alAbrirTarea = alAbrirTarea,
-                                        modifier = Modifier.onGloballyPositioned {
-                                            coordenadasFila[elemento.tarea.id] = it
-                                        },
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    else -> {
-                        estado.secciones.forEach { seccion ->
-                            item(key = "section_${seccion.tipo.name}") {
-                                Column(
-                                    modifier = Modifier
-                                        .animateItem(
-                                            placementSpec = tween(
-                                                MovimientoNotally.movimientoElementoMs,
-                                            ),
-                                        )
-                                        .animateContentSize(
-                                            MovimientoNotally.espacialNormal(),
-                                        )
-                                        .padding(top = 24.dp),
-                                ) {
-                                    SectionHeader(
-                                        titulo = tituloSeccion(seccion.tipo),
-                                        cantidad = seccion.cantidad,
-                                        contraible = seccion.contraible,
-                                        expandida = seccion.expandida,
-                                        alAlternar = {
-                                            viewModel.alternarSeccion(seccion.tipo)
-                                        },
-                                    )
-                                    if (seccion.expandida) {
-                                        Column(
-                                            verticalArrangement = Arrangement.spacedBy(4.dp),
-                                        ) {
-                                            seccion.elementos.forEach { elemento ->
-                                                ElementoTarea(
-                                                    elemento = elemento,
-                                                    ahora = estado.ahora,
-                                                    viewModel = viewModel,
-                                                    alAbrirTarea = alAbrirTarea,
-                                                    modifier = Modifier.onGloballyPositioned {
-                                                        coordenadasFila[elemento.tarea.id] = it
-                                                    },
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
             }
         }
     }
 }
-
-@Composable
-private fun EncabezadoHoy(
-    antetitulo: String,
-    resumen: ResumenHoy?,
-) {
-    val colores = MaterialTheme.colorScheme
-    Column {
-        if (antetitulo.isNotEmpty()) {
-            Text(
-                text = antetitulo,
-                style = MaterialTheme.typography.labelSmall,
-                color = colores.onSurfaceVariant,
-            )
-            Spacer(Modifier.height(4.dp))
-        }
-        Text(
-            text = stringResource(R.string.a11y_today_heading),
-            style = MaterialTheme.typography.displaySmall,
-            color = colores.onSurface,
-            modifier = Modifier.semantics { heading() },
-        )
-        if (resumen != null) {
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = pluralStringResource(
-                    R.plurals.today_summary,
-                    resumen.total,
-                    resumen.completadas,
-                    resumen.total,
-                ),
-                style = TipografiaNotally.numerico,
-                color = colores.onSurfaceVariant,
-            )
-        }
-    }
-}
-
-@Composable
-private fun ElementoTarea(
-    elemento: ElementoHoy,
-    ahora: Long,
-    viewModel: TodayViewModel,
-    alAbrirTarea: (Long) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    SwipeTaskRow(
-        tarea = elemento.tarea,
-        nombreCurso = elemento.curso?.nombre,
-        colorCursoArgb = elemento.curso?.color,
-        ahora = ahora,
-        modifier = modifier,
-        alPulsar = { alAbrirTarea(elemento.tarea.id) },
-        alAlternarCompletada = { viewModel.alternarCompletada(elemento.tarea) },
-        alCompletar = { viewModel.completar(elemento.tarea) },
-        alPosponer = { viewModel.posponerParaManana(elemento.tarea) },
-        alEliminar = { viewModel.eliminar(elemento.tarea) },
-    )
-}
-
-@Composable
-private fun EmptyStateHoy(
-    vacio: VacioHoy,
-    alCrearTarea: () -> Unit,
-    alMostrarTodas: () -> Unit,
-    alMostrarPendientes: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    when (vacio) {
-        VacioHoy.Total -> EmptyState(
-            titulo = stringResource(R.string.today_empty_title),
-            cuerpo = stringResource(R.string.today_empty_body),
-            etiquetaAccion = stringResource(R.string.today_empty_cta),
-            alAccionar = alCrearTarea,
-            modifier = modifier,
-        )
-
-        VacioHoy.FiltroPendientes -> EmptyState(
-            titulo = stringResource(R.string.filter_empty_pending_title),
-            cuerpo = stringResource(R.string.filter_empty_pending_body),
-            etiquetaAccion = stringResource(R.string.filter_empty_pending_cta),
-            alAccionar = alMostrarTodas,
-            modifier = modifier,
-        )
-
-        VacioHoy.FiltroCompletadas -> EmptyState(
-            titulo = stringResource(R.string.filter_empty_done_title),
-            cuerpo = stringResource(R.string.filter_empty_done_body),
-            etiquetaAccion = stringResource(R.string.filter_empty_done_cta),
-            alAccionar = alMostrarPendientes,
-            modifier = modifier,
-        )
-    }
-}
-
-private val FiltroHoy.id: String
-    get() = when (this) {
-        FiltroHoy.TODAS -> "all"
-        FiltroHoy.PENDIENTES -> "pending"
-        FiltroHoy.COMPLETADAS -> "done"
-    }
-
-@Composable
-private fun opcionesFiltro(conteos: ConteosFiltroHoy): List<OpcionFiltro> = listOf(
-    OpcionFiltro("all", stringResource(R.string.filter_all), conteos.todas),
-    OpcionFiltro("pending", stringResource(R.string.filter_pending), conteos.pendientes),
-    OpcionFiltro("done", stringResource(R.string.filter_done), conteos.completadas),
-)
-
-/** Destino de la tira de días: sección existente, no un filtro (§7.1.1). */
-private data class SaltoDia(
-    val seccion: TipoSeccionHoy,
-    val fechaEntrega: LocalDate,
-    val expandirProximas: Boolean,
-)
-
-private fun resolverSaltoDia(dia: DiaTira, hoy: LocalDate): SaltoDia = when {
-    dia.fecha.isBefore(hoy) ->
-        SaltoDia(TipoSeccionHoy.ATRASADAS, dia.fecha, expandirProximas = false)
-
-    dia.fecha == hoy ->
-        SaltoDia(TipoSeccionHoy.HOY, dia.fecha, expandirProximas = false)
-
-    else ->
-        SaltoDia(TipoSeccionHoy.PROXIMAS, dia.fecha, expandirProximas = true)
-}
-
-@Composable
-private fun tituloSeccion(tipo: TipoSeccionHoy): String = stringResource(
-    when (tipo) {
-        TipoSeccionHoy.ATRASADAS -> R.string.today_section_overdue
-        TipoSeccionHoy.HOY -> R.string.today_section_today
-        TipoSeccionHoy.SIN_HORA -> R.string.today_section_anytime
-        TipoSeccionHoy.PROXIMAS -> R.string.today_section_upcoming
-        TipoSeccionHoy.COMPLETADAS -> R.string.today_section_done
-    },
-)
