@@ -48,12 +48,14 @@ import com.example.notally.ui.components.FloatingNavItem
 import com.example.notally.ui.editor.EditorScreen
 import com.example.notally.ui.settings.SettingsScreen
 import com.example.notally.ui.cursos.CursosScreen
+import com.example.notally.ui.cursos.TareasCursoScreen
 import com.example.notally.ui.theme.EspaciadoNotally
 import com.example.notally.ui.theme.MovimientoNotally
 import com.example.notally.ui.theme.margenHorizontalPantalla
 import com.example.notally.ui.today.TodayScreen
 
 private const val PREFIJO_EDITOR = "editor:"
+private const val PREFIJO_CURSO_TAREAS = "cursoTareas:"
 private const val ID_EDITOR_NUEVO = "new"
 
 /** Destinos de la V1. El editor no lleva barra inferior. */
@@ -72,9 +74,21 @@ sealed interface Destino {
         override val clave: String = "settings"
     }
 
+    /** Tareas de un curso; se abre desde la hoja de curso y no lleva barra. */
+    data class CursoTareas(val cursoId: Long) : Destino {
+        override val clave: String = "$PREFIJO_CURSO_TAREAS$cursoId"
+    }
+
     data class Editor(val tareaId: Long?) : Destino {
         override val clave: String = "$PREFIJO_EDITOR${tareaId ?: ID_EDITOR_NUEVO}"
     }
+}
+
+/** Pantallas que sustituyen por completo a las pestañas (sin barra inferior). */
+private sealed interface NivelRaiz {
+    data object Pestanas : NivelRaiz
+    data class CursoTareas(val cursoId: Long) : NivelRaiz
+    data class Editor(val tareaId: Long?) : NivelRaiz
 }
 
 /**
@@ -94,45 +108,80 @@ fun NotallyRoot(modifier: Modifier = Modifier) {
     val pila = remember(pilaCodificada) { decodificarPila(pilaCodificada) }
     val actual = pila.lastOrNull() ?: Destino.Hoy
     val editor = actual as? Destino.Editor
-    val pestanaActual = pila.lastOrNull { it !is Destino.Editor } ?: Destino.Hoy
+    val cursoTareas = actual as? Destino.CursoTareas
+    val pestanaActual = pila.lastOrNull {
+        it !is Destino.Editor && it !is Destino.CursoTareas
+    } ?: Destino.Hoy
+    val nivel = when {
+        editor != null -> NivelRaiz.Editor(editor.tareaId)
+        cursoTareas != null -> NivelRaiz.CursoTareas(cursoTareas.cursoId)
+        else -> NivelRaiz.Pestanas
+    }
 
     // Back del editor: lo gestiona `PredictiveBackHandler` dentro de
     // EditorScreen, que hace flush y permite el gesto predictivo. No se
     // intercepta aquí para no cancelarlo (§6, §10.5).
     //
+    // Back en la lista de tareas del curso: vuelve a Cursos conservando la
+    // pestaña y su estado guardado.
+    BackHandler(enabled = cursoTareas != null) {
+        pilaCodificada = codificarPila(pila.dropLast(1))
+    }
+    //
     // Back en tabs: volver a Hoy es una navegación interna; se conserva un
     // BackHandler solo para pestañas secundarias. En Hoy el sistema sale de la
     // app sin nada pendiente que guardar.
-    BackHandler(enabled = editor == null && pestanaActual != Destino.Hoy) {
+    BackHandler(
+        enabled = editor == null && cursoTareas == null && pestanaActual != Destino.Hoy,
+    ) {
         pilaCodificada = codificarDestino(Destino.Hoy)
     }
 
     val conservadorEstado = rememberSaveableStateHolder()
 
     AnimatedContent(
-        targetState = editor,
+        targetState = nivel,
         transitionSpec = {
             fadeIn(tween(MovimientoNotally.fundidoMs)) togetherWith
                 fadeOut(tween(MovimientoNotally.fundidoMs))
         },
         label = "rootTransition",
         modifier = modifier.fillMaxSize(),
-    ) { editorActivo ->
-        if (editorActivo != null) {
-            RutaEditor(
-                tareaId = editorActivo.tareaId,
+    ) { nivelActivo ->
+        when (nivelActivo) {
+            is NivelRaiz.Editor -> RutaEditor(
+                tareaId = nivelActivo.tareaId,
                 onVolver = {
                     pilaCodificada = codificarPila(pila.dropLast(1))
                 },
             )
-        } else {
-            ContenedorPestanas(
+
+            is NivelRaiz.CursoTareas -> {
+                conservadorEstado.SaveableStateProvider(
+                    "cursoTareas:${nivelActivo.cursoId}",
+                ) {
+                    TareasCursoScreen(
+                        cursoId = nivelActivo.cursoId,
+                        alVolver = {
+                            pilaCodificada = codificarPila(pila.dropLast(1))
+                        },
+                        alAbrirTarea = { tareaId ->
+                            pilaCodificada = codificarPila(pila + Destino.Editor(tareaId))
+                        },
+                    )
+                }
+            }
+
+            NivelRaiz.Pestanas -> ContenedorPestanas(
                 actual = pestanaActual,
                 onSeleccionar = { destino ->
                     pilaCodificada = codificarDestino(destino)
                 },
                 onAbrirEditor = { tareaId ->
                     pilaCodificada = codificarPila(pila + Destino.Editor(tareaId))
+                },
+                onAbrirTareasCurso = { cursoId ->
+                    pilaCodificada = codificarPila(pila + Destino.CursoTareas(cursoId))
                 },
                 conservadorEstado = conservadorEstado,
             )
@@ -145,6 +194,7 @@ private fun ContenedorPestanas(
     actual: Destino,
     onSeleccionar: (Destino) -> Unit,
     onAbrirEditor: (Long?) -> Unit,
+    onAbrirTareasCurso: (Long) -> Unit,
     conservadorEstado: androidx.compose.runtime.saveable.SaveableStateHolder,
 ) {
     val colores = MaterialTheme.colorScheme
@@ -255,6 +305,7 @@ private fun ContenedorPestanas(
                                 modifier = Modifier.padding(
                                     bottom = EspaciadoNotally.rellenoInferiorLista,
                                 ),
+                                alAbrirTareasCurso = onAbrirTareasCurso,
                             )
 
                             Destino.Settings -> SettingsScreen(
@@ -264,6 +315,7 @@ private fun ContenedorPestanas(
                             )
 
                             is Destino.Editor -> Unit
+                            is Destino.CursoTareas -> Unit
                         }
                     }
                 }
@@ -344,6 +396,7 @@ private fun Destino.recursoEtiqueta(): Int = when (this) {
     Destino.Cursos -> R.string.nav_cursos
     Destino.Settings -> R.string.nav_ajustes
     is Destino.Editor -> R.string.nav_hoy
+    is Destino.CursoTareas -> R.string.nav_cursos
 }
 
 /**
@@ -355,6 +408,7 @@ private fun Destino.indicePestana(): Int? = when (this) {
     Destino.Cursos -> 1
     Destino.Settings -> 2
     is Destino.Editor -> null
+    is Destino.CursoTareas -> null
 }
 
 private fun Destino.recursoIcono(): Int = when (this) {
@@ -362,6 +416,7 @@ private fun Destino.recursoIcono(): Int = when (this) {
     Destino.Cursos -> R.drawable.ic_book
     Destino.Settings -> R.drawable.ic_settings
     is Destino.Editor -> R.drawable.ic_checklist
+    is Destino.CursoTareas -> R.drawable.ic_book
 }
 
 internal fun codificarDestino(destino: Destino): String = destino.clave
@@ -381,6 +436,11 @@ private val destinosFijos: Map<String, Destino> = listOf(
 ).associateBy { it.clave }
 
 internal fun decodificarDestino(codificada: String): Destino? = when {
+    codificada.startsWith(PREFIJO_CURSO_TAREAS) -> codificada
+        .removePrefix(PREFIJO_CURSO_TAREAS)
+        .toLongOrNull()
+        ?.let(Destino::CursoTareas)
+
     codificada.startsWith(PREFIJO_EDITOR) -> Destino.Editor(
         codificada.removePrefix(PREFIJO_EDITOR)
             .takeUnless { it == ID_EDITOR_NUEVO }

@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -24,6 +25,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.example.notally.R
 import com.example.notally.data.model.Curso
@@ -79,6 +82,7 @@ fun CursoSheet(
     alGuardar: suspend (existente: Curso?, nombre: String) -> ResultadoCurso,
     alGuardado: () -> Unit,
     alEliminar: (Curso) -> Unit,
+    alVerTareas: () -> Unit,
     alLimpiarError: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -151,6 +155,27 @@ fun CursoSheet(
                         valor = valor,
                     )
                 }
+            }
+            if (edicion != null) {
+                Spacer(Modifier.height(24.dp))
+                val cantidadTareas = edicion.tarjeta.totalTareas
+                val descripcionVerTareas = stringResource(
+                    R.string.a11y_view_tasks,
+                    edicion.tarjeta.curso.nombre,
+                )
+                OutlinedButton(
+                    onClick = alVerTareas,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .semantics { contentDescription = descripcionVerTareas },
+                ) {
+                    Text(
+                        text = stringResource(R.string.course_view_tasks) +
+                            stringResource(R.string.task_meta_separator) +
+                            cantidadTareas,
+                    )
+                }
+                Spacer(Modifier.height(8.dp))
             }
             if (edicion != null) {
                 Spacer(Modifier.height(24.dp))

@@ -111,6 +111,14 @@
     <string name="course_section">Sección</string>
     <string name="course_period">Periodo</string>
     <string name="course_type">Tipo</string>
+    <string name="course_view_tasks">Ver tareas</string>
+    <plurals name="course_tasks_count">
+        <item quantity="one">%d tarea</item>
+        <item quantity="other">%d tareas</item>
+    </plurals>
+    <string name="course_tasks_empty_title">Este curso no tiene tareas</string>
+    <string name="course_tasks_empty_body">Cuando agregues una tarea a este curso, aparecerá aquí.</string>
+    <string name="course_tasks_empty_cta">Volver a Cursos</string>
 
     <!-- Editor de tarea -->
     <string name="editor_title_placeholder">Título de la tarea</string>
@@ -154,6 +162,7 @@
     <string name="a11y_openTask">Abrir tarea</string>
     <string name="a11y_newTask">Nueva tarea</string>
     <string name="a11y_edit_course">Editar curso</string>
+    <string name="a11y_view_tasks">Ver tareas de %1$s</string>
     <string name="a11y_deleteSubtask">Eliminar subtarea</string>
     <string name="a11y_completeTask">Completar tarea: %s</string>
     <string name="a11y_uncompleteTask">Marcar como pendiente: %s</string>

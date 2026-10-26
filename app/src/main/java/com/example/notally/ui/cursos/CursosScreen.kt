@@ -84,6 +84,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 @Composable
 fun CursosScreen(
     modifier: Modifier = Modifier,
+    alAbrirTareasCurso: (Long) -> Unit = {},
     viewModel: CursosViewModel = viewModel(
         factory = CursosViewModel.factory(LocalContext.current),
     ),
@@ -261,6 +262,14 @@ fun CursosScreen(
                 viewModel.eliminarCurso(curso) {
                     viewModel.limpiarErrorFormulario()
                     objetivoHoja = null
+                }
+            },
+            alVerTareas = {
+                val curso = (objetivo as? ObjetivoCursoSheet.Editar)?.tarjeta?.curso
+                if (curso != null) {
+                    viewModel.limpiarErrorFormulario()
+                    objetivoHoja = null
+                    alAbrirTareasCurso(curso.id)
                 }
             },
             alLimpiarError = viewModel::limpiarErrorFormulario,
