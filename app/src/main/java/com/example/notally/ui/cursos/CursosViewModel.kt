@@ -156,14 +156,13 @@ class CursosViewModel(
     suspend fun guardarCurso(
         existente: Curso?,
         nombre: String,
-        color: Long,
     ): ResultadoCurso {
         val recortado = nombre.trim()
         val resultado = if (existente == null) {
-            repositorioCursos.crearCurso(nombre = recortado, color = color)
+            repositorioCursos.crearCurso(nombre = recortado)
         } else {
             repositorioCursos.actualizarCurso(
-                existente.copy(nombre = recortado, color = color),
+                existente.copy(nombre = recortado),
             )
         }
         _errorFormulario.value = resultado.takeUnless { it.esExito }
@@ -181,12 +180,6 @@ class CursosViewModel(
                 _eventos.emit(EventoCursos.Fallo { eliminarCurso(curso, alEliminar) })
             }
         }
-    }
-
-    /** Color por defecto en alta: siguiente swatch en orden (§2.5). */
-    fun colorPorDefecto(cantidadCursos: Int): Long {
-        val swatches = com.example.notally.ui.theme.SwatchesCursos
-        return swatches[cantidadCursos % swatches.size].argb
     }
 
     private fun buildState(agregado: Agregado, ahora: Long): EstadoUiCursos {

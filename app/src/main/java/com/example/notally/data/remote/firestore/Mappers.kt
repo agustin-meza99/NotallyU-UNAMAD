@@ -194,7 +194,6 @@ object CursoLimits {
 fun Curso.toRemote(updatedAtMs: Long = creadoEn): RemoteCurso {
     val remote = RemoteCurso(
         name = nombre,
-        colorArgb = color,
         professor = profesor,
         credits = creditos,
         createdAt = creadoEn,
@@ -229,7 +228,6 @@ fun RemoteCurso.toLocal(
     return Curso(
         id = localId,
         nombre = name,
-        color = colorArgb,
         profesor = professor,
         creditos = credits,
         creadoEn = createdAt ?: now,

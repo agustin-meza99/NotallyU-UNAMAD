@@ -1,6 +1,5 @@
 package com.example.notally.ui.theme
 
-import androidx.annotation.StringRes
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.SpringSpec
 import androidx.compose.animation.core.spring
@@ -11,11 +10,8 @@ import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.colorResource
@@ -27,31 +23,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.notally.R
-import com.example.notally.data.ColorsCurso
-import kotlin.math.pow
 
 // ===========================================================================
 // Colores
 // ===========================================================================
-
-// ---------------------------------------------------------------------------
-// Helpers de distancia de color (solo para resolver acentos de curso).
-// ---------------------------------------------------------------------------
-
-private fun rgb(argb: Long): Triple<Int, Int, Int> = Triple(
-    ((argb shr 16) and 0xFF).toInt(),
-    ((argb shr 8) and 0xFF).toInt(),
-    (argb and 0xFF).toInt(),
-)
-
-private fun colorDistance(a: Long, b: Long): Double {
-    val (ar, ag, ab) = rgb(a)
-    val (br, bg, bb) = rgb(b)
-    // Distancia ponderada (aprox. percepción): el ojo es más sensible al verde.
-    return (2 * (ar - br).toDouble().pow(2) +
-        4 * (ag - bg).toDouble().pow(2) +
-        3 * (ab - bb).toDouble().pow(2))
-}
 
 // ---------------------------------------------------------------------------
 // Paleta clara (§2.2 del DESIGN.md). Es la única paleta de la app.
@@ -151,103 +126,6 @@ private fun lightScheme(superficie: Color): ColorScheme = lightColorScheme(
     surfaceContainerLow = LightSurfaceContainerLow,
     surfaceContainerLowest = LightSurfaceContainerLowest,
 )
-
-// ---------------------------------------------------------------------------
-// Acentos de curso (§2.5). Seis swatches fijos, con una sola variante clara.
-// El argb almacenado por el usuario es el hex claro del swatch.
-// ---------------------------------------------------------------------------
-
-/**
- * Un swatch de curso.
- *
- * [argb] es el valor canónico que se guarda en `Curso.colorArgb` (hex claro).
- * [light] identifica el curso sobre superficie; [lightContainer] se usa en la
- * hoja de edición y en la selección de swatch.
- */
-@Immutable
-data class SwatchCurso(
-    val argb: Long,
-    @param:StringRes val nameRes: Int,
-    val light: Color,
-    val lightContainer: Color,
-)
-
-/** Los seis acentos, en el orden de la tabla del documento. */
-val SwatchesCursos: List<SwatchCurso> = listOf(
-    SwatchCurso(
-        argb = ColorsCurso.INDIGO,
-        nameRes = R.string.course_color_indigo,
-        light = Color(ColorsCurso.INDIGO),
-        lightContainer = Color(0xFFE9ECF5),
-    ),
-    SwatchCurso(
-        argb = ColorsCurso.FOREST,
-        nameRes = R.string.course_color_forest,
-        light = Color(ColorsCurso.FOREST),
-        lightContainer = Color(0xFFE6EFE8),
-    ),
-    SwatchCurso(
-        argb = ColorsCurso.TERRACOTTA,
-        nameRes = R.string.course_color_terracotta,
-        light = Color(ColorsCurso.TERRACOTTA),
-        lightContainer = Color(0xFFF4E8E2),
-    ),
-    SwatchCurso(
-        argb = ColorsCurso.LIME,
-        nameRes = R.string.course_color_lime,
-        light = Color(ColorsCurso.LIME),
-        lightContainer = Color(0xFFF3F5E0),
-    ),
-    SwatchCurso(
-        argb = ColorsCurso.LAVENDER,
-        nameRes = R.string.course_color_lavender,
-        light = Color(ColorsCurso.LAVENDER),
-        lightContainer = Color(0xFFF3EDF5),
-    ),
-    SwatchCurso(
-        argb = ColorsCurso.PETROL,
-        nameRes = R.string.course_color_petrol,
-        light = Color(ColorsCurso.PETROL),
-        lightContainer = Color(0xFFE3EEEE),
-    ),
-)
-
-/**
- * Resuelve el acento de un curso contra los seis swatches claros.
- *
- * Los valores guardados con anterioridad y los de bases anteriores pueden no
- * coincidir con los seis swatches; en ese caso se elige el swatch más cercano en RGB para que la
- * identidad de color del documento se mantenga (nunca se muestra un morado
- * suelto fuera de la paleta).
- */
-@Immutable
-class PaletteCursos internal constructor(
-    val swatches: List<SwatchCurso> = SwatchesCursos,
-) {
-    private fun resolve(argb: Long): SwatchCurso {
-        val normalized = argb and 0xFFFFFFFFL
-        swatches.firstOrNull { it.argb == normalized }?.let { return it }
-        return swatches.minBy { colorDistance(normalized, it.argb) }
-    }
-
-    fun colorCurso(argb: Long): Color = resolve(argb).light
-
-    fun contenedorCurso(argb: Long): Color = resolve(argb).lightContainer
-
-    fun swatchCurso(argb: Long): SwatchCurso = resolve(argb)
-
-    companion object {
-        val Single = PaletteCursos()
-    }
-}
-
-/** Paleta de curso del tema claro. */
-val LocalPaletteCursos = staticCompositionLocalOf { PaletteCursos.Single }
-
-/** Color de acento de curso resuelto para el tema claro. */
-@Composable
-@ReadOnlyComposable
-fun colorCurso(argb: Long): Color = LocalPaletteCursos.current.colorCurso(argb)
 
 // ===========================================================================
 // Tipografia
@@ -465,18 +343,15 @@ val margenHorizontalPantalla: Dp
 /**
  * Tema de Notally.
  *
- * Un solo tema claro y fijo: siempre [lightColorsScheme] con la paleta de
- * cursos clara. No existe variante oscura, dinámica ni ajuste que altere los
- * roles M3.
+ * Un solo tema claro y fijo: siempre [lightColorsScheme]. No existe variante
+ * oscura, dinámica ni ajuste que altere los roles M3.
  */
 @Composable
 fun TemaNotally(content: @Composable () -> Unit) {
-    CompositionLocalProvider(LocalPaletteCursos provides PaletteCursos.Single) {
-        MaterialTheme(
-            colorScheme = lightColorsScheme(),
-            typography = Tipografia,
-            shapes = FormasNotally,
-            content = content,
-        )
-    }
+    MaterialTheme(
+        colorScheme = lightColorsScheme(),
+        typography = Tipografia,
+        shapes = FormasNotally,
+        content = content,
+    )
 }

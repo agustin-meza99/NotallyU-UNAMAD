@@ -46,7 +46,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
@@ -70,7 +69,6 @@ import com.example.notally.ui.theme.EspaciadoNotally
 import com.example.notally.ui.theme.FormaNotally
 import com.example.notally.ui.theme.MovimientoNotally
 import com.example.notally.ui.theme.TipografiaNotally
-import com.example.notally.ui.theme.colorCurso
 import com.example.notally.ui.theme.margenHorizontalPantalla
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
@@ -247,14 +245,13 @@ fun CursosScreen(
     if (objetivo != null) {
         CursoSheet(
             objetivo = objetivo,
-            colorPorDefecto = viewModel.colorPorDefecto(estado.cursos.size),
             errorFormulario = errorFormulario,
             alDescartar = {
                 viewModel.limpiarErrorFormulario()
                 objetivoHoja = null
             },
-            alGuardar = { existente: Curso?, nombre: String, color: Long ->
-                viewModel.guardarCurso(existente, nombre, color)
+            alGuardar = { existente: Curso?, nombre: String ->
+                viewModel.guardarCurso(existente, nombre)
             },
             alGuardado = {
                 viewModel.limpiarErrorFormulario()
@@ -356,7 +353,6 @@ private fun TarjetaCurso(
     modifier: Modifier = Modifier,
 ) {
     val colores = MaterialTheme.colorScheme
-    val acento = colorCurso(tarjeta.curso.color)
     val fuenteInteraccion = remember { MutableInteractionSource() }
     val pulsada by fuenteInteraccion.collectIsPressedAsState()
     var enfocada by remember { mutableStateOf(false) }
@@ -433,55 +429,41 @@ private fun TarjetaCurso(
         color = contenedor,
         border = BorderStroke(1.dp, colorBorde),
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.Top,
-        ) {
-            Box(
-                modifier = Modifier
-                    .width(3.dp)
-                    .height(28.dp)
-                    .clip(CircleShape)
-                    .background(acento),
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = tarjeta.curso.nombre,
+                style = MaterialTheme.typography.titleMedium,
+                color = colores.onSurface,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
             )
-            Spacer(Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = tarjeta.curso.nombre,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = colores.onSurface,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = estadisticas,
+                style = MaterialTheme.typography.bodySmall,
+                color = colores.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(8.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                BarraProgreso(
+                    fraccion = if (tarjeta.totalTareas == 0) {
+                        0f
+                    } else {
+                        tarjeta.tareasHechas.toFloat() / tarjeta.totalTareas
+                    },
+                    modifier = Modifier.weight(1f),
                 )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = estadisticas,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = colores.onSurfaceVariant,
-                )
-                Spacer(Modifier.height(8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    BarraProgreso(
-                        fraccion = if (tarjeta.totalTareas == 0) {
-                            0f
-                        } else {
-                            tarjeta.tareasHechas.toFloat() / tarjeta.totalTareas
-                        },
-                        color = acento,
-                        modifier = Modifier.weight(1f),
+                if (tarjeta.totalTareas > 0) {
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = stringResource(
+                            R.string.course_progress_ratio,
+                            tarjeta.tareasHechas,
+                            tarjeta.totalTareas,
+                        ),
+                        style = TipografiaNotally.numerico,
+                        color = colores.onSurfaceVariant,
                     )
-                    if (tarjeta.totalTareas > 0) {
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            text = stringResource(
-                                R.string.course_progress_ratio,
-                                tarjeta.tareasHechas,
-                                tarjeta.totalTareas,
-                            ),
-                            style = TipografiaNotally.numerico,
-                            color = colores.onSurfaceVariant,
-                        )
-                    }
                 }
             }
         }
@@ -491,7 +473,6 @@ private fun TarjetaCurso(
 @Composable
 private fun BarraProgreso(
     fraccion: Float,
-    color: Color,
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -506,7 +487,7 @@ private fun BarraProgreso(
                     .fillMaxWidth(fraccion.coerceIn(0f, 1f))
                     .height(2.dp)
                     .clip(CircleShape)
-                    .background(color),
+                    .background(MaterialTheme.colorScheme.primary),
             )
         }
     }

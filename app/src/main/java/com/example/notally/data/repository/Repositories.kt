@@ -149,7 +149,6 @@ class CursosRepository(
 
     suspend fun crearCurso(
         nombre: String,
-        color: Long,
         profesor: String? = null,
         creditos: Int? = null,
     ): ResultadoCurso = escribir {
@@ -157,7 +156,6 @@ class CursosRepository(
             cursoDao.insertar(
                 Curso(
                     nombre = nombre,
-                    color = color,
                     profesor = profesor,
                     creditos = creditos,
                 ),

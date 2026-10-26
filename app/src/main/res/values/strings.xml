@@ -99,16 +99,7 @@
     <string name="courses_new">Nuevo curso</string>
     <string name="course_edit_title">Editar curso</string>
     <string name="course_name">Nombre</string>
-    <string name="course_color">Color</string>
     <string name="course_delete">Eliminar curso</string>
-
-    <!-- Nombres accesibles de los swatches de curso -->
-    <string name="course_color_indigo">Índigo</string>
-    <string name="course_color_forest">Bosque</string>
-    <string name="course_color_terracotta">Terracota</string>
-    <string name="course_color_lime">Lima</string>
-    <string name="course_color_lavender">Lavanda</string>
-    <string name="course_color_petrol">Petróleo</string>
 
     <!-- Editor de tarea -->
     <string name="editor_title_placeholder">Título de la tarea</string>

@@ -48,7 +48,6 @@ data class RemoteTask(
  *
  * Contrato (ver `firestore.rules`, funcion `validCurso`):
  * - `name`: string, 1..120 caracteres.
- * - `colorArgb`: number (ARGB opaco).
  * - `professor`: string de hasta 120 caracteres o null.
  * - `credits`: number >= 0 o null.
  * - `createdAt` / `updatedAt`: Timestamp del servidor.
@@ -65,7 +64,6 @@ data class RemoteTask(
  */
 data class RemoteCurso(
     val name: String,
-    val colorArgb: Long,
     val professor: String? = null,
     val credits: Int? = null,
     val createdAt: Long? = null,

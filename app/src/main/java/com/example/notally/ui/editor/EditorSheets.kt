@@ -82,11 +82,10 @@ fun EditorSheetsHost(
     hoja: HojaEditor?,
     borrador: BorradorTarea,
     cursos: List<Curso>,
-    defaultCursoColor: Long,
     errorNuevoCurso: ResultadoCurso?,
     alDescartar: () -> Unit,
     alSeleccionarCurso: (Long?) -> Unit,
-    alCrearCurso: (String, Long) -> Unit,
+    alCrearCurso: (String) -> Unit,
     alLimpiarErrorCurso: () -> Unit,
     alCambiarEntrega: (Long?) -> Unit,
     alCambiarPrioridad: (Prioridad) -> Unit,
@@ -103,7 +102,6 @@ fun EditorSheetsHost(
             HojaEditor.CURSO -> CourseSelectorContent(
                 cursos = cursos,
                 idSeleccionado = borrador.cursoId,
-                colorPorDefecto = defaultCursoColor,
                 error = errorNuevoCurso,
                 alSeleccionar = {
                     alSeleccionarCurso(it)
@@ -167,10 +165,9 @@ private fun SheetTitle(texto: String) {
 private fun CourseSelectorContent(
     cursos: List<Curso>,
     idSeleccionado: Long?,
-    colorPorDefecto: Long,
     error: ResultadoCurso?,
     alSeleccionar: (Long?) -> Unit,
-    alCrear: (String, Long) -> Unit,
+    alCrear: (String) -> Unit,
     alLimpiarError: () -> Unit,
 ) {
     var creando by rememberSaveable { mutableStateOf(false) }
@@ -228,7 +225,7 @@ private fun CourseSelectorContent(
                     Text(stringResource(R.string.action_cancel))
                 }
                 TextButton(
-                    onClick = { alCrear(nombre.trim(), colorPorDefecto) },
+                    onClick = { alCrear(nombre.trim()) },
                     enabled = nombre.isNotBlank(),
                 ) {
                     Text(stringResource(R.string.action_add))

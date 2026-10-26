@@ -27,13 +27,6 @@ const IDENTITY_BASE = 'https://identitytoolkit.googleapis.com/v1';
 const FIRESTORE_BASE = 'https://firestore.googleapis.com/v1';
 const DAY_MS = 86_400_000;
 
-const COLORS = {
-  INDIGO: 0xff3a5a9e,
-  FOREST: 0xff2f6a4e,
-  TERRACOTTA: 0xff99482e,
-  LIME: 0xff5f7300,
-};
-
 // ---------------------------------------------------------------------------
 // Datos: espejo exacto de app/src/main/java/com/example/notally/data/SeedData.kt
 // ---------------------------------------------------------------------------
@@ -42,28 +35,24 @@ const CURSOS = [
   {
     id: 'course-calculo',
     name: 'Cálculo III',
-    colorArgb: COLORS.INDIGO,
     professor: 'Dra. Mariana Quispe',
     credits: 4,
   },
   {
     id: 'course-estructuras',
     name: 'Estructuras de Datos',
-    colorArgb: COLORS.FOREST,
     professor: 'Ing. Carlos Mendoza',
     credits: 5,
   },
   {
     id: 'course-bases-datos',
     name: 'Bases de Datos',
-    colorArgb: COLORS.TERRACOTTA,
     professor: 'Mg. Lucía Fernández',
     credits: 4,
   },
   {
     id: 'course-etica',
     name: 'Ética Profesional',
-    colorArgb: COLORS.LIME,
     professor: 'Dr. Jorge Salazar',
     credits: 2,
   },
@@ -243,7 +232,6 @@ function dueAt(now, days, hour, minute) {
 function cursoFields(curso) {
   return {
     name: str(curso.name),
-    colorArgb: int(curso.colorArgb),
     professor: str(curso.professor),
     credits: int(curso.credits),
     deletedAt: nullValue(),

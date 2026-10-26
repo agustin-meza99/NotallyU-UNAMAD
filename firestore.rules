@@ -84,18 +84,17 @@ service cloud.firestore {
     // Validadores de forma
     // ---------------------------------------------------------------------
 
-    // Curso: name (<=120), colorArgb, professor (<=120 o null),
+    // Curso: name (<=120), professor (<=120 o null),
     // credits (number o null), createdAt/updatedAt (timestamp),
     // deletedAt (timestamp o null).
     function validCurso(d) {
-      return d.keys().hasAll(['name', 'colorArgb', 'createdAt', 'updatedAt'])
+      return d.keys().hasAll(['name', 'createdAt', 'updatedAt'])
         && d.keys().hasOnly([
-             'name', 'colorArgb', 'professor', 'credits',
+             'name', 'professor', 'credits',
              'createdAt', 'updatedAt', 'deletedAt'
            ])
         && d.name is string
         && d.name.size() >= 1 && d.name.size() <= 120
-        && d.colorArgb is number
         && (!d.keys().hasAny(['professor'])
             || d.professor == null
             || (d.professor is string && d.professor.size() <= 120))

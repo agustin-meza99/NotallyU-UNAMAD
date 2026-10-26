@@ -71,7 +71,6 @@ import com.example.notally.data.model.Estado
 import com.example.notally.data.model.Prioridad
 import com.example.notally.data.model.Tarea
 import com.example.notally.R
-import com.example.notally.ui.theme.colorCurso
 import com.example.notally.ui.theme.FormaNotally
 import com.example.notally.ui.theme.MovimientoNotally
 import com.example.notally.ui.utils.DateFormat
@@ -93,7 +92,6 @@ import com.example.notally.ui.utils.textoFraseEntrega
 fun TaskRow(
     tarea: Tarea,
     nombreCurso: String?,
-    colorCursoArgb: Long?,
     modifier: Modifier = Modifier,
     ahora: Long = System.currentTimeMillis(),
     alPulsar: () -> Unit = {},
@@ -120,7 +118,6 @@ fun TaskRow(
             ?: textoEtiquetaFecha(tarea.entregaEn, ahora)
     }
     val colorFecha = if (atrasada) colores.error else colores.onSurfaceVariant
-    val colorPuntoCurso = colorCursoArgb?.let { colorCurso(it) } ?: colores.outline
 
     val textoPrioridad = priorityLabelForA11y(tarea.prioridad)
     val descripcionEntrega = tarea.entregaEn?.let {
@@ -242,28 +239,17 @@ fun TaskRow(
                 overflow = TextOverflow.Ellipsis,
             )
             Spacer(Modifier.height(4.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(6.dp)
-                        .clip(CircleShape)
-                        .background(
-                            colorPuntoCurso,
-                        ),
-                )
-                Spacer(Modifier.width(4.dp))
-                Text(
-                    text = buildAnnotatedString {
-                        append(textoCurso)
-                        append(separador)
-                        withStyle(SpanStyle(color = colorFecha)) { append(textoFecha) }
-                    },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = colores.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
+            Text(
+                text = buildAnnotatedString {
+                    append(textoCurso)
+                    append(separador)
+                    withStyle(SpanStyle(color = colorFecha)) { append(textoFecha) }
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = colores.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }
@@ -327,7 +313,6 @@ private fun TaskCheckbox(hecha: Boolean) {
 fun SwipeTaskRow(
     tarea: Tarea,
     nombreCurso: String?,
-    colorCursoArgb: Long?,
     modifier: Modifier = Modifier,
     ahora: Long = System.currentTimeMillis(),
     alPulsar: () -> Unit = {},
@@ -432,7 +417,6 @@ fun SwipeTaskRow(
         TaskRow(
             tarea = tarea,
             nombreCurso = nombreCurso,
-            colorCursoArgb = colorCursoArgb,
             ahora = ahora,
             alPulsar = alPulsar,
             alAlternarCompletada = alAlternarCompletada,

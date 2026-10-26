@@ -10,8 +10,6 @@ import androidx.room.PrimaryKey
  * Curso o asignatura universitaria.
  *
  * La tabla y las columnas físicas conservan sus nombres en inglés.
- *
- * @property color color de acento en formato ARGB (por ejemplo `0xFF3A5A9E`).
  */
 @Entity(
     tableName = "subjects",
@@ -22,8 +20,6 @@ data class Curso(
     val id: Long = 0L,
     @ColumnInfo(name = "name")
     val nombre: String,
-    @ColumnInfo(name = "colorArgb")
-    val color: Long,
     @ColumnInfo(name = "professor")
     val profesor: String? = null,
     @ColumnInfo(name = "credits")

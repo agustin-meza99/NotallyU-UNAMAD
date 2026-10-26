@@ -289,7 +289,6 @@ private fun ElementoTarea(
     SwipeTaskRow(
         tarea = elemento.tarea,
         nombreCurso = elemento.curso?.nombre,
-        colorCursoArgb = elemento.curso?.color,
         ahora = ahora,
         modifier = modifier,
         alPulsar = { alAbrirTarea(elemento.tarea.id) },

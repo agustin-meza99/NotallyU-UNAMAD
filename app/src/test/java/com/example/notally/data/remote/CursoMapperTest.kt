@@ -15,14 +15,12 @@ class CursoMapperTest {
     private fun curso(
         id: Long = 3L,
         nombre: String = "Historia del Peru",
-        color: Long = 0xFF3A5A9E,
         profesor: String? = "Dra. Rojas",
         creditos: Int? = 4,
         creadoEn: Long = 1_600_000_000_000L,
     ) = Curso(
         id = id,
         nombre = nombre,
-        color = color,
         profesor = profesor,
         creditos = creditos,
         creadoEn = creadoEn,
@@ -37,7 +35,6 @@ class CursoMapperTest {
 
         assertEquals(local, vuelta)
         assertEquals(local.nombre, remoto.name)
-        assertEquals(local.color, remoto.colorArgb)
         assertEquals(local.creadoEn, remoto.createdAt)
         assertEquals(local.creadoEn, remoto.updatedAt)
         assertNull(remoto.deletedAt)
@@ -105,7 +102,6 @@ class CursoMapperTest {
     fun `un tombstone no se puede mapear como curso local viva`() {
         val tombstone = RemoteCurso(
             name = "Borrada",
-            colorArgb = 0xFF3A5A9E,
             createdAt = 1_600_000_000_000L,
             updatedAt = 1_610_000_000_000L,
             deletedAt = 1_620_000_000_000L,
@@ -120,7 +116,6 @@ class CursoMapperTest {
     fun `un remoto sin createdAt usa el reloj recibido`() {
         val remoto = RemoteCurso(
             name = "Sin fecha",
-            colorArgb = 0xFF2F6A4E,
             createdAt = null,
         )
 
@@ -132,17 +127,16 @@ class CursoMapperTest {
     @Test
     fun `nombre y profesor invalidos se rechazan al entrar`() {
         assertThrows(IllegalArgumentException::class.java) {
-            RemoteCurso(name = "", colorArgb = 0).toLocal()
+            RemoteCurso(name = "").toLocal()
         }
         assertThrows(IllegalArgumentException::class.java) {
             RemoteCurso(
                 name = "Valida",
-                colorArgb = 0,
                 professor = "p".repeat(CursoLimits.MAX_PROFESSOR + 1),
             ).toLocal()
         }
         assertThrows(IllegalArgumentException::class.java) {
-            RemoteCurso(name = "Valida", colorArgb = 0, credits = -5).toLocal()
+            RemoteCurso(name = "Valida", credits = -5).toLocal()
         }
     }
 }

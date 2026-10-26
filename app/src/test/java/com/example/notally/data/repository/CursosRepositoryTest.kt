@@ -32,7 +32,7 @@ class CursosRepositoryTest {
     fun `crear curso devuelve Creado con el id insertado`() = runBlocking {
         val repositorio = CursosRepository(CursoDaoFalso(alInsertar = { 42L }))
 
-        val resultado = repositorio.crearCurso(nombre = "Física", color = 1L)
+        val resultado = repositorio.crearCurso(nombre = "Física")
 
         assertEquals(ResultadoCurso.Creado(42L), resultado)
         assertTrue(resultado.esExito)
@@ -44,7 +44,7 @@ class CursosRepositoryTest {
             CursoDaoFalso(alInsertar = { throw SQLiteConstraintException("duplicado") }),
         )
 
-        val resultado = repositorio.crearCurso(nombre = "Física", color = 1L)
+        val resultado = repositorio.crearCurso(nombre = "Física")
 
         assertEquals(ResultadoCurso.Duplicado, resultado)
         assertTrue(!resultado.esExito)
@@ -56,7 +56,7 @@ class CursosRepositoryTest {
             CursoDaoFalso(alInsertar = { error("disco lleno") }),
         )
 
-        val resultado = repositorio.crearCurso(nombre = "Física", color = 1L)
+        val resultado = repositorio.crearCurso(nombre = "Física")
 
         assertEquals(ResultadoCurso.Error, resultado)
         assertTrue(!resultado.esExito)
@@ -67,7 +67,7 @@ class CursosRepositoryTest {
         val repositorio = CursosRepository(CursoDaoFalso(alInsertar = { 0L }))
 
         val resultado = repositorio.actualizarCurso(
-            Curso(id = 7L, nombre = "Física", color = 1L),
+            Curso(id = 7L, nombre = "Física"),
         )
 
         assertEquals(ResultadoCurso.Actualizado(7L), resultado)

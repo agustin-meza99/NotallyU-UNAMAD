@@ -17,7 +17,6 @@ import com.example.notally.data.model.TareaConSubtareas
 import com.example.notally.data.repository.CursosRepository
 import com.example.notally.data.repository.ResultadoCurso
 import com.example.notally.data.repository.TareasRepository
-import com.example.notally.ui.theme.SwatchesCursos
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -410,11 +409,6 @@ class EditorViewModel(
     // Cursos y eliminación
     // ---------------------------------------------------------------------
 
-    fun defaultCursoColor(): Long {
-        val swatches = SwatchesCursos
-        return swatches[_cursos.value.size % swatches.size].argb
-    }
-
     fun limpiarErrorNuevoCurso() {
         _errorNuevoCurso.value = null
     }
@@ -422,13 +416,12 @@ class EditorViewModel(
     /** Crea un curso y la selecciona. [alCrear] se ejecuta en el hilo principal. */
     fun crearCursoYSeleccionar(
         nombre: String,
-        color: Long,
         alCrear: () -> Unit,
     ) {
         val recortado = nombre.trim()
         if (recortado.isEmpty()) return
         viewModelScope.launch {
-            when (val resultado = repositorioCursos.crearCurso(recortado, color)) {
+            when (val resultado = repositorioCursos.crearCurso(recortado)) {
                 is ResultadoCurso.Creado -> {
                     _errorNuevoCurso.value = null
                     actualizarBorrador { it.copy(cursoId = resultado.id) }

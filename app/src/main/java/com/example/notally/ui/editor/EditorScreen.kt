@@ -306,12 +306,11 @@ fun EditorScreen(
         hoja = hoja,
         borrador = estado,
         cursos = cursos,
-        defaultCursoColor = viewModel.defaultCursoColor(),
         errorNuevoCurso = errorNuevoCurso,
         alDescartar = { hoja = null },
         alSeleccionarCurso = viewModel::cambiarCurso,
-        alCrearCurso = { nombre, color ->
-            viewModel.crearCursoYSeleccionar(nombre, color) { hoja = null }
+        alCrearCurso = { nombre ->
+            viewModel.crearCursoYSeleccionar(nombre) { hoja = null }
         },
         alLimpiarErrorCurso = viewModel::limpiarErrorNuevoCurso,
         alCambiarEntrega = viewModel::cambiarEntrega,

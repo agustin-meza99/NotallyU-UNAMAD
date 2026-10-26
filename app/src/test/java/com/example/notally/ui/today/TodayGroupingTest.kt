@@ -29,7 +29,6 @@ class TodayGroupingTest {
     private val curso = Curso(
         id = 1L,
         nombre = "Cálculo diferencial",
-        color = 0xFF3A5A9E,
     )
     private val cursos = mapOf(1L to curso)
 
