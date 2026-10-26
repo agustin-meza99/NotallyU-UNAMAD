@@ -6,7 +6,6 @@ import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
 import com.example.notally.data.model.Subtarea
-import kotlinx.coroutines.flow.Flow
 
 /**
  * Acceso a subtareas. Los parámetros ligados al SQL conservan su nombre para no
@@ -14,12 +13,6 @@ import kotlinx.coroutines.flow.Flow
  */
 @Dao
 abstract class SubtareaDao {
-
-    @Query("SELECT * FROM subtasks WHERE taskId = :taskId ORDER BY position ASC, id ASC")
-    abstract fun observarDeTarea(taskId: Long): Flow<List<Subtarea>>
-
-    @Query("SELECT * FROM subtasks WHERE taskId = :taskId ORDER BY position ASC, id ASC")
-    abstract suspend fun obtenerDeTarea(taskId: Long): List<Subtarea>
 
     @Insert
     abstract suspend fun insertar(subtarea: Subtarea): Long
@@ -38,9 +31,6 @@ abstract class SubtareaDao {
 
     @Query("DELETE FROM subtasks WHERE id = :subtaskId")
     abstract suspend fun eliminarPorId(subtaskId: Long)
-
-    @Query("DELETE FROM subtasks WHERE taskId = :taskId")
-    abstract suspend fun eliminarDeTarea(taskId: Long)
 
     @Query("UPDATE subtasks SET position = :position WHERE id = :subtaskId AND taskId = :taskId")
     abstract suspend fun actualizarPosicion(subtaskId: Long, taskId: Long, position: Int)

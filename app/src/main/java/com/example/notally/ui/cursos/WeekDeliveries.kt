@@ -1,11 +1,8 @@
 package com.example.notally.ui.cursos
 
 import com.example.notally.data.DateRanges
-import java.time.DayOfWeek
-import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import java.time.temporal.TemporalAdjusters
 
 /**
  * Cálculo de "N entregas esta semana" para Cursos (§7.4).
@@ -26,11 +23,10 @@ object WeekDeliveries {
         ahora: Long,
         semanaEmpiezaLunes: Boolean,
         zona: ZoneId = ZoneId.systemDefault(),
-    ): LocalDate {
-        val hoy = Instant.ofEpochMilli(ahora).atZone(zona).toLocalDate()
-        val primerDia = if (semanaEmpiezaLunes) DayOfWeek.MONDAY else DayOfWeek.SUNDAY
-        return hoy.with(TemporalAdjusters.previousOrSame(primerDia))
-    }
+    ): LocalDate = DateRanges.inicioSemana(
+        DateRanges.fechaLocal(ahora, zona),
+        semanaEmpiezaLunes,
+    )
 
     /** Rango inclusivo de siete días que cubre la semana de [ahora]. */
     fun rangoSemana(

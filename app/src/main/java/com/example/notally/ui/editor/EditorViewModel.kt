@@ -1,7 +1,6 @@
 package com.example.notally.ui.editor
 
 import android.content.Context
-import android.database.sqlite.SQLiteConstraintException
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -16,6 +15,7 @@ import com.example.notally.data.model.Subtarea
 import com.example.notally.data.model.Tarea
 import com.example.notally.data.model.TareaConSubtareas
 import com.example.notally.data.repository.CursosRepository
+import com.example.notally.data.repository.ResultadoCurso
 import com.example.notally.data.repository.TareasRepository
 import com.example.notally.ui.theme.MuestrasCursos
 import kotlinx.coroutines.CancellationException
@@ -59,12 +59,6 @@ data class BorradorTarea(
     val errorGuardado: Boolean = false,
 )
 
-/** Error al crear un curso desde la hoja del editor. */
-enum class ErrorCursoEditor {
-    DUPLICADO,
-    GENERICO,
-}
-
 sealed interface EventoEditor {
     data class SubtareaEliminada(
         val titulo: String,
@@ -99,8 +93,8 @@ class EditorViewModel(
     private val _cursos = MutableStateFlow<List<Curso>>(emptyList())
     val cursos: StateFlow<List<Curso>> = _cursos.asStateFlow()
 
-    private val _errorNuevoCurso = MutableStateFlow<ErrorCursoEditor?>(null)
-    val errorNuevoCurso: StateFlow<ErrorCursoEditor?> = _errorNuevoCurso.asStateFlow()
+    private val _errorNuevoCurso = MutableStateFlow<ResultadoCurso?>(null)
+    val errorNuevoCurso: StateFlow<ResultadoCurso?> = _errorNuevoCurso.asStateFlow()
 
     private val _eventos = MutableSharedFlow<EventoEditor>(extraBufferCapacity = 8)
     val eventos: SharedFlow<EventoEditor> = _eventos.asSharedFlow()
@@ -434,20 +428,14 @@ class EditorViewModel(
         val recortado = nombre.trim()
         if (recortado.isEmpty()) return
         viewModelScope.launch {
-            try {
-                val id = repositorioCursos.crearCurso(
-                    nombre = recortado,
-                    color = color,
-                )
-                _errorNuevoCurso.value = null
-                actualizarBorrador { it.copy(cursoId = id) }
-                alCrear()
-            } catch (cancelada: CancellationException) {
-                throw cancelada
-            } catch (_: SQLiteConstraintException) {
-                _errorNuevoCurso.value = ErrorCursoEditor.DUPLICADO
-            } catch (_: Exception) {
-                _errorNuevoCurso.value = ErrorCursoEditor.GENERICO
+            when (val resultado = repositorioCursos.crearCurso(recortado, color)) {
+                is ResultadoCurso.Creado -> {
+                    _errorNuevoCurso.value = null
+                    actualizarBorrador { it.copy(cursoId = resultado.id) }
+                    alCrear()
+                }
+
+                else -> _errorNuevoCurso.value = resultado
             }
         }
     }

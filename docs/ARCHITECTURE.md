@@ -43,7 +43,7 @@ ui (Compose) → ViewModel → repository → local (Room)
 - **Repository:** única puerta de entrada a los datos. Traduce modelos de Room a operaciones de dominio y centraliza reglas de escritura (timestamps, `completedAt`, orden de subtareas). No conoce Compose.
 - **local/remote:** detalles de persistencia. Room es la fuente de verdad; Firestore es un espejo que solo toca `data/sync`.
 
-**DI manual con `AppContainer` en `core`.** Una instancia en `NotallyApp`, accesible por `Context.notallyContainer`. `core` es el punto de composición + utilidades transversales: construye base de datos, repositorios y (en el futuro) el `SyncEngine`.
+**DI manual con `AppContainer` en `core`.** Una instancia en `NotallyApp`, accesible por `Context.contenedorNotally`. `core` es el punto de composición + utilidades transversales: construye base de datos, repositorios y (en el futuro) el `SyncEngine`.
 
 **Un solo módulo Gradle.** El proyecto es pequeño y los límites se sostienen con reglas de dependencia + revisión. Extraer módulos antes de tener un problema real de build o de equipos solo agrega ceremonia.
 

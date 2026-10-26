@@ -5,15 +5,21 @@ import com.example.notally.data.model.Estado
 import com.example.notally.data.model.Curso
 import com.example.notally.data.model.Prioridad
 import com.example.notally.data.model.Tarea
-import java.time.DayOfWeek
-import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import java.time.temporal.TemporalAdjusters
 import java.util.Locale
 
 /** Filtro de Hoy (§7.7). No se persiste entre sesiones. */
-enum class FiltroHoy { TODAS, PENDIENTES, COMPLETADAS }
+enum class FiltroHoy(val id: String) {
+    TODAS("all"),
+    PENDIENTES("pending"),
+    COMPLETADAS("done");
+
+    companion object {
+        fun desdeId(id: String): FiltroHoy =
+            entries.firstOrNull { it.id == id } ?: TODAS
+    }
+}
 
 /** Secciones de Hoy, en el orden del documento (§7.3). */
 enum class TipoSeccionHoy { ATRASADAS, HOY, SIN_HORA, PROXIMAS, COMPLETADAS }
@@ -119,7 +125,7 @@ fun agruparHoy(
     cursosPorId: Map<Long, Curso>,
     semanaEmpiezaLunes: Boolean = true,
 ): GruposHoy {
-    val hoy = Instant.ofEpochMilli(ahora).atZone(zona).toLocalDate()
+    val hoy = DateRanges.fechaLocal(ahora, zona)
     val inicioHoy = DateRanges.rangoDia(hoy, zona).first
     val inicioManana = DateRanges.rangoDia(hoy.plusDays(1), zona).first
 
@@ -155,7 +161,7 @@ fun agruparHoy(
 
     val sinFechaCompletadasHoy = sinFecha.filter { tarea ->
         !estaPendiente(tarea) && tarea.completadoEn?.let {
-            aFechaLocal(it, zona) == hoy
+            DateRanges.fechaLocal(it, zona) == hoy
         } == true
     }
 
@@ -172,7 +178,7 @@ fun agruparHoy(
 
     val sinFechaEnResumen = sinFecha.count { tarea ->
         estaPendiente(tarea) ||
-            tarea.completadoEn?.let { aFechaLocal(it, zona) == hoy } == true
+            tarea.completadoEn?.let { DateRanges.fechaLocal(it, zona) == hoy } == true
     }
 
     // Conteos de los chips (§7.7): sobre las listas completas, sin extraer la
@@ -253,8 +259,7 @@ private fun construirDiasSemana(
     semanaEmpiezaLunes: Boolean,
     activas: List<Tarea>,
 ): List<DiaSemanaHoy> {
-    val primerDia = if (semanaEmpiezaLunes) DayOfWeek.MONDAY else DayOfWeek.SUNDAY
-    val inicioSemana = hoy.with(TemporalAdjusters.previousOrSame(primerDia))
+    val inicioSemana = DateRanges.inicioSemana(hoy, semanaEmpiezaLunes)
     val pendientesConFecha =
         activas.filter { it.estado != Estado.COMPLETADA && it.entregaEn != null }
     return (0L..6L).map { desplazamiento ->
@@ -268,9 +273,6 @@ private fun construirDiasSemana(
         )
     }
 }
-
-private fun aFechaLocal(millis: Long, zona: ZoneId): LocalDate =
-    Instant.ofEpochMilli(millis).atZone(zona).toLocalDate()
 
 /**
  * Construye las secciones visibles según el filtro y el estado de expansión.

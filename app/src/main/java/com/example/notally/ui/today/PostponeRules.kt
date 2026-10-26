@@ -1,5 +1,6 @@
 package com.example.notally.ui.today
 
+import com.example.notally.data.DateRanges
 import java.time.Instant
 import java.time.LocalTime
 import java.time.ZoneId
@@ -12,7 +13,7 @@ import java.time.ZoneId
  * Función pura para poder probarla en JVM sin Android.
  */
 internal fun posponerEntrega(entregaEn: Long?, ahora: Long, zona: ZoneId): Long {
-    val manana = Instant.ofEpochMilli(ahora).atZone(zona).toLocalDate().plusDays(1)
+    val manana = DateRanges.fechaLocal(ahora, zona).plusDays(1)
     val hora = entregaEn
         ?.let { Instant.ofEpochMilli(it).atZone(zona).toLocalTime() }
         ?: LocalTime.of(9, 0)

@@ -3,7 +3,6 @@ package com.example.notally.data.repository
 import com.example.notally.data.local.SubtareaDao
 import com.example.notally.data.local.TareaDao
 import com.example.notally.data.model.Estado
-import com.example.notally.data.model.Prioridad
 import com.example.notally.data.model.Subtarea
 import com.example.notally.data.model.Tarea
 import com.example.notally.data.model.TareaConSubtareas
@@ -32,15 +31,6 @@ class TareasRepository(
      */
     fun observarTareasFuturas(despuesDeMillis: Long): Flow<List<Tarea>> =
         tareaDao.observarTareasFuturas(despuesDeMillis)
-
-    fun observarTareasPorCurso(cursoId: Long): Flow<List<Tarea>> =
-        tareaDao.observarTareasPorCurso(cursoId)
-
-    fun observarTareaConSubtareas(tareaId: Long): Flow<TareaConSubtareas?> =
-        tareaDao.observarTareaConSubtareas(tareaId)
-
-    fun observarSubtareas(tareaId: Long): Flow<List<Subtarea>> =
-        subtareaDao.observarDeTarea(tareaId)
 
     suspend fun obtenerTareaConSubtareas(tareaId: Long): TareaConSubtareas? =
         tareaDao.obtenerTareaConSubtareas(tareaId)
@@ -74,24 +64,6 @@ class TareasRepository(
         return tareaId
     }
 
-    suspend fun crearTarea(
-        titulo: String,
-        notas: String = "",
-        cursoId: Long? = null,
-        entregaEn: Long? = null,
-        prioridad: Prioridad = Prioridad.MEDIA,
-        titulosSubtareas: List<String> = emptyList(),
-    ): Long = crearTarea(
-        tarea = Tarea(
-            titulo = titulo,
-            notas = notas,
-            cursoId = cursoId,
-            entregaEn = entregaEn,
-            prioridad = prioridad,
-        ),
-        titulosSubtareas = titulosSubtareas,
-    )
-
     suspend fun actualizarTarea(tarea: Tarea) {
         val ahora = System.currentTimeMillis()
         val completadoEn = when (tarea.estado) {
@@ -115,15 +87,6 @@ class TareasRepository(
         tareaDao.cambiarEstado(tareaId, estado, completadoEn, ahora)
     }
 
-    suspend fun cambiarArchivada(
-        tareaId: Long,
-        archivada: Boolean,
-        ahora: Long = System.currentTimeMillis(),
-    ) = tareaDao.cambiarArchivada(tareaId, archivada, ahora)
-
-    /** Borra definitivamente todas las tareas con estado COMPLETADA. */
-    suspend fun limpiarCompletadas(): Int = tareaDao.eliminarCompletadas()
-
     suspend fun agregarSubtarea(tareaId: Long, titulo: String): Long {
         val posicion = subtareaDao.siguientePosicion(tareaId)
         val id = subtareaDao.insertar(
@@ -139,7 +102,4 @@ class TareasRepository(
     suspend fun alternarSubtarea(subtareaId: Long) = subtareaDao.alternarHecha(subtareaId)
 
     suspend fun eliminarSubtarea(subtareaId: Long) = subtareaDao.eliminarPorId(subtareaId)
-
-    suspend fun reordenarSubtareas(tareaId: Long, idsOrdenados: List<Long>) =
-        subtareaDao.reordenar(tareaId, idsOrdenados)
 }

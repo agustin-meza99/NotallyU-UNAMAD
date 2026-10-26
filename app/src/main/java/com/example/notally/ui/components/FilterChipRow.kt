@@ -72,7 +72,7 @@ fun FilterChipRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         opciones.forEach { opcion ->
-            ChipFiltro(
+            FilterChip(
                 opcion = opcion,
                 seleccionado = opcion.id == idSeleccionado,
                 alPulsar = { alSeleccionar(opcion.id) },
@@ -82,7 +82,7 @@ fun FilterChipRow(
 }
 
 @Composable
-private fun ChipFiltro(
+private fun FilterChip(
     opcion: OpcionFiltro,
     seleccionado: Boolean,
     alPulsar: () -> Unit,

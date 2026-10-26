@@ -1,5 +1,6 @@
 package com.example.notally.ui.cursos
 
+import com.example.notally.data.repository.ResultadoCurso
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -16,13 +17,14 @@ class CursoFormRulesTest {
             // `finally` vuelve a guardando = false aunque el error se repita.
             assertTrue(CursoFormRules.puedeEnviar(nombre, guardando = false))
         }
-        assertFalse(CursoFormRules.termino(ResultadoGuardarCurso.DUPLICADO))
-        assertFalse(CursoFormRules.termino(ResultadoGuardarCurso.GENERICO))
+        assertFalse(CursoFormRules.termino(ResultadoCurso.Duplicado))
+        assertFalse(CursoFormRules.termino(ResultadoCurso.Error))
     }
 
     @Test
     fun `solo el guardado confirmado cierra la hoja`() {
-        assertTrue(CursoFormRules.termino(ResultadoGuardarCurso.GUARDADO))
+        assertTrue(CursoFormRules.termino(ResultadoCurso.Creado(1L)))
+        assertTrue(CursoFormRules.termino(ResultadoCurso.Actualizado(1L)))
         assertFalse(CursoFormRules.puedeEnviar("   ", guardando = false))
     }
 }

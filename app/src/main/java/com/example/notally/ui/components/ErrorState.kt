@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -17,7 +16,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.LiveRegionMode
-import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -35,26 +33,13 @@ fun BloqueError(
     modifier: Modifier = Modifier,
     cuerpo: String? = null,
 ) {
-    Column(modifier = modifier.widthIn(max = 360.dp)) {
-        Text(
-            text = titulo,
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.semantics { heading() },
-        )
-        if (cuerpo != null) {
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = cuerpo,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        Spacer(Modifier.height(16.dp))
-        TextButton(onClick = alReintentar) {
-            Text(etiquetaReintentar)
-        }
-    }
+    MessageWithAction(
+        titulo = titulo,
+        etiquetaAccion = etiquetaReintentar,
+        alAccionar = alReintentar,
+        modifier = modifier,
+        cuerpo = cuerpo,
+    )
 }
 
 /**

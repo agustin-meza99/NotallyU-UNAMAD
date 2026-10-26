@@ -3,7 +3,7 @@
 
     <!-- Navegación -->
     <string name="nav_hoy">Hoy</string>
-    <string name="nav_materias">Cursos</string>
+    <string name="nav_cursos">Cursos</string>
     <string name="nav_ajustes">Ajustes</string>
 
     <!-- Hoy -->
@@ -33,7 +33,7 @@
         <item quantity="one">Atrasada · ayer</item>
         <item quantity="other">Atrasada · %d días</item>
     </plurals>
-    <string name="task_noSubject">Sin curso</string>
+    <string name="task_no_course">Sin curso</string>
     <string name="task_noDate">Sin fecha</string>
     <string name="task_meta_separator">" · "</string>
     <string name="task_completed">Tarea completada</string>
@@ -61,61 +61,60 @@
     <string name="filter_empty_done_cta">Ver pendientes</string>
 
     <!-- Cursos -->
-    <plurals name="subjects_summary">
+    <plurals name="courses_summary">
         <item quantity="one">%1$d curso · %2$s</item>
         <item quantity="other">%1$d cursos · %2$s</item>
     </plurals>
-    <plurals name="subjects_pending">
+    <plurals name="courses_pending">
         <item quantity="one">%d pendiente</item>
         <item quantity="other">%d pendientes</item>
     </plurals>
-    <plurals name="subjects_week">
+    <plurals name="courses_week">
         <item quantity="one">%d entrega esta semana</item>
         <item quantity="other">%d entregas esta semana</item>
     </plurals>
-    <plurals name="subject_progress">
+    <plurals name="course_progress">
         <item quantity="one">%1$d de %2$d completada</item>
         <item quantity="other">%1$d de %2$d completadas</item>
     </plurals>
-    <plurals name="subject_progress_complete">
+    <plurals name="course_progress_complete">
         <item quantity="one">%1$d de %2$d tarea completada</item>
         <item quantity="other">%1$d de %2$d tareas completadas</item>
     </plurals>
-    <string name="subject_noTasks">Sin tareas</string>
-    <plurals name="subject_tasks">
+    <string name="course_noTasks">Sin tareas</string>
+    <plurals name="course_tasks">
         <item quantity="one">%d tarea</item>
         <item quantity="other">%d tareas</item>
     </plurals>
-    <plurals name="subject_done">
+    <plurals name="course_done">
         <item quantity="one">%d hecha</item>
         <item quantity="other">%d hechas</item>
     </plurals>
-    <string name="subject_name_duplicate">Ya existe un curso con ese nombre.</string>
-    <string name="subject_save_error">No se pudo guardar el curso.</string>
-    <string name="subject_delete_error">No se pudo eliminar el curso.</string>
-    <string name="subject_progress_ratio">%1$d/%2$d</string>
-    <string name="subjects_empty_title">Aún no tienes cursos</string>
-    <string name="subjects_empty_body">Crea un curso para agrupar tus tareas y ver cuántas llevas.</string>
-    <string name="subjects_empty_cta">Nuevo curso</string>
-    <string name="subjects_new">Nuevo curso</string>
-    <string name="subject_edit_title">Editar curso</string>
-    <string name="subject_name">Nombre</string>
-    <string name="subject_color">Color</string>
-    <string name="subject_delete">Eliminar curso</string>
+    <string name="course_name_duplicate">Ya existe un curso con ese nombre.</string>
+    <string name="course_save_error">No se pudo guardar el curso.</string>
+    <string name="course_delete_error">No se pudo eliminar el curso.</string>
+    <string name="course_progress_ratio">%1$d/%2$d</string>
+    <string name="courses_empty_title">Aún no tienes cursos</string>
+    <string name="courses_empty_body">Crea un curso para agrupar tus tareas y ver cuántas llevas.</string>
+    <string name="courses_new">Nuevo curso</string>
+    <string name="course_edit_title">Editar curso</string>
+    <string name="course_name">Nombre</string>
+    <string name="course_color">Color</string>
+    <string name="course_delete">Eliminar curso</string>
 
     <!-- Nombres accesibles de los swatches de curso -->
-    <string name="subject_color_indigo">Índigo</string>
-    <string name="subject_color_forest">Bosque</string>
-    <string name="subject_color_terracotta">Terracota</string>
-    <string name="subject_color_lime">Lima</string>
-    <string name="subject_color_lavender">Lavanda</string>
-    <string name="subject_color_petrol">Petróleo</string>
+    <string name="course_color_indigo">Índigo</string>
+    <string name="course_color_forest">Bosque</string>
+    <string name="course_color_terracotta">Terracota</string>
+    <string name="course_color_lime">Lima</string>
+    <string name="course_color_lavender">Lavanda</string>
+    <string name="course_color_petrol">Petróleo</string>
 
     <!-- Editor de tarea -->
     <string name="editor_title_placeholder">Título de la tarea</string>
     <string name="editor_untitled">Sin título</string>
     <string name="editor_notes_placeholder">Notas</string>
-    <string name="editor_property_subject">Curso</string>
+    <string name="editor_property_course">Curso</string>
     <string name="editor_property_due">Entrega</string>
     <string name="editor_property_priority">Prioridad</string>
     <string name="editor_property_state">Estado</string>
@@ -123,7 +122,6 @@
     <string name="editor_subtasks">Subtareas</string>
     <string name="editor_subtasks_progress">%1$d de %2$d</string>
     <string name="editor_subtasks_add">Agregar subtarea</string>
-    <string name="editor_subtasks_placeholder">Agregar subtarea</string>
     <string name="editor_saving_error">No se pudo guardar el cambio.</string>
     <string name="editor_load_error">No se pudo cargar la tarea.</string>
     <string name="editor_toolbar_subtask">Subtarea</string>
@@ -146,14 +144,14 @@
 
     <!-- Errores -->
     <string name="error_load">No se pudieron cargar tus tareas.</string>
-    <string name="error_loadSubjects">No se pudieron cargar tus cursos.</string>
+    <string name="error_load_courses">No se pudieron cargar tus cursos.</string>
     <string name="error_refresh">No se pudieron actualizar los datos.</string>
 
     <!-- Accesibilidad -->
     <string name="a11y_back">Volver</string>
     <string name="a11y_openTask">Abrir tarea</string>
     <string name="a11y_newTask">Nueva tarea</string>
-    <string name="a11y_editSubject">Editar curso</string>
+    <string name="a11y_edit_course">Editar curso</string>
     <string name="a11y_deleteSubtask">Eliminar subtarea</string>
     <string name="a11y_completeTask">Completar tarea: %s</string>
     <string name="a11y_uncompleteTask">Marcar como pendiente: %s</string>
@@ -169,6 +167,8 @@
     <string name="a11y_week_day">%1$s, %2$d de %3$s, %4$s</string>
     <string name="a11y_week_open">Ver tareas en %s</string>
     <string name="a11y_week_selected">Seleccionado</string>
+    <string name="state_selected">Seleccionada</string>
+    <string name="state_unselected">No seleccionada</string>
     <string name="a11y_featured_task">Tarea destacada. %1$s. %2$s. %3$s. %4$s.</string>
     <plurals name="a11y_filter_count">
         <item quantity="one">%1$s, %2$d tarea</item>
@@ -182,12 +182,11 @@
         <item quantity="other">Se eliminará «%1$s» con sus %2$d subtareas.</item>
     </plurals>
     <string name="confirm_deleteTask_bodyNoSub">Se eliminará «%s».</string>
-    <string name="confirm_deleteSubject_title">¿Eliminar el curso?</string>
-    <plurals name="confirm_deleteSubject_body">
+    <string name="confirm_delete_course_title">¿Eliminar el curso?</string>
+    <plurals name="confirm_delete_course_body">
         <item quantity="one">«%1$s» tiene %2$d tarea. Quedará sin curso.</item>
         <item quantity="other">«%1$s» tiene %2$d tareas. Quedarán sin curso.</item>
     </plurals>
-    <string name="confirm_deleteSubject_bodyNoTasks">Se eliminará «%s».</string>
 
     <!-- Ajustes -->
     <string name="settings_agenda">Agenda</string>

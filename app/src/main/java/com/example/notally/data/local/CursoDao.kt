@@ -1,7 +1,6 @@
 package com.example.notally.data.local
 
 import androidx.room.Dao
-import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Update
@@ -35,21 +34,12 @@ interface CursoDao {
     )
     fun observarCursosConConteo(): Flow<List<CursoConConteo>>
 
-    @Query("SELECT * FROM subjects WHERE id = :courseId")
-    suspend fun obtenerPorId(courseId: Long): Curso?
-
     @Insert
     suspend fun insertar(curso: Curso): Long
 
     @Update
     suspend fun actualizar(curso: Curso)
 
-    @Delete
-    suspend fun eliminar(curso: Curso)
-
     @Query("DELETE FROM subjects WHERE id = :courseId")
     suspend fun eliminarPorId(courseId: Long)
-
-    @Query("SELECT COUNT(*) FROM subjects")
-    suspend fun contar(): Int
 }

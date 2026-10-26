@@ -106,7 +106,7 @@ fun DayStrip(
         verticalAlignment = Alignment.Top,
     ) {
         dias.forEach { dia ->
-            CeldaDia(
+            DayCell(
                 dia = dia,
                 seleccionado = dia.fecha == fechaSeleccionada,
                 alPulsar = { alElegirDia(dia) },
@@ -124,7 +124,7 @@ fun DayStrip(
 }
 
 @Composable
-private fun CeldaDia(
+private fun DayCell(
     dia: DiaTira,
     seleccionado: Boolean,
     alPulsar: () -> Unit,

@@ -34,12 +34,12 @@ class CursoColorsTest {
         assertEquals(ColoresCurso.todos, muestras.map { it.argb })
         assertEquals(
             listOf(
-                R.string.subject_color_indigo,
-                R.string.subject_color_forest,
-                R.string.subject_color_terracotta,
-                R.string.subject_color_lime,
-                R.string.subject_color_lavender,
-                R.string.subject_color_petrol,
+                R.string.course_color_indigo,
+                R.string.course_color_forest,
+                R.string.course_color_terracotta,
+                R.string.course_color_lime,
+                R.string.course_color_lavender,
+                R.string.course_color_petrol,
             ),
             muestras.map { it.recursoNombre },
         )

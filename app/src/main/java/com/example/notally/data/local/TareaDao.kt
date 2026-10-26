@@ -1,12 +1,10 @@
 package com.example.notally.data.local
 
 import androidx.room.Dao
-import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
-import androidx.room.Upsert
 import com.example.notally.data.model.Estado
 import com.example.notally.data.model.Tarea
 import com.example.notally.data.model.TareaConSubtareas
@@ -74,22 +72,6 @@ interface TareaDao {
     )
     fun observarTareasFuturas(afterMillis: Long): Flow<List<Tarea>>
 
-    @Query(
-        """
-        SELECT * FROM tasks
-        WHERE isArchived = 0 AND subjectId = :courseId
-        ORDER BY status = 'DONE' ASC,
-                 dueAt IS NULL ASC,
-                 dueAt ASC,
-                 createdAt DESC
-        """
-    )
-    fun observarTareasPorCurso(courseId: Long): Flow<List<Tarea>>
-
-    @Transaction
-    @Query("SELECT * FROM tasks WHERE id = :taskId")
-    fun observarTareaConSubtareas(taskId: Long): Flow<TareaConSubtareas?>
-
     @Transaction
     @Query("SELECT * FROM tasks WHERE id = :taskId")
     suspend fun obtenerTareaConSubtareas(taskId: Long): TareaConSubtareas?
@@ -103,14 +85,8 @@ interface TareaDao {
     @Update
     suspend fun actualizar(tarea: Tarea)
 
-    @Upsert
-    suspend fun insertarOActualizar(tarea: Tarea): Long
-
     @Query("DELETE FROM tasks WHERE id = :taskId")
     suspend fun eliminarPorId(taskId: Long)
-
-    @Delete
-    suspend fun eliminar(tarea: Tarea)
 
     /**
      * Alterna entre DONE y PENDING. Al completar fija [completedAt] = [now];
@@ -138,16 +114,6 @@ interface TareaDao {
     )
     suspend fun cambiarEstado(taskId: Long, status: Estado, completedAt: Long?, now: Long)
 
-    @Query("UPDATE tasks SET isArchived = :archived, updatedAt = :now WHERE id = :taskId")
-    suspend fun cambiarArchivada(taskId: Long, archived: Boolean, now: Long)
-
     @Query("UPDATE tasks SET updatedAt = :now WHERE id = :taskId")
     suspend fun tocar(taskId: Long, now: Long)
-
-    /** Borrado definitivo de todas las tareas completadas (y sus subtareas). */
-    @Query("DELETE FROM tasks WHERE status = 'DONE'")
-    suspend fun eliminarCompletadas(): Int
-
-    @Query("SELECT COUNT(*) FROM tasks")
-    suspend fun contar(): Int
 }

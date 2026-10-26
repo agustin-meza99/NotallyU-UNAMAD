@@ -11,7 +11,7 @@ import androidx.room.PrimaryKey
  *
  * La tabla y las columnas físicas conservan sus nombres en inglés.
  *
- * @property color color de acento en formato ARGB (por ejemplo `0xFF6C5CE7`).
+ * @property color color de acento en formato ARGB (por ejemplo `0xFF3A5A9E`).
  */
 @Entity(
     tableName = "subjects",

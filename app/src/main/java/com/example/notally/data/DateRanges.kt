@@ -1,8 +1,10 @@
 package com.example.notally.data
 
+import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.temporal.TemporalAdjusters
 
 /**
  * Cálculo puro de rangos de fechas (sin dependencias de Android) para que la
@@ -17,7 +19,7 @@ object DateRanges {
     fun rangoDia(
         millis: Long,
         zonaId: ZoneId = ZoneId.systemDefault(),
-    ): LongRange = rangoDia(aFechaLocal(millis, zonaId), zonaId)
+    ): LongRange = rangoDia(fechaLocal(millis, zonaId), zonaId)
 
     /** Rango del día [fecha] en [zonaId]. */
     fun rangoDia(
@@ -29,26 +31,18 @@ object DateRanges {
         return inicio..fin
     }
 
-    /**
-     * Rango de [dias] días naturales a partir del día que contiene [millis],
-     * incluyendo el día actual. Con el valor por defecto (7) cubre hoy y los
-     * seis días siguientes.
-     */
-    fun rangoProximo(
+    /** Fecha local de [millis] en [zonaId]. */
+    fun fechaLocal(
         millis: Long,
-        dias: Int = 7,
         zonaId: ZoneId = ZoneId.systemDefault(),
-    ): LongRange {
-        require(dias > 0) { "dias debe ser mayor que 0" }
-        val fechaInicio = aFechaLocal(millis, zonaId)
-        val inicio = fechaInicio.atStartOfDay(zonaId).toInstant().toEpochMilli()
-        val fin = fechaInicio.plusDays(dias.toLong())
-            .atStartOfDay(zonaId)
-            .toInstant()
-            .toEpochMilli() - 1
-        return inicio..fin
-    }
+    ): LocalDate = Instant.ofEpochMilli(millis).atZone(zonaId).toLocalDate()
 
-    private fun aFechaLocal(millis: Long, zonaId: ZoneId): LocalDate =
-        Instant.ofEpochMilli(millis).atZone(zonaId).toLocalDate()
+    /** Primer día de la semana que contiene [fecha], según [semanaEmpiezaLunes]. */
+    fun inicioSemana(
+        fecha: LocalDate,
+        semanaEmpiezaLunes: Boolean,
+    ): LocalDate {
+        val primerDia = if (semanaEmpiezaLunes) DayOfWeek.MONDAY else DayOfWeek.SUNDAY
+        return fecha.with(TemporalAdjusters.previousOrSame(primerDia))
+    }
 }

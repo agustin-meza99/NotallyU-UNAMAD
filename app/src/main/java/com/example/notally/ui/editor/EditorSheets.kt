@@ -14,14 +14,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -39,16 +37,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.notally.R
+import com.example.notally.data.DateRanges
 import com.example.notally.data.model.Estado
 import com.example.notally.data.model.Curso
 import com.example.notally.data.model.Prioridad
+import com.example.notally.data.repository.ResultadoCurso
+import com.example.notally.ui.components.CourseNameField
 import com.example.notally.ui.components.OptionRow
+import com.example.notally.ui.components.statusLabel
+import com.example.notally.ui.components.priorityLabel
 import com.example.notally.ui.theme.FormaNotally
 import com.example.notally.ui.util.DateFormat
 import com.example.notally.ui.util.textoEtiquetaFecha
@@ -75,12 +76,12 @@ enum class HojaEditor {
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AnfitrionEditorSheets(
+fun EditorSheetsHost(
     hoja: HojaEditor?,
     borrador: BorradorTarea,
     cursos: List<Curso>,
     colorCursoPorDefecto: Long,
-    errorNuevoCurso: ErrorCursoEditor?,
+    errorNuevoCurso: ResultadoCurso?,
     alDescartar: () -> Unit,
     alSeleccionarCurso: (Long?) -> Unit,
     alCrearCurso: (String, Long) -> Unit,
@@ -97,7 +98,7 @@ fun AnfitrionEditorSheets(
         scrimColor = MaterialTheme.colorScheme.scrim.copy(alpha = 0.32f),
     ) {
         when (actual) {
-            HojaEditor.CURSO -> ContenidoSelectorCurso(
+            HojaEditor.CURSO -> CourseSelectorContent(
                 cursos = cursos,
                 idSeleccionado = borrador.cursoId,
                 colorPorDefecto = colorCursoPorDefecto,
@@ -110,17 +111,17 @@ fun AnfitrionEditorSheets(
                 alLimpiarError = alLimpiarErrorCurso,
             )
 
-            HojaEditor.ENTREGA -> ContenidoEntrega(
+            HojaEditor.ENTREGA -> DeliveryContent(
                 entregaEn = borrador.entregaEn,
                 alCambiarEntrega = alCambiarEntrega,
                 alCerrar = alDescartar,
             )
 
             HojaEditor.PRIORIDAD -> {
-                TituloHoja(stringResource(R.string.editor_property_priority))
+                SheetTitle(stringResource(R.string.editor_property_priority))
                 Prioridad.entries.forEach { prioridad ->
                     OptionRow(
-                        etiqueta = etiquetaPrioridad(prioridad),
+                        etiqueta = priorityLabel(prioridad),
                         seleccionado = borrador.prioridad == prioridad,
                         alPulsar = {
                             alCambiarPrioridad(prioridad)
@@ -133,10 +134,10 @@ fun AnfitrionEditorSheets(
             }
 
             HojaEditor.ESTADO -> {
-                TituloHoja(stringResource(R.string.editor_property_state))
+                SheetTitle(stringResource(R.string.editor_property_state))
                 Estado.entries.forEach { estado ->
                     OptionRow(
-                        etiqueta = etiquetaEstado(estado),
+                        etiqueta = statusLabel(estado),
                         seleccionado = borrador.estado == estado,
                         alPulsar = {
                             alCambiarEstado(estado)
@@ -151,7 +152,7 @@ fun AnfitrionEditorSheets(
 }
 
 @Composable
-private fun TituloHoja(texto: String) {
+private fun SheetTitle(texto: String) {
     Text(
         text = texto,
         style = MaterialTheme.typography.titleLarge,
@@ -161,11 +162,11 @@ private fun TituloHoja(texto: String) {
 }
 
 @Composable
-private fun ContenidoSelectorCurso(
+private fun CourseSelectorContent(
     cursos: List<Curso>,
     idSeleccionado: Long?,
     colorPorDefecto: Long,
-    error: ErrorCursoEditor?,
+    error: ResultadoCurso?,
     alSeleccionar: (Long?) -> Unit,
     alCrear: (String, Long) -> Unit,
     alLimpiarError: () -> Unit,
@@ -173,9 +174,9 @@ private fun ContenidoSelectorCurso(
     var creando by rememberSaveable { mutableStateOf(false) }
     var nombre by rememberSaveable { mutableStateOf("") }
 
-    TituloHoja(stringResource(R.string.editor_property_subject))
+    SheetTitle(stringResource(R.string.editor_property_course))
     OptionRow(
-        etiqueta = stringResource(R.string.task_noSubject),
+        etiqueta = stringResource(R.string.task_no_course),
         seleccionado = idSeleccionado == null,
         alPulsar = { alSeleccionar(null) },
     )
@@ -206,37 +207,16 @@ private fun ContenidoSelectorCurso(
                     modifier = Modifier.size(18.dp),
                 )
                 Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.subjects_new))
+                Text(stringResource(R.string.courses_new))
             }
         }
     } else {
         Column(Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
-            OutlinedTextField(
-                value = nombre,
-                onValueChange = {
-                    nombre = it
-                    if (error != null) alLimpiarError()
-                },
-                label = { Text(stringResource(R.string.subject_name)) },
-                singleLine = true,
-                isError = error != null,
-                supportingText = when (error) {
-                    ErrorCursoEditor.DUPLICADO -> {
-                        { Text(stringResource(R.string.subject_name_duplicate)) }
-                    }
-
-                    ErrorCursoEditor.GENERICO -> {
-                        { Text(stringResource(R.string.subject_save_error)) }
-                    }
-
-                    null -> null
-                },
-                shape = FormaNotally.s,
-                keyboardOptions = KeyboardOptions(
-                    capitalization = KeyboardCapitalization.Sentences,
-                    imeAction = ImeAction.Done,
-                ),
-                modifier = Modifier.fillMaxWidth(),
+            CourseNameField(
+                valor = nombre,
+                alCambiarValor = { nombre = it },
+                resultado = error,
+                alLimpiarError = alLimpiarError,
             )
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -259,7 +239,7 @@ private fun ContenidoSelectorCurso(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ContenidoEntrega(
+private fun DeliveryContent(
     entregaEn: Long?,
     alCambiarEntrega: (Long?) -> Unit,
     alCerrar: () -> Unit,
@@ -274,7 +254,7 @@ private fun ContenidoEntrega(
     val textoHora = entregaEn?.let { DateFormat.formatearHora(it, es24Horas, zona) }
     val tieneHora = entregaEn != null && DateFormat.tieneHora(entregaEn, zona)
 
-    TituloHoja(stringResource(R.string.editor_property_due))
+    SheetTitle(stringResource(R.string.editor_property_due))
     Text(
         text = when {
             entregaEn == null -> stringResource(R.string.task_noDate)
@@ -309,7 +289,7 @@ private fun ContenidoEntrega(
                 etiqueta = stringResource(R.string.editor_due_clear_time),
                 seleccionado = false,
                 alPulsar = {
-                    val fecha = Instant.ofEpochMilli(entregaEn).atZone(zona).toLocalDate()
+                    val fecha = DateRanges.fechaLocal(entregaEn, zona)
                     alCambiarEntrega(
                         fecha.atStartOfDay(zona).toInstant().toEpochMilli(),
                     )
@@ -321,7 +301,7 @@ private fun ContenidoEntrega(
 
     if (mostrarSelectorFecha) {
         val inicial = entregaEn?.let {
-            Instant.ofEpochMilli(it).atZone(zona).toLocalDate()
+            DateRanges.fechaLocal(it, zona)
         }
         val estadoFecha = rememberDatePickerState(
             initialSelectedDateMillis = inicial
@@ -425,24 +405,6 @@ private fun ContenidoEntrega(
         }
     }
 }
-
-@Composable
-private fun etiquetaPrioridad(prioridad: Prioridad): String = stringResource(
-    when (prioridad) {
-        Prioridad.ALTA -> R.string.priority_high
-        Prioridad.MEDIA -> R.string.priority_medium
-        Prioridad.BAJA -> R.string.priority_low
-    },
-)
-
-@Composable
-private fun etiquetaEstado(estado: Estado): String = stringResource(
-    when (estado) {
-        Estado.PENDIENTE -> R.string.state_pending
-        Estado.EN_CURSO -> R.string.state_doing
-        Estado.COMPLETADA -> R.string.state_done
-    },
-)
 
 /**
  * Combina la fecha elegida con la hora que ya tuviera la tarea; si no había

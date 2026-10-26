@@ -1,5 +1,7 @@
 package com.example.notally.ui.cursos
 
+import com.example.notally.data.repository.ResultadoCurso
+
 /**
  * Reglas puras de la hoja de curso (§7.4, §7.9).
  *
@@ -13,6 +15,5 @@ object CursoFormRules {
         nombre.isNotBlank() && !guardando
 
     /** Solo un guardado confirmado cierra la hoja. */
-    fun termino(resultado: ResultadoGuardarCurso): Boolean =
-        resultado == ResultadoGuardarCurso.GUARDADO
+    fun termino(resultado: ResultadoCurso): Boolean = resultado.esExito
 }

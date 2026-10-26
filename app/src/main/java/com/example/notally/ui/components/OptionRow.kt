@@ -37,7 +37,6 @@ fun OptionRow(
     alPulsar: () -> Unit,
     modifier: Modifier = Modifier,
     mostrarPuntoError: Boolean = false,
-    inicial: @Composable (() -> Unit)? = null,
 ) {
     val colores = MaterialTheme.colorScheme
     val colorContenido = if (seleccionado) colores.tertiary else colores.onSurface
@@ -67,10 +66,6 @@ fun OptionRow(
             }
         }
         Spacer(Modifier.width(16.dp))
-        if (inicial != null) {
-            inicial()
-            Spacer(Modifier.width(12.dp))
-        }
         Text(
             text = etiqueta,
             style = MaterialTheme.typography.bodyLarge,

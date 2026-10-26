@@ -15,10 +15,9 @@ import com.example.notally.data.repository.SettingsRepository
 import com.example.notally.data.repository.CursosRepository
 import com.example.notally.data.repository.TareasRepository
 import com.example.notally.ui.util.DateFormat
-import java.time.Instant
+import com.example.notally.ui.util.clockFlow
 import java.time.ZoneId
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,7 +29,6 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
@@ -126,21 +124,15 @@ class TodayViewModel(
     private val _eventos = MutableSharedFlow<EventoHoy>(extraBufferCapacity = 8)
     val eventos: SharedFlow<EventoHoy> = _eventos.asSharedFlow()
 
-    private val flujoReloj: Flow<Long> = flow {
-        while (true) {
-            val ahora = reloj()
-            emit(ahora)
-            delay(60_000L - (ahora % 60_000L))
-        }
-    }
+    private val relojMinuto: Flow<Long> = clockFlow(reloj)
 
-    private val flujoInicioHoy: Flow<Long> = flujoReloj
+    private val startOfTodayFlow: Flow<Long> = relojMinuto
         .map { DateRanges.rangoDia(it, zona).first }
         .distinctUntilChanged()
 
     private val estadosCarga: Flow<EstadoCarga> = disparadorRefresco.flatMapLatest {
-        flujoInicioHoy.flatMapLatest { inicio ->
-            val hoy = Instant.ofEpochMilli(inicio).atZone(zona).toLocalDate()
+        startOfTodayFlow.flatMapLatest { inicio ->
+            val hoy = DateRanges.fechaLocal(inicio, zona)
             val finDia = DateRanges.rangoDia(hoy, zona).last
             // Último milisegundo de hoy: la consulta de futuro usa `>` y así
             // incluye todo lo que empieza mañana a las 00:00, sin tope superior.
@@ -184,11 +176,11 @@ class TodayViewModel(
 
     val estadoUi: StateFlow<EstadoUiHoy> = combine(
         agregado,
-        flujoReloj,
+        relojMinuto,
         estadoFiltro,
         expansionManual,
     ) { agregado, ahora, filtro, expansion ->
-        construirEstado(agregado, ahora, filtro, expansion)
+        buildState(agregado, ahora, filtro, expansion)
     }
         .onEach { estado ->
             // Con cero tareas no tiene sentido conservar "Pendientes" o
@@ -301,7 +293,7 @@ class TodayViewModel(
         }
     }
 
-    private fun construirEstado(
+    private fun buildState(
         agregado: Agregado,
         ahora: Long,
         filtro: FiltroHoy,

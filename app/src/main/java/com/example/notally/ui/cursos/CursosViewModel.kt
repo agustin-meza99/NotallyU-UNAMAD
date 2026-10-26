@@ -1,7 +1,6 @@
 package com.example.notally.ui.cursos
 
 import android.content.Context
-import android.database.sqlite.SQLiteConstraintException
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -15,10 +14,11 @@ import com.example.notally.data.model.CursoConConteo
 import com.example.notally.data.model.Tarea
 import com.example.notally.data.repository.SettingsRepository
 import com.example.notally.data.repository.CursosRepository
+import com.example.notally.data.repository.ResultadoCurso
 import com.example.notally.data.repository.TareasRepository
+import com.example.notally.ui.util.clockFlow
 import java.time.ZoneId
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,7 +29,6 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.scan
@@ -54,19 +53,6 @@ data class EstadoUiCursos(
     val totalPendientes: Int = 0,
     val entregasSemanales: Int = 0,
 )
-
-/** Error de la hoja de curso que se muestra dentro del formulario. */
-enum class ErrorFormularioCurso {
-    DUPLICADO,
-    GENERICO,
-}
-
-/** Resultado explícito de guardar un curso desde la hoja. */
-enum class ResultadoGuardarCurso {
-    GUARDADO,
-    DUPLICADO,
-    GENERICO,
-}
 
 sealed interface EventoCursos {
     data class Fallo(val reintentar: () -> Unit) : EventoCursos
@@ -109,19 +95,13 @@ class CursosViewModel(
     )
 
     private val disparadorReintento = MutableStateFlow(0)
-    private val _errorFormulario = MutableStateFlow<ErrorFormularioCurso?>(null)
-    val errorFormulario: StateFlow<ErrorFormularioCurso?> = _errorFormulario
+    private val _errorFormulario = MutableStateFlow<ResultadoCurso?>(null)
+    val errorFormulario: StateFlow<ResultadoCurso?> = _errorFormulario
 
     private val _eventos = MutableSharedFlow<EventoCursos>(extraBufferCapacity = 4)
     val eventos: SharedFlow<EventoCursos> = _eventos.asSharedFlow()
 
-    private val flujoReloj: Flow<Long> = flow {
-        while (true) {
-            val ahora = reloj()
-            emit(ahora)
-            delay(60_000L - (ahora % 60_000L))
-        }
-    }
+    private val relojMinuto: Flow<Long> = clockFlow(reloj)
 
     private val estadosCarga: Flow<EstadoCarga> = disparadorReintento.flatMapLatest {
         val listo: Flow<EstadoCarga> = combine(
@@ -152,9 +132,9 @@ class CursosViewModel(
 
     val estadoUi: StateFlow<EstadoUiCursos> = combine(
         agregado,
-        flujoReloj,
+        relojMinuto,
     ) { estado, ahora ->
-        construirEstado(estado, ahora)
+        buildState(estado, ahora)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
@@ -177,27 +157,17 @@ class CursosViewModel(
         existente: Curso?,
         nombre: String,
         color: Long,
-    ): ResultadoGuardarCurso {
+    ): ResultadoCurso {
         val recortado = nombre.trim()
-        return try {
-            if (existente == null) {
-                repositorioCursos.crearCurso(nombre = recortado, color = color)
-            } else {
-                repositorioCursos.actualizarCurso(
-                    existente.copy(nombre = recortado, color = color),
-                )
-            }
-            _errorFormulario.value = null
-            ResultadoGuardarCurso.GUARDADO
-        } catch (cancelada: CancellationException) {
-            throw cancelada
-        } catch (_: SQLiteConstraintException) {
-            _errorFormulario.value = ErrorFormularioCurso.DUPLICADO
-            ResultadoGuardarCurso.DUPLICADO
-        } catch (_: Exception) {
-            _errorFormulario.value = ErrorFormularioCurso.GENERICO
-            ResultadoGuardarCurso.GENERICO
+        val resultado = if (existente == null) {
+            repositorioCursos.crearCurso(nombre = recortado, color = color)
+        } else {
+            repositorioCursos.actualizarCurso(
+                existente.copy(nombre = recortado, color = color),
+            )
         }
+        _errorFormulario.value = resultado.takeUnless { it.esExito }
+        return resultado
     }
 
     fun eliminarCurso(curso: Curso, alEliminar: () -> Unit) {
@@ -219,7 +189,7 @@ class CursosViewModel(
         return muestras[cantidadCursos % muestras.size].argb
     }
 
-    private fun construirEstado(agregado: Agregado, ahora: Long): EstadoUiCursos {
+    private fun buildState(agregado: Agregado, ahora: Long): EstadoUiCursos {
         val datos = agregado.datos ?: return EstadoUiCursos(
             cargando = agregado.cargando,
             error = agregado.error,

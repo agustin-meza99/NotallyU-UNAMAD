@@ -51,7 +51,7 @@ fun SectionHeader(
     val etiqueta = buildString {
         append(titulo.uppercase(DateFormat.LocaleEspanol))
         if (cantidad != null) {
-            append(" · ")
+            append(stringResource(R.string.task_meta_separator))
             append(cantidad)
         }
     }

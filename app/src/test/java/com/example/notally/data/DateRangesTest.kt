@@ -6,7 +6,6 @@ import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZoneOffset
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertThrows
 import org.junit.Test
 
 class DateRangesTest {
@@ -44,36 +43,6 @@ class DateRangesTest {
     }
 
     @Test
-    fun `el rango proximo cubre hoy y seis dias por defecto`() {
-        val mediodia = epochDe("2026-03-15", "12:00")
-
-        val rango = DateRanges.rangoProximo(mediodia, zonaId = utc)
-
-        assertEquals(epochDe("2026-03-15", "00:00"), rango.first)
-        assertEquals(epochDe("2026-03-22", "00:00") - 1, rango.last)
-        assertEquals(7L * 86_400_000L, rango.last - rango.first + 1)
-    }
-
-    @Test
-    fun `el rango proximo acepta un numero de dias personalizado`() {
-        val mediodia = epochDe("2026-03-15", "12:00")
-
-        val rango = DateRanges.rangoProximo(mediodia, dias = 3, zonaId = utc)
-
-        assertEquals(epochDe("2026-03-15", "00:00"), rango.first)
-        assertEquals(epochDe("2026-03-18", "00:00") - 1, rango.last)
-    }
-
-    @Test
-    fun `el rango proximo rechaza dias no positivos`() {
-        val mediodia = epochDe("2026-03-15", "12:00")
-
-        assertThrows(IllegalArgumentException::class.java) {
-            DateRanges.rangoProximo(mediodia, dias = 0, zonaId = utc)
-        }
-    }
-
-    @Test
     fun `el rango del dia respeta los cambios de horario de verano`() {
         val nuevaYork = ZoneId.of("America/New_York")
         val cambioPrimavera = epochDe("2026-03-08", "12:00", nuevaYork)
@@ -94,5 +63,73 @@ class DateRangesTest {
 
         assertEquals(fecha, inicioDentro.atZone(utc).toLocalDate())
         assertEquals(fecha, finDentro.atZone(utc).toLocalDate())
+    }
+
+    @Test
+    fun `fechaLocal devuelve el dia civil de la zona indicada`() {
+        assertEquals(
+            LocalDate.parse("2026-03-15"),
+            DateRanges.fechaLocal(epochDe("2026-03-15", "23:30"), utc),
+        )
+
+        // 02:00 UTC del 16 sigue siendo el 15 en Nueva York.
+        assertEquals(
+            LocalDate.parse("2026-03-15"),
+            DateRanges.fechaLocal(
+                epochDe("2026-03-16", "02:00"),
+                ZoneId.of("America/New_York"),
+            ),
+        )
+    }
+
+    @Test
+    fun `inicioSemana con lunes devuelve el lunes anterior y cruza de mes`() {
+        // Domingo 1 de noviembre de 2026.
+        val domingo = LocalDate.parse("2026-11-01")
+
+        assertEquals(
+            LocalDate.parse("2026-10-26"),
+            DateRanges.inicioSemana(domingo, semanaEmpiezaLunes = true),
+        )
+    }
+
+    @Test
+    fun `inicioSemana con domingo devuelve el domingo anterior y cruza de ano`() {
+        // Viernes 1 de enero de 2027.
+        val viernes = LocalDate.parse("2027-01-01")
+
+        assertEquals(
+            LocalDate.parse("2026-12-27"),
+            DateRanges.inicioSemana(viernes, semanaEmpiezaLunes = false),
+        )
+    }
+
+    @Test
+    fun `inicioSemana con lunes cruza de ano y respeta el mismo dia`() {
+        assertEquals(
+            LocalDate.parse("2026-12-28"),
+            DateRanges.inicioSemana(
+                LocalDate.parse("2027-01-01"),
+                semanaEmpiezaLunes = true,
+            ),
+        )
+        assertEquals(
+            LocalDate.parse("2026-10-26"),
+            DateRanges.inicioSemana(
+                LocalDate.parse("2026-10-26"),
+                semanaEmpiezaLunes = true,
+            ),
+        )
+    }
+
+    @Test
+    fun `inicioSemana con domingo mantiene el domingo de inicio de semana`() {
+        assertEquals(
+            LocalDate.parse("2026-11-01"),
+            DateRanges.inicioSemana(
+                LocalDate.parse("2026-11-01"),
+                semanaEmpiezaLunes = false,
+            ),
+        )
     }
 }

@@ -128,7 +128,7 @@ fun SwipeTaskRow(
                                 else Alignment.CenterStart,
                             )
                             .fillMaxHeight()
-                            .clip(FormaNotally.row)
+                            .clip(FormaNotally.m)
                             .background(contenedor)
                             .padding(horizontal = 20.dp),
                         verticalAlignment = Alignment.CenterVertically,

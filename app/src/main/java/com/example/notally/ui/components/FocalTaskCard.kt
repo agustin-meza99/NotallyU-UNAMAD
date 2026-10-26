@@ -54,13 +54,7 @@ fun FocalTaskCard(
     val colores = MaterialTheme.colorScheme
     var enfocada by remember { mutableStateOf(false) }
 
-    val etiquetaPrioridad = stringResource(
-        when (prioridad) {
-            Prioridad.ALTA -> R.string.a11y_priority_high
-            Prioridad.MEDIA -> R.string.a11y_priority_medium
-            Prioridad.BAJA -> R.string.a11y_priority_low
-        },
-    )
+    val etiquetaPrioridad = priorityLabelForA11y(prioridad)
     val separador = stringResource(R.string.task_meta_separator)
     val descripcion = stringResource(
         R.string.a11y_featured_task,

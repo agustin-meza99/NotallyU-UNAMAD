@@ -1,5 +1,6 @@
 package com.example.notally.ui.util
 
+import com.example.notally.data.DateRanges
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -56,7 +57,7 @@ object DateFormat {
         DateTimeFormatter.ofPattern("HH:mm", LocaleEspanol)
 
     fun fechaLocal(millis: Long, zona: ZoneId = ZoneId.systemDefault()): LocalDate =
-        Instant.ofEpochMilli(millis).atZone(zona).toLocalDate()
+        DateRanges.fechaLocal(millis, zona)
 
     /**
      * "Hoy", "Mañana", "Ayer", "Vie 31 oct" o "31 oct 2026".

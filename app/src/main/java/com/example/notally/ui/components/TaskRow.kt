@@ -97,7 +97,7 @@ fun TaskRow(
     val es24Horas = remember(contexto) { AndroidDateFormat.is24HourFormat(contexto) }
     val haptica = LocalHapticFeedback.current
 
-    val textoCurso = nombreCurso ?: stringResource(R.string.task_noSubject)
+    val textoCurso = nombreCurso ?: stringResource(R.string.task_no_course)
     val separador = stringResource(R.string.task_meta_separator)
     val sinFecha = stringResource(R.string.task_noDate)
     val textoFecha = when {
@@ -109,11 +109,7 @@ fun TaskRow(
     val colorFecha = if (atrasada) colores.error else colores.onSurfaceVariant
     val colorPuntoCurso = colorCursoArgb?.let { colorCurso(it) } ?: colores.outline
 
-    val textoPrioridad = when (tarea.prioridad) {
-        Prioridad.ALTA -> stringResource(R.string.a11y_priority_high)
-        Prioridad.MEDIA -> stringResource(R.string.a11y_priority_medium)
-        Prioridad.BAJA -> stringResource(R.string.a11y_priority_low)
-    }
+    val textoPrioridad = priorityLabelForA11y(tarea.prioridad)
     val descripcionEntrega = tarea.entregaEn?.let {
         stringResource(R.string.a11y_task_due, textoFraseEntrega(it, ahora, es24Horas))
     }
@@ -152,8 +148,8 @@ fun TaskRow(
         modifier = modifier
             .fillMaxWidth()
             .heightIn(min = 56.dp)
-            .anilloFoco(visible = enfocada, shape = FormaNotally.row)
-            .clip(FormaNotally.row)
+            .anilloFoco(visible = enfocada, shape = FormaNotally.m)
+            .clip(FormaNotally.m)
             .background(fondo)
             .onFocusChanged { enfocada = it.isFocused }
             .clickable(
@@ -205,7 +201,7 @@ fun TaskRow(
                 },
             contentAlignment = Alignment.Center,
         ) {
-            CasillaTarea(hecha = hecha)
+            TaskCheckbox(hecha = hecha)
         }
 
         Spacer(Modifier.width(8.dp))
@@ -261,7 +257,7 @@ fun TaskRow(
 
 /** Checkbox circular de 20 dp con confirmación de estado (§5, patrón 3). */
 @Composable
-private fun CasillaTarea(hecha: Boolean) {
+private fun TaskCheckbox(hecha: Boolean) {
     val colores = MaterialTheme.colorScheme
     val relleno by animateColorAsState(
         targetValue = if (hecha) colores.primary else Color.Transparent,
