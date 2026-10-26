@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!--
+      El tema base solo cubre el primer frame: la UI real la pinta Compose.
+      `windowBackground` usa el mismo papel cálido que `surface` para no
+      mostrar un destello claro antes de `enableEdgeToEdge`.
+    -->
+    <style name="Theme.Notally" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/notally_surface</item>
+        <item name="android:colorBackground">@color/notally_surface</item>
+    </style>
+</resources>

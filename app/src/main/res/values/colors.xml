@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Fondo de `surface` en modo claro (§2.2), usado por el tema base. -->
+    <color name="notally_surface">#FFFBFAF7</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+</resources>

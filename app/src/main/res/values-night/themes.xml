@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Variante oscura del tema base: evita el flash claro al arrancar. -->
+    <style name="Theme.Notally" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/notally_surface</item>
+        <item name="android:colorBackground">@color/notally_surface</item>
+    </style>
+</resources>

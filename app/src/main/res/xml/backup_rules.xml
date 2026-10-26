@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+   Reglas de backup completo (API 23–30).
+   Se respalda exactamente el estado de la app: la base Room con su WAL/SHM y
+   el DataStore de ajustes. No hay caché ni preferencias fuera de esos dos.
+-->
+<full-backup-content>
+    <include domain="database" path="notally.db" />
+    <include domain="database" path="notally.db-wal" />
+    <include domain="database" path="notally.db-shm" />
+    <include domain="file" path="datastore/notally_settings.preferences_pb" />
+</full-backup-content>
