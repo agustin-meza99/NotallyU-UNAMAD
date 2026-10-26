@@ -47,6 +47,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.paneTitle
@@ -59,6 +60,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.notally.R
 import com.example.notally.data.aula.ErrorAula
+import com.example.notally.data.firebase.ErrorAuth
+import com.example.notally.data.firebase.UsuarioFirebase
 import com.example.notally.ui.components.anilloFoco
 import com.example.notally.ui.theme.EspaciadoNotally
 import com.example.notally.ui.theme.FormaNotally
@@ -83,31 +86,43 @@ fun SettingsScreen(
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val estadoAula by viewModel.estadoAula.collectAsStateWithLifecycle()
+    val usuario by viewModel.usuario.collectAsStateWithLifecycle()
+    val estadoCuenta by viewModel.estadoCuenta.collectAsStateWithLifecycle()
     val margen = margenHorizontalPantalla
     val contexto = LocalContext.current
     val tituloPantalla = stringResource(R.string.nav_ajustes)
 
     var hojaAulaVisible by rememberSaveable { mutableStateOf(false) }
+    var hojaCuentaVisible by rememberSaveable { mutableStateOf(false) }
     var confirmarDesconexion by remember { mutableStateOf(false) }
     val snackbar = remember { SnackbarHostState() }
+
+    LaunchedEffect(usuario) {
+        if (usuario != null) hojaCuentaVisible = false
+    }
 
     LaunchedEffect(viewModel) {
         viewModel.eventosAula.collect { evento ->
             when (evento) {
                 is EventoAula.Importado -> {
                     hojaAulaVisible = false
-                    val mensaje = if (evento.errores > 0) {
-                        contexto.getString(
-                            R.string.settings_aula_summary_errors,
-                            evento.cursos,
-                            evento.tareas,
-                            evento.errores,
+                    val sync = evento.sync
+                    val mensaje = when {
+                        sync == null -> contexto.getString(
+                            R.string.settings_aula_summary_device,
                         )
-                    } else {
-                        contexto.getString(
-                            R.string.settings_aula_summary,
-                            evento.cursos,
-                            evento.tareas,
+
+                        sync.errores > 0 -> contexto.getString(
+                            R.string.settings_aula_summary_firestore_errors,
+                            sync.cursosSubidos,
+                            sync.tareasSubidas,
+                            sync.errores,
+                        )
+
+                        else -> contexto.getString(
+                            R.string.settings_aula_summary_firestore,
+                            sync.cursosSubidos,
+                            sync.tareasSubidas,
                         )
                     }
                     snackbar.showSnackbar(mensaje)
@@ -147,6 +162,36 @@ fun SettingsScreen(
                     marcado = settings.semanaEmpiezaLunes,
                     alCambiar = viewModel::cambiarSemanaEmpiezaLunes,
                 )
+            }
+
+            item(key = "account_label") {
+                EtiquetaSeccion(
+                    stringResource(R.string.settings_account),
+                    modifier = Modifier.padding(top = 24.dp),
+                )
+            }
+
+            val sesion = usuario
+            if (sesion == null) {
+                item(key = "account_signed_out_row") {
+                    FilaIniciarSesion(
+                        alPulsar = {
+                            viewModel.descartarErrorCuenta()
+                            hojaCuentaVisible = true
+                        },
+                    )
+                }
+            } else {
+                item(key = "account_signed_in_row") {
+                    FilaCuentaConSesion(
+                        usuario = sesion,
+                        ultimaSincronizacion = settings.ultimaSincronizacionFirestore,
+                        sincronizando = estadoCuenta.sincronizando,
+                        errorSync = estadoCuenta.errorSync,
+                        alSincronizar = viewModel::sincronizarAhora,
+                        alCerrarSesion = viewModel::cerrarSesion,
+                    )
+                }
             }
 
             item(key = "aula_label") {
@@ -241,6 +286,18 @@ fun SettingsScreen(
         )
     }
 
+    if (hojaCuentaVisible && usuario == null) {
+        HojaCuenta(
+            estado = estadoCuenta,
+            alEntrar = viewModel::iniciarSesion,
+            alCrear = viewModel::crearCuenta,
+            alDescartar = {
+                hojaCuentaVisible = false
+                viewModel.descartarErrorCuenta()
+            },
+        )
+    }
+
     if (confirmarDesconexion) {
         AlertDialog(
             onDismissRequest = { confirmarDesconexion = false },
@@ -278,6 +335,272 @@ fun SettingsScreen(
                 }
             },
         )
+    }
+}
+
+@Composable
+private fun FilaIniciarSesion(
+    alPulsar: () -> Unit,
+) {
+    val colores = MaterialTheme.colorScheme
+    var enfocada by remember { mutableStateOf(false) }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 56.dp)
+            .clickable(role = Role.Button, onClick = alPulsar)
+            .onFocusChanged { enfocada = it.isFocused }
+            .anilloFoco(visible = enfocada, shape = FormaNotally.s)
+            .padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = stringResource(R.string.settings_account_sign_in),
+                style = MaterialTheme.typography.bodyLarge,
+                color = colores.onSurface,
+            )
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text = stringResource(R.string.settings_account_sign_in_support),
+                style = MaterialTheme.typography.bodySmall,
+                color = colores.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun FilaCuentaConSesion(
+    usuario: UsuarioFirebase,
+    ultimaSincronizacion: Long?,
+    sincronizando: Boolean,
+    errorSync: Boolean,
+    alSincronizar: () -> Unit,
+    alCerrarSesion: () -> Unit,
+) {
+    val colores = MaterialTheme.colorScheme
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = usuario.email ?: stringResource(R.string.settings_account_no_email),
+            style = MaterialTheme.typography.bodyLarge,
+            color = colores.onSurface,
+            modifier = Modifier.padding(top = 12.dp),
+        )
+        Spacer(Modifier.height(2.dp))
+        Text(
+            text = when {
+                sincronizando -> stringResource(R.string.settings_account_syncing)
+                errorSync -> stringResource(R.string.settings_account_sync_error)
+                ultimaSincronizacion != null -> stringResource(
+                    R.string.settings_account_synced,
+                    textoHace(ultimaSincronizacion),
+                )
+
+                else -> stringResource(R.string.settings_account_never_synced)
+            },
+            style = MaterialTheme.typography.bodySmall,
+            color = if (errorSync) colores.error else colores.onSurfaceVariant,
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            TextButton(
+                onClick = alSincronizar,
+                enabled = !sincronizando,
+            ) {
+                Text(stringResource(R.string.settings_account_sync_now))
+            }
+            TextButton(
+                onClick = alCerrarSesion,
+                enabled = !sincronizando,
+                colors = ButtonDefaults.textButtonColors(contentColor = colores.error),
+            ) {
+                Text(stringResource(R.string.settings_account_sign_out))
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun HojaCuenta(
+    estado: EstadoCuenta,
+    alEntrar: (email: String, password: String) -> Unit,
+    alCrear: (email: String, password: String) -> Unit,
+    alDescartar: () -> Unit,
+) {
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var modoCrear by remember { mutableStateOf(false) }
+    val cargando = estado.cargando
+    val puedeEnviar = email.isNotBlank() && password.isNotBlank() && !cargando
+    val enviar = {
+        if (puedeEnviar) {
+            if (modoCrear) alCrear(email, password) else alEntrar(email, password)
+        }
+    }
+
+    ModalBottomSheet(
+        onDismissRequest = alDescartar,
+        shape = FormaNotally.xl,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        scrimColor = MaterialTheme.colorScheme.scrim.copy(alpha = 0.32f),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 20.dp, end = 20.dp, bottom = 24.dp),
+        ) {
+            Text(
+                text = stringResource(
+                    if (modoCrear) {
+                        R.string.settings_account_sheet_title_create
+                    } else {
+                        R.string.settings_account_sheet_title
+                    },
+                ),
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Spacer(Modifier.height(16.dp))
+            OutlinedTextField(
+                value = email,
+                onValueChange = { email = it },
+                label = { Text(stringResource(R.string.settings_account_email)) },
+                singleLine = true,
+                enabled = !cargando,
+                shape = FormaNotally.s,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Email,
+                    imeAction = ImeAction.Next,
+                ),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(12.dp))
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text(stringResource(R.string.settings_account_password)) },
+                singleLine = true,
+                enabled = !cargando,
+                shape = FormaNotally.s,
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Password,
+                    imeAction = ImeAction.Done,
+                ),
+                keyboardActions = KeyboardActions(onDone = { enviar() }),
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            if (cargando) {
+                Spacer(Modifier.height(16.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.width(20.dp).height(20.dp),
+                        strokeWidth = 2.dp,
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Text(
+                        text = stringResource(R.string.settings_account_connecting),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+
+            estado.error?.let { error ->
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    text = mensajeErrorCuenta(error),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+
+            Spacer(Modifier.height(16.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                TextButton(
+                    onClick = alDescartar,
+                    enabled = !cargando,
+                ) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+                Spacer(Modifier.width(8.dp))
+                TextButton(
+                    onClick = enviar,
+                    enabled = puedeEnviar,
+                ) {
+                    Text(
+                        stringResource(
+                            if (modoCrear) {
+                                R.string.settings_account_create
+                            } else {
+                                R.string.settings_account_enter
+                            },
+                        ),
+                    )
+                }
+            }
+            TextButton(
+                onClick = { modoCrear = !modoCrear },
+                enabled = !cargando,
+            ) {
+                Text(
+                    stringResource(
+                        if (modoCrear) {
+                            R.string.settings_account_switch_to_login
+                        } else {
+                            R.string.settings_account_switch_to_create
+                        },
+                    ),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun mensajeErrorCuenta(error: ErrorAuth): String = when (error) {
+    ErrorAuth.CREDENCIALES -> stringResource(R.string.settings_account_error_credentials)
+    ErrorAuth.EMAIL_INVALIDO -> stringResource(R.string.settings_account_error_email)
+    ErrorAuth.RED -> stringResource(R.string.settings_account_error_network)
+    ErrorAuth.DEMASIADOS_INTENTOS -> stringResource(R.string.settings_account_error_too_many)
+    ErrorAuth.EMAIL_EN_USO -> stringResource(R.string.settings_account_error_email_in_use)
+    ErrorAuth.PASSWORD_DEBIL -> stringResource(R.string.settings_account_error_weak_password)
+    ErrorAuth.CUENTA_DESHABILITADA -> stringResource(R.string.settings_account_error_disabled)
+    ErrorAuth.PROVEEDOR_DESHABILITADO -> stringResource(R.string.settings_account_error_provider)
+    ErrorAuth.DESCONOCIDO -> stringResource(R.string.settings_account_error_unknown)
+}
+
+@Composable
+private fun textoHace(millis: Long): String {
+    val minutos = ((System.currentTimeMillis() - millis).coerceAtLeast(0L) / 60_000L)
+    return when {
+        minutos < 1L -> stringResource(R.string.settings_account_ago_seconds)
+        minutos < 60L -> pluralStringResource(
+            R.plurals.settings_account_ago_minutes,
+            minutos.toInt(),
+            minutos,
+        )
+
+        minutos < 1_440L -> {
+            val horas = minutos / 60L
+            pluralStringResource(
+                R.plurals.settings_account_ago_hours,
+                horas.toInt(),
+                horas,
+            )
+        }
+
+        else -> formatearUltimaImportacion(millis)
     }
 }
 

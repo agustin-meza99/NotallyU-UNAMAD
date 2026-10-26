@@ -6,6 +6,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
 import com.example.notally.data.local.CursoDao
@@ -50,6 +51,10 @@ class TareasRepository(
 
     suspend fun obtenerTareaConSubtareas(tareaId: Long): TareaConSubtareas? =
         tareaDao.obtenerTareaConSubtareas(tareaId)
+
+    /** Tareas no archivadas con sus subtareas, para la subida a Firestore. */
+    suspend fun obtenerTareasActivasConSubtareas(): List<TareaConSubtareas> =
+        tareaDao.obtenerTareasActivasConSubtareas()
 
     suspend fun obtenerTarea(tareaId: Long): Tarea? = tareaDao.obtenerTarea(tareaId)
 
@@ -176,6 +181,9 @@ class CursosRepository(
 
     fun observarCursos(): Flow<List<Curso>> = cursoDao.observarCursos()
 
+    /** Todos los cursos, para la subida a Firestore. */
+    suspend fun obtenerCursos(): List<Curso> = cursoDao.obtenerCursos()
+
     fun observarCursosConConteo(): Flow<List<CursoConConteo>> =
         cursoDao.observarCursosConConteo()
 
@@ -260,6 +268,7 @@ class SettingsRepository(
         .map { preferencias ->
             Settings(
                 semanaEmpiezaLunes = preferencias[Claves.SEMANA_EMPIEZA_LUNES] ?: true,
+                ultimaSincronizacionFirestore = preferencias[Claves.ULTIMA_SINCRONIZACION],
             )
         }
 
@@ -267,7 +276,13 @@ class SettingsRepository(
         dataStore.edit { it[Claves.SEMANA_EMPIEZA_LUNES] = activo }
     }
 
+    /** Registra una subida completada para el estado “Guardado hace X”. */
+    suspend fun marcarSincronizacionFirestore(ahora: Long) {
+        dataStore.edit { it[Claves.ULTIMA_SINCRONIZACION] = ahora }
+    }
+
     private object Claves {
         val SEMANA_EMPIEZA_LUNES = booleanPreferencesKey("week_starts_monday")
+        val ULTIMA_SINCRONIZACION = longPreferencesKey("last_firestore_sync")
     }
 }

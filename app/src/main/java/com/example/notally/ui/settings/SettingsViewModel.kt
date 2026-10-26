@@ -14,6 +14,12 @@ import com.example.notally.data.aula.AulaImporter
 import com.example.notally.data.aula.ErrorAula
 import com.example.notally.data.aula.ProgresoAula
 import com.example.notally.data.aula.ResultadoImportacion
+import com.example.notally.data.firebase.AuthRepository
+import com.example.notally.data.firebase.ErrorAuth
+import com.example.notally.data.firebase.FirestoreSync
+import com.example.notally.data.firebase.ResultadoAuth
+import com.example.notally.data.firebase.ResultadoSync
+import com.example.notally.data.firebase.UsuarioFirebase
 import com.example.notally.data.model.Settings
 import com.example.notally.data.repository.SettingsRepository
 import kotlinx.coroutines.CancellationException
@@ -51,15 +57,28 @@ sealed interface EventoAula {
         val cursos: Int,
         val tareas: Int,
         val errores: Int,
+        /** Resultado de la subida automática; `null` si no había sesión. */
+        val sync: ResultadoSync? = null,
     ) : EventoAula
 }
+
+/** Estado del bloque Cuenta de Ajustes. */
+data class EstadoCuenta(
+    val cargando: Boolean = false,
+    val error: ErrorAuth? = null,
+    val sincronizando: Boolean = false,
+    val errorSync: Boolean = false,
+)
 
 /** ViewModel de Settings (§7.12). Persiste cada cambio en DataStore. */
 class SettingsViewModel(
     private val repositorio: SettingsRepository,
     private val credencialesAula: AulaCredencialesStore,
     private val importadorAula: AulaImporter,
+    private val authRepository: AuthRepository,
+    private val firestoreSync: FirestoreSync,
     private val crearClienteAula: () -> AulaApi = { AulaClient() },
+    private val reloj: () -> Long = System::currentTimeMillis,
 ) : ViewModel() {
 
     val settings: StateFlow<Settings> = repositorio.settings.stateIn(
@@ -70,6 +89,12 @@ class SettingsViewModel(
 
     private val _estadoAula = MutableStateFlow(EstadoAula())
     val estadoAula: StateFlow<EstadoAula> = _estadoAula
+
+    /** Sesión de Firebase Auth; ya es un StateFlow del repositorio. */
+    val usuario: StateFlow<UsuarioFirebase?> = authRepository.usuario
+
+    private val _estadoCuenta = MutableStateFlow(EstadoCuenta())
+    val estadoCuenta: StateFlow<EstadoCuenta> = _estadoCuenta
 
     private val _eventosAula = MutableSharedFlow<EventoAula>(extraBufferCapacity = 4)
     val eventosAula: SharedFlow<EventoAula> = _eventosAula.asSharedFlow()
@@ -96,6 +121,92 @@ class SettingsViewModel(
 
     fun cambiarSemanaEmpiezaLunes(activo: Boolean) {
         viewModelScope.launch { repositorio.cambiarSemanaEmpiezaLunes(activo) }
+    }
+
+    /** Inicia sesión con email/contraseña y, si funciona, sube lo pendiente. */
+    fun iniciarSesion(email: String, password: String) {
+        ejecutarAuth { authRepository.iniciarSesion(email, password) }
+    }
+
+    /** Crea la cuenta y deja la sesión iniciada. */
+    fun crearCuenta(email: String, password: String) {
+        ejecutarAuth { authRepository.crearCuenta(email, password) }
+    }
+
+    fun descartarErrorCuenta() {
+        _estadoCuenta.update { it.copy(error = null, errorSync = false) }
+    }
+
+    /**
+     * Cierra la sesión de Firebase. No borra cursos ni tareas de Room: los
+     * datos locales siguen disponibles sin conexión.
+     */
+    fun cerrarSesion() {
+        authRepository.cerrarSesion()
+        _estadoCuenta.value = EstadoCuenta()
+    }
+
+    /** Subida manual desde Ajustes. */
+    fun sincronizarAhora() {
+        if (_estadoCuenta.value.sincronizando) return
+        viewModelScope.launch { ejecutarSync() }
+    }
+
+    private fun ejecutarAuth(bloque: suspend () -> ResultadoAuth) {
+        if (_estadoCuenta.value.cargando) return
+        viewModelScope.launch {
+            _estadoCuenta.update { it.copy(cargando = true, error = null, errorSync = false) }
+            when (val resultado = try {
+                bloque()
+            } catch (cancelada: CancellationException) {
+                throw cancelada
+            } catch (_: Exception) {
+                ResultadoAuth.Fallo(ErrorAuth.DESCONOCIDO)
+            }) {
+                ResultadoAuth.Exito -> {
+                    _estadoCuenta.update { it.copy(cargando = false, error = null) }
+                    ejecutarSync()
+                }
+
+                is ResultadoAuth.Fallo -> {
+                    _estadoCuenta.update {
+                        it.copy(cargando = false, error = resultado.error)
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Sube a Firestore si hay sesión. Devuelve `null` sin sesión y nunca lanza
+     * por un fallo de sync: la importación local ya ocurrió.
+     */
+    private suspend fun ejecutarSync(): ResultadoSync? {
+        if (authRepository.usuario.value == null) return null
+        _estadoCuenta.update { it.copy(sincronizando = true, errorSync = false) }
+        val resultado = try {
+            firestoreSync.subirTodo()
+        } catch (cancelada: CancellationException) {
+            throw cancelada
+        } catch (_: Exception) {
+            ResultadoSync(errores = 1)
+        }
+        if (resultado.errores == 0) {
+            try {
+                repositorio.marcarSincronizacionFirestore(reloj())
+            } catch (cancelada: CancellationException) {
+                throw cancelada
+            } catch (_: Exception) {
+                // La subida ya ocurrió; solo falló el registro de la hora.
+            }
+        }
+        _estadoCuenta.update {
+            it.copy(
+                sincronizando = false,
+                errorSync = resultado.errores > 0,
+            )
+        }
+        return resultado
     }
 
     /**
@@ -207,11 +318,13 @@ class SettingsViewModel(
                         error = null,
                     )
                 }
+                val sync = ejecutarSync()
                 _eventosAula.emit(
                     EventoAula.Importado(
                         cursos = resultado.cursos,
                         tareas = resultado.tareasNuevas + resultado.tareasActualizadas,
                         errores = resultado.errores,
+                        sync = sync,
                     ),
                 )
             }
@@ -258,6 +371,8 @@ class SettingsViewModel(
                     repositorio = contenedor.repositorioSettings,
                     credencialesAula = contenedor.credencialesAula,
                     importadorAula = contenedor.importadorAula,
+                    authRepository = contenedor.authRepository,
+                    firestoreSync = contenedor.firestoreSync,
                 )
             }
         }

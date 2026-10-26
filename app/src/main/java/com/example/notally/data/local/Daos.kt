@@ -79,6 +79,11 @@ interface TareaDao {
     @Query("SELECT * FROM tasks WHERE id = :taskId")
     suspend fun obtenerTareaConSubtareas(taskId: Long): TareaConSubtareas?
 
+    /** Tareas no archivadas con sus subtareas, para la subida a Firestore. */
+    @Transaction
+    @Query("SELECT * FROM tasks WHERE isArchived = 0")
+    suspend fun obtenerTareasActivasConSubtareas(): List<TareaConSubtareas>
+
     @Query("SELECT * FROM tasks WHERE id = :taskId")
     suspend fun obtenerTarea(taskId: Long): Tarea?
 
@@ -132,6 +137,10 @@ interface CursoDao {
 
     @Query("SELECT * FROM subjects ORDER BY name COLLATE NOCASE ASC")
     fun observarCursos(): Flow<List<Curso>>
+
+    /** Todos los cursos, para la subida a Firestore. */
+    @Query("SELECT * FROM subjects ORDER BY name COLLATE NOCASE ASC")
+    suspend fun obtenerCursos(): List<Curso>
 
     /**
      * Cursos con el conteo de tareas pendientes (ni completadas ni

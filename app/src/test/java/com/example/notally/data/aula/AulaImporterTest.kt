@@ -25,6 +25,8 @@ class AulaImporterTest {
 
         override fun observarCursos(): Flow<List<Curso>> = emptyFlow()
 
+        override suspend fun obtenerCursos(): List<Curso> = cursos
+
         override fun observarCursosConConteo(): Flow<List<CursoConConteo>> =
             emptyFlow()
 
@@ -65,6 +67,11 @@ class AulaImporterTest {
             val tarea = tareas.firstOrNull { it.id == taskId } ?: return null
             return TareaConSubtareas(tarea, emptyList<Subtarea>())
         }
+
+        override suspend fun obtenerTareasActivasConSubtareas(): List<TareaConSubtareas> =
+            tareas.filterNot { it.archivada }.map {
+                TareaConSubtareas(it, emptyList())
+            }
 
         override suspend fun obtenerTarea(taskId: Long): Tarea? =
             tareas.firstOrNull { it.id == taskId }

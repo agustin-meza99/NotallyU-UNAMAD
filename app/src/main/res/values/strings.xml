@@ -193,6 +193,45 @@
     <string name="settings_about">Acerca de</string>
     <string name="settings_version">Versión %s</string>
 
+    <!-- Cuenta -->
+    <string name="settings_account">Cuenta</string>
+    <string name="settings_account_sign_in">Iniciar sesión</string>
+    <string name="settings_account_sign_in_support">Guarda tus cursos y tareas en Firestore.</string>
+    <string name="settings_account_no_email">Cuenta sin email</string>
+    <string name="settings_account_email">Email</string>
+    <string name="settings_account_password">Contraseña</string>
+    <string name="settings_account_enter">Entrar</string>
+    <string name="settings_account_create">Crear cuenta</string>
+    <string name="settings_account_switch_to_create">Crear cuenta</string>
+    <string name="settings_account_switch_to_login">Ya tengo cuenta</string>
+    <string name="settings_account_sheet_title">Iniciar sesión</string>
+    <string name="settings_account_sheet_title_create">Crear cuenta</string>
+    <string name="settings_account_connecting">Conectando…</string>
+    <string name="settings_account_syncing">Sincronizando…</string>
+    <string name="settings_account_sync_now">Sincronizar ahora</string>
+    <string name="settings_account_sign_out">Cerrar sesión</string>
+    <string name="settings_account_synced">Guardado en Firestore · %1$s</string>
+    <string name="settings_account_never_synced">Aún no sincronizado con Firestore</string>
+    <string name="settings_account_sync_error">No se pudo guardar en Firestore. Revisa tu conexión.</string>
+    <string name="settings_account_ago_seconds">hace unos segundos</string>
+    <plurals name="settings_account_ago_minutes">
+        <item quantity="one">hace %d minuto</item>
+        <item quantity="other">hace %d minutos</item>
+    </plurals>
+    <plurals name="settings_account_ago_hours">
+        <item quantity="one">hace %d hora</item>
+        <item quantity="other">hace %d horas</item>
+    </plurals>
+    <string name="settings_account_error_credentials">Email o contraseña incorrectos.</string>
+    <string name="settings_account_error_email">El email no es válido.</string>
+    <string name="settings_account_error_network">Sin conexión. Revisa tu red e inténtalo de nuevo.</string>
+    <string name="settings_account_error_too_many">Demasiados intentos. Espera un momento antes de reintentar.</string>
+    <string name="settings_account_error_email_in_use">Ya existe una cuenta con ese email.</string>
+    <string name="settings_account_error_weak_password">La contraseña es demasiado débil.</string>
+    <string name="settings_account_error_disabled">Esta cuenta está deshabilitada.</string>
+    <string name="settings_account_error_provider">El acceso con email y contraseña no está habilitado.</string>
+    <string name="settings_account_error_unknown">No se pudo completar la operación.</string>
+
     <!-- Aula Virtual -->
     <string name="settings_aula">Aula Virtual</string>
     <string name="settings_aula_connect">Conectar Aula Virtual</string>
@@ -212,6 +251,9 @@
     <string name="settings_aula_progress">%1$s (%2$d de %3$d)</string>
     <string name="settings_aula_summary">%1$d cursos · %2$d tareas</string>
     <string name="settings_aula_summary_errors">%1$d cursos · %2$d tareas · %3$d errores</string>
+    <string name="settings_aula_summary_device">Importado en el dispositivo. Inicia sesión para guardarlo en Firestore.</string>
+    <string name="settings_aula_summary_firestore">%1$d cursos · %2$d tareas guardadas en Firestore</string>
+    <string name="settings_aula_summary_firestore_errors">%1$d cursos · %2$d tareas · %3$d errores al guardar en Firestore</string>
     <string name="settings_aula_error_credentials">Usuario o contraseña incorrectos.</string>
     <string name="settings_aula_error_blocked">La cuenta está bloqueada temporalmente. Espera antes de intentar de nuevo.</string>
     <string name="settings_aula_error_network">No se pudo conectar. Revisa tu conexión.</string>

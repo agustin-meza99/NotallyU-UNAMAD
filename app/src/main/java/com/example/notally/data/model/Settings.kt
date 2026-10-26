@@ -5,4 +5,6 @@ package com.example.notally.data.model
  */
 data class Settings(
     val semanaEmpiezaLunes: Boolean = true,
+    /** Última subida completada a Firestore, en epoch ms. */
+    val ultimaSincronizacionFirestore: Long? = null,
 )

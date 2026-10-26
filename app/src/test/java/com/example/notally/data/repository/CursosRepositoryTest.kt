@@ -18,6 +18,8 @@ class CursosRepositoryTest {
     ) : CursoDao {
         override fun observarCursos(): Flow<List<Curso>> = emptyFlow()
 
+        override suspend fun obtenerCursos(): List<Curso> = emptyList()
+
         override fun observarCursosConConteo(): Flow<List<CursoConConteo>> =
             emptyFlow()
 

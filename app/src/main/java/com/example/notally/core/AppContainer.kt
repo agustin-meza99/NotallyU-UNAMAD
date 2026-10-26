@@ -4,6 +4,8 @@ import android.content.Context
 import com.example.notally.data.NotallyDatabase
 import com.example.notally.data.aula.AulaCredencialesStore
 import com.example.notally.data.aula.AulaImporter
+import com.example.notally.data.firebase.AuthRepository
+import com.example.notally.data.firebase.FirestoreSync
 import com.example.notally.data.repository.SettingsRepository
 import com.example.notally.data.repository.CursosRepository
 import com.example.notally.data.repository.TareasRepository
@@ -33,6 +35,19 @@ class AppContainer(context: Context) {
     val credencialesAula = AulaCredencialesStore(contextoApp)
 
     val importadorAula = AulaImporter(
+        repositorioCursos = repositorioCursos,
+        repositorioTareas = repositorioTareas,
+    )
+
+    val authRepository = AuthRepository()
+
+    /**
+     * Firestore se obtiene de forma perezosa dentro de [FirestoreSync], después
+     * de comprobar que hay usuario. Construir este objeto no inicializa
+     * Firestore.
+     */
+    val firestoreSync = FirestoreSync(
+        authRepository = authRepository,
         repositorioCursos = repositorioCursos,
         repositorioTareas = repositorioTareas,
     )
