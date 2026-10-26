@@ -7,11 +7,12 @@
  * temporalmente tras varios intentos fallidos).
  */
 
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
+const ARCHIVO_ENV = path.join(AQUI, '.env');
 const DIR_SALIDA = path.join(AQUI, 'out');
 const BASE_POR_DEFECTO = 'https://aula-virtual.unamad.edu.pe';
 const USER_AGENT = 'NotallyExplorer/1.0';
@@ -41,6 +42,42 @@ const FILTROS_ENLACES = [
 function salir(codigo, mensaje) {
   if (mensaje) console.error(mensaje);
   process.exit(codigo);
+}
+
+/**
+ * Carga tools/aula/.env (si existe) sin dependencias externas.
+ * Solo define variables que aún no estén en process.env, para no pisar
+ * valores pasados por el shell ni por `node --env-file`.
+ */
+async function cargarEnvLocal() {
+  let contenido;
+  try {
+    contenido = await readFile(ARCHIVO_ENV, 'utf8');
+  } catch (error) {
+    if (error?.code === 'ENOENT') return;
+    console.warn(`Aviso: no se pudo leer ${path.relative(process.cwd(), ARCHIVO_ENV)}: ${error?.message ?? error}`);
+    return;
+  }
+
+  for (const lineaCruda of contenido.split(/\r?\n/)) {
+    const linea = lineaCruda.trim();
+    if (!linea || linea.startsWith('#')) continue;
+
+    const separador = linea.indexOf('=');
+    if (separador === -1) continue;
+
+    const clave = linea.slice(0, separador).trim();
+    if (!clave) continue;
+
+    let valor = linea.slice(separador + 1).trim();
+    if (valor.length >= 2 && valor.startsWith('"') && valor.endsWith('"')) {
+      valor = valor.slice(1, -1);
+    } else if (valor.length >= 2 && valor.startsWith("'") && valor.endsWith("'")) {
+      valor = valor.slice(1, -1);
+    }
+
+    if (process.env[clave] === undefined) process.env[clave] = valor;
+  }
 }
 
 function analizarArgumentos(argv) {
@@ -79,9 +116,13 @@ function mostrarAyuda() {
   console.log(`Explorador local del Aula Virtual de UNAMAD
 
 Uso:
-  AULA_USER=tu_usuario AULA_PASS=tu_contraseña node tools/aula/explore.mjs
+  node tools/aula/explore.mjs
   node tools/aula/explore.mjs --dry-run
   node tools/aula/explore.mjs --base https://aula-virtual.unamad.edu.pe
+
+Credenciales:
+  Rellena tools/aula/.env (copia tools/aula/.env.example) o define
+  AULA_USER y AULA_PASS en el entorno.
 
 Opciones:
   --base <url>   URL base del Aula Virtual (por defecto ${BASE_POR_DEFECTO})
@@ -316,6 +357,8 @@ async function principal() {
     process.exit(0);
   }
 
+  await cargarEnvLocal();
+
   const usuario = process.env.AULA_USER?.trim();
   const contrasena = process.env.AULA_PASS;
 
@@ -323,7 +366,8 @@ async function principal() {
     salir(
       1,
       'Faltan credenciales.\n' +
-        'Define AULA_USER y AULA_PASS en el entorno antes de ejecutar el explorador.\n' +
+        'Edita tools/aula/.env (copia tools/aula/.env.example si aún no existe) ' +
+        'o define AULA_USER y AULA_PASS en el entorno.\n' +
         'Ejemplo (PowerShell):\n' +
         '  $env:AULA_USER="tu_usuario"; $env:AULA_PASS="tu_contraseña"\n' +
         '  node tools/aula/explore.mjs --dry-run',

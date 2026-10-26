@@ -56,3 +56,6 @@ tools/seed-firestore/node_modules/
 # Explorador local del Aula Virtual
 tools/aula/out/
 tools/aula/*.local
+tools/aula/.env
+tools/aula/.env.*
+!tools/aula/.env.example

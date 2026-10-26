@@ -14,6 +14,33 @@ un único `POST /account/login`.
 
 ## Uso
 
+Hay dos vías para dar las credenciales.
+
+### 1. Archivo `.env` local (recomendado)
+
+Copia la plantilla y rellena tus datos:
+
+```powershell
+Copy-Item tools/aula/.env.example tools/aula/.env
+# Edita tools/aula/.env y escribe tu usuario y contraseña
+node tools/aula/explore.mjs
+```
+
+El archivo `tools/aula/.env` tiene este formato (sin comillas es lo normal; también se
+admiten comillas simples o dobles):
+
+```dotenv
+# Comentario
+AULA_USER=tu_usuario
+AULA_PASS=tu_contraseña
+```
+
+El explorador lee `tools/aula/.env` automáticamente al arrancar. Si una variable ya está
+definida en el entorno, se respeta ese valor (por lo que también funciona con
+`node --env-file=tools/aula/.env tools/aula/explore.mjs`).
+
+### 2. Variables de entorno
+
 PowerShell:
 
 ```powershell
@@ -45,12 +72,14 @@ Opciones:
 | `--dry-run`    | Valida el entorno y muestra el plan sin hacer red ni login         |
 | `--help`       | Muestra la ayuda                                                   |
 
-Comprobar el entorno sin tocar la red:
+Comprobar el entorno sin tocar la red (con `.env` relleno o con variables de entorno):
 
 ```powershell
-$env:AULA_USER="demo"; $env:AULA_PASS="demo"
 node tools/aula/explore.mjs --dry-run
 ```
+
+`--dry-run` solo comprueba que las credenciales existen y muestra el plan de peticiones;
+no hace login ni contacta el servidor.
 
 También puedes validar que el script no tiene errores de sintaxis:
 
@@ -101,8 +130,11 @@ cuerpos completos.
 
 - **No hagas commit de `tools/aula/out/`.** Contiene datos de tu cuenta y respuestas del
   campus. Ya está en `.gitignore`.
-- **No compartas tus credenciales** ni las escribas en archivos, scripts o historiales de
-  shell. Usa solo variables de entorno.
+- **No hagas commit de `tools/aula/.env`.** Contiene tus credenciales y está ignorado por
+  git. La plantilla versionada es `tools/aula/.env.example` (sin datos). Nunca commitees
+  `.env` ni ningún `.env.*` distinto de `.env.example`.
+- **No compartas tus credenciales** ni las escribas en scripts versionados o historiales de
+  shell. Usa `tools/aula/.env` o variables de entorno.
 - **Usa únicamente tu propia cuenta.** No automatices cuentas ajenas ni extraigas datos de
   terceros.
 - **Respeta los términos de servicio del Aula Virtual.** Este script es una herramienta de
