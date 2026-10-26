@@ -48,3 +48,7 @@ skills-lock.json
 firebase-debug.log
 firebase-debug.*.log
 *.local
+
+# Seed de Firestore
+tools/seed-firestore/node_modules/
+.env
