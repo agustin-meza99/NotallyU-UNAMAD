@@ -1,9 +1,11 @@
 package com.example.notally.data.model
 
+import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import androidx.room.Relation
 
 /**
  * Tarea o entrega académica.
@@ -53,3 +55,11 @@ enum class Status {
     IN_PROGRESS,
     DONE,
 }
+
+/** Tarea con sus subtareas, usada para el detalle. */
+data class TaskWithSubtasks(
+    @Embedded
+    val task: Task,
+    @Relation(parentColumn = "id", entityColumn = "taskId")
+    val subtasks: List<Subtask>,
+)

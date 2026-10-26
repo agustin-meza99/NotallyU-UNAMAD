@@ -1,5 +1,7 @@
 package com.example.notally.data.model
 
+import androidx.room.ColumnInfo
+import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -21,4 +23,12 @@ data class Subject(
     val professor: String? = null,
     val credits: Int? = null,
     val createdAt: Long = System.currentTimeMillis(),
+)
+
+/** Materia con el número de tareas no completadas y no archivadas. */
+data class SubjectWithTaskCount(
+    @Embedded
+    val subject: Subject,
+    @ColumnInfo(name = "pendingTaskCount")
+    val pendingTaskCount: Int,
 )
