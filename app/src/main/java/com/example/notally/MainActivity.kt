@@ -14,10 +14,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.notally.data.model.Settings
-import com.example.notally.data.model.ThemeMode
-import com.example.notally.ui.NotallyRoot
-import com.example.notally.ui.theme.NotallyTheme
+import com.example.notally.data.model.Ajustes
+import com.example.notally.data.model.ModoTema
+import com.example.notally.ui.RaizNotally
+import com.example.notally.ui.theme.TemaNotally
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -33,39 +33,39 @@ class MainActivity : ComponentActivity() {
             ),
         )
         setContent {
-            NotallyAppRoot()
+            RaizAplicacion()
         }
     }
 }
 
 @Composable
-private fun NotallyAppRoot() {
-    val context = LocalContext.current
-    val settings by context.notallyContainer.settingsRepository.settings
-        .collectAsStateWithLifecycle(initialValue = Settings())
+private fun RaizAplicacion() {
+    val contexto = LocalContext.current
+    val ajustes by contexto.contenedorNotally.repositorioAjustes.ajustes
+        .collectAsStateWithLifecycle(initialValue = Ajustes())
 
-    val systemDark = isSystemInDarkTheme()
-    val darkTheme = when (settings.themeMode) {
-        ThemeMode.SYSTEM -> systemDark
-        ThemeMode.LIGHT -> false
-        ThemeMode.DARK -> true
+    val sistemaOscuro = isSystemInDarkTheme()
+    val temaOscuro = when (ajustes.modoTema) {
+        ModoTema.SISTEMA -> sistemaOscuro
+        ModoTema.CLARO -> false
+        ModoTema.OSCURO -> true
     }
 
     // Iconos de barra del sistema coherentes con el tema elegido en la app,
     // no con el del dispositivo.
-    val view = LocalView.current
+    val vista = LocalView.current
     SideEffect {
-        val window = (view.context as? Activity)?.window ?: return@SideEffect
-        WindowCompat.getInsetsController(window, view).apply {
-            isAppearanceLightStatusBars = !darkTheme
-            isAppearanceLightNavigationBars = !darkTheme
+        val ventana = (vista.context as? Activity)?.window ?: return@SideEffect
+        WindowCompat.getInsetsController(ventana, vista).apply {
+            isAppearanceLightStatusBars = !temaOscuro
+            isAppearanceLightNavigationBars = !temaOscuro
         }
     }
 
-    NotallyTheme(
-        darkTheme = darkTheme,
-        dynamicColor = settings.useDynamicColor,
+    TemaNotally(
+        darkTheme = temaOscuro,
+        dynamicColor = ajustes.usarColorDinamico,
     ) {
-        NotallyRoot()
+        RaizNotally()
     }
 }

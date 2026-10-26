@@ -1,6 +1,6 @@
 package com.example.notally.data.remote.firestore
 
-import com.example.notally.data.model.Subject
+import com.example.notally.data.model.Materia
 
 /** Limites replicados de `firestore.rules` para materias. */
 object SubjectLimits {
@@ -12,21 +12,21 @@ object SubjectLimits {
  * Convierte una materia local en su forma remota.
  *
  * El docId remoto es `id.toString()` hoy (ver `docs/ARCHITECTURE.md` 5.4).
- * `Subject` no guarda `updatedAt` en Room, asi que por defecto se reutiliza
+ * `Materia` no guarda `updatedAt` en Room, asi que por defecto se reutiliza
  * `createdAt`; el SyncEngine debe pasar el `updatedAt` real de su metadata de
  * last-write-wins cuando lo tenga.
  *
  * @throws IllegalArgumentException si rompe los limites de las reglas.
  */
-fun Subject.toRemote(updatedAtMs: Long = createdAt): RemoteSubject {
+fun Materia.toRemote(updatedAtMs: Long = creadoEn): RemoteSubject {
     val remote = RemoteSubject(
-        name = name,
-        colorArgb = colorArgb,
-        professor = professor,
-        credits = credits,
-        createdAt = createdAt,
+        name = nombre,
+        colorArgb = color,
+        professor = profesor,
+        credits = creditos,
+        createdAt = creadoEn,
         updatedAt = updatedAtMs,
-        // Room hace borrado duro; una Subject local nunca es un tombstone.
+        // Room hace borrado duro; una Materia local nunca es un tombstone.
         deletedAt = null,
     )
     validateRemoteSubject(remote)
@@ -36,7 +36,7 @@ fun Subject.toRemote(updatedAtMs: Long = createdAt): RemoteSubject {
 /**
  * Convierte una materia remota en local.
  *
- * Perdida documentada: `updatedAt` y `deletedAt` no existen en `Subject` de
+ * Perdida documentada: `updatedAt` y `deletedAt` no existen en `Materia` de
  * Room. `deletedAt` debe filtrarlo el SyncEngine (aqui se rechaza el tombstone)
  * y `updatedAt` solo interesa para last-write-wins, que vive en la capa de sync.
  *
@@ -47,19 +47,19 @@ fun Subject.toRemote(updatedAtMs: Long = createdAt): RemoteSubject {
 fun RemoteSubject.toLocal(
     localId: Long = 0L,
     now: Long = System.currentTimeMillis(),
-): Subject {
+): Materia {
     require(deletedAt == null) {
         "RemoteSubject es un tombstone (deletedAt=$deletedAt): el SyncEngine debe " +
             "aplicar el borrado local y no mapearlo como materia viva."
     }
     validateRemoteSubject(this)
-    return Subject(
+    return Materia(
         id = localId,
-        name = name,
-        colorArgb = colorArgb,
-        professor = professor,
-        credits = credits,
-        createdAt = createdAt ?: now,
+        nombre = name,
+        color = colorArgb,
+        profesor = professor,
+        creditos = credits,
+        creadoEn = createdAt ?: now,
     )
 }
 

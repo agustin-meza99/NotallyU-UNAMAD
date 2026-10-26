@@ -1,9 +1,10 @@
 package com.example.notally.data.remote.firestore
 
-import com.example.notally.data.model.Priority
-import com.example.notally.data.model.Status
-import com.example.notally.data.model.Subtask
-import com.example.notally.data.model.Task
+import com.example.notally.data.aTexto
+import com.example.notally.data.estadoDesdeTexto
+import com.example.notally.data.model.Subtarea
+import com.example.notally.data.model.Tarea
+import com.example.notally.data.prioridadDesdeTexto
 
 /**
  * Limites replicados de `firestore.rules`. Si cambian las reglas, cambian
@@ -18,48 +19,53 @@ object TaskLimits {
     const val MAX_ID = 128
 }
 
-private val VALID_PRIORITIES = Priority.entries.map { it.name }.toSet()
-private val VALID_STATUSES = Status.entries.map { it.name }.toSet()
+// Contrato remoto: los valores persistidos siguen en inglés.
+private val VALID_PRIORITIES = setOf("LOW", "MEDIUM", "HIGH")
+private val VALID_STATUSES = setOf("PENDING", "IN_PROGRESS", "DONE")
 
 /**
  * Convierte una tarea local en su forma remota.
  *
+ * Los nombres de campo del documento remoto no cambian: `title`, `priority`,
+ * `status`, `dueAt`, etc. El mapper traduce los enums locales a su texto
+ * original en inglés.
+ *
  * @param subtasks subtareas de la tarea. Room las guarda en otra tabla, por eso
- *   no vienen dentro de [Task].
+ *   no vienen dentro de [Tarea].
  * @param subjectId id remoto de la materia. Por defecto usa `id.toString()`
  *   hasta que exista la migracion a UUID descrita en `docs/ARCHITECTURE.md`.
  * @throws IllegalArgumentException si la tarea esta archivada (no hay campo
  *   remoto para `isArchived`) o si algun campo rompe los limites de las reglas.
  */
-fun Task.toRemote(
-    subtasks: List<Subtask> = emptyList(),
-    subjectId: String? = this.subjectId?.toString(),
+fun Tarea.toRemote(
+    subtasks: List<Subtarea> = emptyList(),
+    subjectId: String? = this.materiaId?.toString(),
 ): RemoteTask {
-    require(!isArchived) {
-        "Task.isArchived no tiene campo en firestore.rules; V1 no sincroniza " +
+    require(!archivada) {
+        "Tarea.archivada no tiene campo en firestore.rules; V1 no sincroniza " +
             "archivadas. Desarchiva la tarea o usa deletedAt (ver ARCHITECTURE.md 5.3)."
     }
     val remote = RemoteTask(
-        title = title,
-        priority = priority.name,
-        status = status.name,
-        notes = notes,
+        title = titulo,
+        priority = prioridad.aTexto(),
+        status = estado.aTexto(),
+        notes = notas,
         subjectId = subjectId,
-        dueAt = dueAt,
+        dueAt = entregaEn,
         subtasks = subtasks
-            .sortedBy { it.position }
-            .map { subtask ->
+            .sortedBy { it.posicion }
+            .map { subtarea ->
                 RemoteSubtask(
-                    id = subtask.id.toString(),
-                    title = subtask.title,
-                    isDone = subtask.isDone,
-                    position = subtask.position,
+                    id = subtarea.id.toString(),
+                    title = subtarea.titulo,
+                    isDone = subtarea.hecha,
+                    position = subtarea.posicion,
                 )
             },
-        createdAt = createdAt,
-        updatedAt = updatedAt,
-        completedAt = completedAt,
-        // Room hace borrado duro; un Task local nunca es un tombstone.
+        createdAt = creadoEn,
+        updatedAt = actualizadoEn,
+        completedAt = completadoEn,
+        // Room hace borrado duro; una Tarea local nunca es un tombstone.
         deletedAt = null,
     )
     validateRemoteTask(remote)
@@ -83,7 +89,7 @@ fun RemoteTask.toLocal(
     isArchived: Boolean = false,
     localSubjectId: Long? = subjectId?.toLongOrNull(),
     now: Long = System.currentTimeMillis(),
-): Task {
+): Tarea {
     require(deletedAt == null) {
         "RemoteTask es un tombstone (deletedAt=$deletedAt): el SyncEngine debe " +
             "aplicar el borrado local y no mapearlo como tarea viva."
@@ -91,31 +97,31 @@ fun RemoteTask.toLocal(
     validateRemoteTask(this)
     require(subjectId == null || localSubjectId != null) {
         "subjectId remoto '$subjectId' no es un id local numerico; falta la " +
-            "migracion a remoteId (UUID) en Task/Subject."
+            "migracion a remoteId (UUID) en Tarea/Materia."
     }
-    return Task(
+    return Tarea(
         id = localId,
-        title = title,
-        notes = notes,
-        subjectId = localSubjectId,
-        dueAt = dueAt,
-        priority = Priority.valueOf(priority),
-        status = Status.valueOf(status),
-        createdAt = createdAt ?: now,
-        updatedAt = updatedAt ?: createdAt ?: now,
-        completedAt = completedAt,
-        isArchived = isArchived,
+        titulo = title,
+        notas = notes,
+        materiaId = localSubjectId,
+        entregaEn = dueAt,
+        prioridad = prioridadDesdeTexto(priority),
+        estado = estadoDesdeTexto(status),
+        creadoEn = createdAt ?: now,
+        actualizadoEn = updatedAt ?: createdAt ?: now,
+        completadoEn = completedAt,
+        archivada = isArchived,
     )
 }
 
 /**
  * Subtareas locales para [localTaskId], en orden de `position`.
  *
- * Nota de identidad: Room autogenera `Subtask.id` (Long) y el remoto usa un
+ * Nota de identidad: Room autogenera `Subtarea.id` (Long) y el remoto usa un
  * string; esa correspondencia se resuelve en el SyncEngine. Aqui el id local se
  * deja en `0` y solo se conservan titulo, estado y posicion.
  */
-fun RemoteTask.toLocalSubtasks(localTaskId: Long): List<Subtask> {
+fun RemoteTask.toLocalSubtasks(localTaskId: Long): List<Subtarea> {
     require(deletedAt == null) {
         "RemoteTask es un tombstone (deletedAt=$deletedAt): no genera subtareas."
     }
@@ -123,12 +129,12 @@ fun RemoteTask.toLocalSubtasks(localTaskId: Long): List<Subtask> {
     return subtasks
         .sortedBy { it.position }
         .map { subtask ->
-            Subtask(
+            Subtarea(
                 id = 0L,
-                taskId = localTaskId,
-                title = subtask.title,
-                isDone = subtask.isDone,
-                position = subtask.position,
+                tareaId = localTaskId,
+                titulo = subtask.title,
+                hecha = subtask.isDone,
+                posicion = subtask.position,
             )
         }
 }

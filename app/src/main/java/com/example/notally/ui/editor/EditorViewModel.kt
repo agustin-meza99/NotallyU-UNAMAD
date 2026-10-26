@@ -8,15 +8,16 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.notally.R
-import com.example.notally.data.model.Priority
-import com.example.notally.data.model.Status
-import com.example.notally.data.model.Subject
-import com.example.notally.data.model.Subtask
-import com.example.notally.data.model.Task
-import com.example.notally.data.repository.SubjectRepository
-import com.example.notally.data.repository.TaskRepository
-import com.example.notally.notallyContainer
-import com.example.notally.ui.theme.NotallySubjectSwatches
+import com.example.notally.contenedorNotally
+import com.example.notally.data.model.Estado
+import com.example.notally.data.model.Materia
+import com.example.notally.data.model.Prioridad
+import com.example.notally.data.model.Subtarea
+import com.example.notally.data.model.Tarea
+import com.example.notally.data.model.TareaConSubtareas
+import com.example.notally.data.repository.RepositorioMaterias
+import com.example.notally.data.repository.RepositorioTareas
+import com.example.notally.ui.theme.MuestrasMaterias
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -37,38 +38,38 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
 
 /** Una subtarea tal como la pinta el editor. */
-data class EditorSubtask(
+data class SubtareaEditor(
     val id: Long,
-    val title: String,
-    val isDone: Boolean,
+    val titulo: String,
+    val hecha: Boolean,
 )
 
 /** Todo el contenido editable del editor, en un solo estado. */
-data class EditorDraft(
-    val taskId: Long = 0L,
-    val title: String = "",
-    val notes: String = "",
-    val subjectId: Long? = null,
-    val dueAt: Long? = null,
-    val priority: Priority = Priority.MEDIUM,
-    val status: Status = Status.PENDING,
-    val subtasks: List<EditorSubtask> = emptyList(),
-    val loading: Boolean = true,
-    val loadError: Boolean = false,
-    val saveError: Boolean = false,
+data class BorradorTarea(
+    val tareaId: Long = 0L,
+    val titulo: String = "",
+    val notas: String = "",
+    val materiaId: Long? = null,
+    val entregaEn: Long? = null,
+    val prioridad: Prioridad = Prioridad.MEDIA,
+    val estado: Estado = Estado.PENDIENTE,
+    val subtareas: List<SubtareaEditor> = emptyList(),
+    val cargando: Boolean = true,
+    val errorCarga: Boolean = false,
+    val errorGuardado: Boolean = false,
 )
 
 /** Error al crear una materia desde la hoja del editor. */
-enum class EditorSubjectError {
-    DUPLICATE,
-    GENERIC,
+enum class ErrorMateriaEditor {
+    DUPLICADO,
+    GENERICO,
 }
 
-sealed interface EditorEvent {
-    data class SubtaskDeleted(
-        val title: String,
-        val wasDone: Boolean,
-    ) : EditorEvent
+sealed interface EventoEditor {
+    data class SubtareaEliminada(
+        val titulo: String,
+        val estabaHecha: Boolean,
+    ) : EventoEditor
 }
 
 /**
@@ -77,95 +78,95 @@ sealed interface EditorEvent {
  * Autosave: debounce de 500 ms y como máximo una escritura por segundo. Se
  * hace flush al salir y al ir a segundo plano; no hay botón "Guardar".
  *
- * Las escrituras corren en [persistScope], un scope propio que no muere con
- * `viewModelScope`: así el flush lanzado desde `onDispose`/`onCleared` termina
- * incluso cuando la pantalla ya se retiró del composition. Las escrituras se
- * serializan con un [Mutex] y se evitan si no cambió nada.
+ * Las escrituras corren en [alcancePersistencia], un scope propio que no muere
+ * con `viewModelScope`: así el flush lanzado desde `onDispose`/`onCleared`
+ * termina incluso cuando la pantalla ya se retiró del composition. Las
+ * escrituras se serializan con un [Mutex] y se evitan si no cambió nada.
  */
 class EditorViewModel(
-    private val taskId: Long?,
-    private val taskRepository: TaskRepository,
-    private val subjectRepository: SubjectRepository,
-    private val untitledLabel: String,
-    private val clock: () -> Long = System::currentTimeMillis,
+    private val tareaId: Long?,
+    private val repositorioTareas: RepositorioTareas,
+    private val repositorioMaterias: RepositorioMaterias,
+    private val etiquetaSinTitulo: String,
+    private val reloj: () -> Long = System::currentTimeMillis,
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(
-        EditorDraft(loading = taskId != null, loadError = false),
+    private val _estado = MutableStateFlow(
+        BorradorTarea(cargando = tareaId != null, errorCarga = false),
     )
-    val state: StateFlow<EditorDraft> = _state.asStateFlow()
+    val estado: StateFlow<BorradorTarea> = _estado.asStateFlow()
 
-    private val _subjects = MutableStateFlow<List<Subject>>(emptyList())
-    val subjects: StateFlow<List<Subject>> = _subjects.asStateFlow()
+    private val _materias = MutableStateFlow<List<Materia>>(emptyList())
+    val materias: StateFlow<List<Materia>> = _materias.asStateFlow()
 
-    private val _newSubjectError = MutableStateFlow<EditorSubjectError?>(null)
-    val newSubjectError: StateFlow<EditorSubjectError?> = _newSubjectError.asStateFlow()
+    private val _errorNuevaMateria = MutableStateFlow<ErrorMateriaEditor?>(null)
+    val errorNuevaMateria: StateFlow<ErrorMateriaEditor?> = _errorNuevaMateria.asStateFlow()
 
-    private val _events = MutableSharedFlow<EditorEvent>(extraBufferCapacity = 8)
-    val events: SharedFlow<EditorEvent> = _events.asSharedFlow()
+    private val _eventos = MutableSharedFlow<EventoEditor>(extraBufferCapacity = 8)
+    val eventos: SharedFlow<EventoEditor> = _eventos.asSharedFlow()
 
-    private val persistScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private val persistMutex = Mutex()
-    private val opsMutex = Mutex()
+    private val alcancePersistencia = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val mutexPersistencia = Mutex()
+    private val mutexOperaciones = Mutex()
 
-    private var loadedTask: Task? = null
+    private var tareaCargada: Tarea? = null
     private var revision = 0L
-    private var savedRevision = 0L
-    private var lastWriteAt = 0L
-    private var debounceJob: Job? = null
-    private var deleted = false
+    private var revisionGuardada = 0L
+    private var ultimaEscrituraEn = 0L
+    private var trabajoDebounce: Job? = null
+    private var eliminada = false
 
     init {
-        observeSubjects()
-        if (taskId != null) load(taskId) else _state.update { it.copy(loading = false) }
+        observarMaterias()
+        if (tareaId != null) cargar(tareaId) else _estado.update { it.copy(cargando = false) }
     }
 
     // ---------------------------------------------------------------------
     // Carga
     // ---------------------------------------------------------------------
 
-    private fun load(id: Long) {
+    private fun cargar(id: Long) {
         viewModelScope.launch {
             try {
-                applySnapshot(taskRepository.getTaskWithSubtasks(id))
-            } catch (cancelled: CancellationException) {
-                throw cancelled
+                aplicarInstantanea(repositorioTareas.obtenerTareaConSubtareas(id))
+            } catch (cancelada: CancellationException) {
+                throw cancelada
             } catch (_: Exception) {
-                _state.update { it.copy(loading = false, loadError = true) }
+                _estado.update { it.copy(cargando = false, errorCarga = true) }
             }
         }
     }
 
-    private fun applySnapshot(snapshot: com.example.notally.data.model.TaskWithSubtasks?) {
-        if (snapshot == null) {
-            _state.update { it.copy(loading = false, loadError = true) }
+    private fun aplicarInstantanea(instantanea: TareaConSubtareas?) {
+        if (instantanea == null) {
+            _estado.update { it.copy(cargando = false, errorCarga = true) }
             return
         }
-        loadedTask = snapshot.task
-        _state.value = EditorDraft(
-            taskId = snapshot.task.id,
-            title = snapshot.task.title,
-            notes = snapshot.task.notes,
-            subjectId = snapshot.task.subjectId,
-            dueAt = snapshot.task.dueAt,
-            priority = snapshot.task.priority,
-            status = snapshot.task.status,
-            subtasks = snapshot.subtasks.sortedBy { it.position }.map { it.toRow() },
-            loading = false,
+        tareaCargada = instantanea.tarea
+        _estado.value = BorradorTarea(
+            tareaId = instantanea.tarea.id,
+            titulo = instantanea.tarea.titulo,
+            notas = instantanea.tarea.notas,
+            materiaId = instantanea.tarea.materiaId,
+            entregaEn = instantanea.tarea.entregaEn,
+            prioridad = instantanea.tarea.prioridad,
+            estado = instantanea.tarea.estado,
+            subtareas = instantanea.subtareas.sortedBy { it.posicion }.map { it.aFila() },
+            cargando = false,
         )
     }
 
-    fun retryLoad() {
-        val id = taskId ?: return
-        _state.update { it.copy(loading = true, loadError = false) }
-        load(id)
+    fun reintentarCarga() {
+        val id = tareaId ?: return
+        _estado.update { it.copy(cargando = true, errorCarga = false) }
+        cargar(id)
     }
 
-    private fun observeSubjects() {
+    private fun observarMaterias() {
         viewModelScope.launch {
-            subjectRepository.observeSubjects()
+            repositorioMaterias.observarMaterias()
                 .catch { }
-                .collect { _subjects.value = it }
+                .collect { _materias.value = it }
         }
     }
 
@@ -173,40 +174,41 @@ class EditorViewModel(
     // Cambios y autosave
     // ---------------------------------------------------------------------
 
-    fun onTitleChange(value: String) = update { it.copy(title = value) }
+    fun cambiarTitulo(valor: String) = actualizarBorrador { it.copy(titulo = valor) }
 
-    fun onNotesChange(value: String) = update { it.copy(notes = value) }
+    fun cambiarNotas(valor: String) = actualizarBorrador { it.copy(notas = valor) }
 
-    fun setSubject(subjectId: Long?) = update { it.copy(subjectId = subjectId) }
+    fun cambiarMateria(materiaId: Long?) = actualizarBorrador { it.copy(materiaId = materiaId) }
 
-    fun setDueAt(dueAt: Long?) = update { it.copy(dueAt = dueAt) }
+    fun cambiarEntrega(entregaEn: Long?) = actualizarBorrador { it.copy(entregaEn = entregaEn) }
 
-    fun setPriority(priority: Priority) = update { it.copy(priority = priority) }
+    fun cambiarPrioridad(prioridad: Prioridad) =
+        actualizarBorrador { it.copy(prioridad = prioridad) }
 
-    fun setStatus(status: Status) = update { it.copy(status = status) }
+    fun cambiarEstado(estado: Estado) = actualizarBorrador { it.copy(estado = estado) }
 
-    private fun update(transform: (EditorDraft) -> EditorDraft) {
-        _state.update(transform)
+    private fun actualizarBorrador(transformacion: (BorradorTarea) -> BorradorTarea) {
+        _estado.update(transformacion)
         revision += 1
-        scheduleSave()
+        programarGuardado()
     }
 
-    private fun scheduleSave() {
-        debounceJob?.cancel()
-        debounceJob = viewModelScope.launch {
-            delay(DEBOUNCE_MS)
-            val elapsed = clock() - lastWriteAt
-            if (elapsed in 0 until MIN_WRITE_INTERVAL_MS) {
-                delay(MIN_WRITE_INTERVAL_MS - elapsed)
+    private fun programarGuardado() {
+        trabajoDebounce?.cancel()
+        trabajoDebounce = viewModelScope.launch {
+            delay(MS_DEBOUNCE)
+            val transcurrido = reloj() - ultimaEscrituraEn
+            if (transcurrido in 0 until MS_INTERVALO_MIN_ESCRITURA) {
+                delay(MS_INTERVALO_MIN_ESCRITURA - transcurrido)
             }
-            persist()
+            persistir()
         }
     }
 
     /** Flush silencioso al volver, al ir a segundo plano o al destruirse. */
-    fun flush() {
-        debounceJob?.cancel()
-        persistScope.launch { persist() }
+    fun volcar() {
+        trabajoDebounce?.cancel()
+        alcancePersistencia.launch { persistir() }
     }
 
     /**
@@ -215,65 +217,74 @@ class EditorViewModel(
      * destruye al volver, así que este es el último punto donde se puede
      * garantizar que el borrador llegue a Room. No bloquea el hilo de UI.
      */
-    suspend fun flushAndWait(timeoutMillis: Long = FLUSH_TIMEOUT_MS) {
-        debounceJob?.cancel()
+    suspend fun volcarYEsperar(timeoutMillis: Long = MS_TIMEOUT_VOLCADO) {
+        trabajoDebounce?.cancel()
         withTimeoutOrNull(timeoutMillis) {
-            persistMutex.withLock { persistLocked() }
+            mutexPersistencia.withLock { persistirBloqueado() }
         }
     }
 
-    fun retrySave() {
-        _state.update { it.copy(saveError = false) }
-        persistScope.launch { persist() }
+    fun reintentarGuardado() {
+        _estado.update { it.copy(errorGuardado = false) }
+        alcancePersistencia.launch { persistir() }
     }
 
-    private suspend fun persist() {
-        persistMutex.withLock { persistLocked() }
+    private suspend fun persistir() {
+        mutexPersistencia.withLock { persistirBloqueado() }
     }
 
-    private suspend fun persistLocked() {
-        if (deleted) return
-        val draft = _state.value
-        if (draft.loading || draft.loadError) return
-        val revisionAtStart = revision
+    private suspend fun persistirBloqueado() {
+        if (eliminada) return
+        val borrador = _estado.value
+        if (borrador.cargando || borrador.errorCarga) return
+        val revisionAlIniciar = revision
         try {
-            if (draft.taskId == 0L) {
-                if (!EditorRules.hasContent(draft.title, draft.notes, draft.subtasks.size)) return
-                val created = taskRepository.createTask(
-                    Task(
-                        title = EditorRules.displayTitle(draft.title, untitledLabel),
-                        notes = draft.notes,
-                        subjectId = draft.subjectId,
-                        dueAt = draft.dueAt,
-                        priority = draft.priority,
-                        status = draft.status,
+            if (borrador.tareaId == 0L) {
+                if (!ReglasEditor.tieneContenido(
+                        borrador.titulo,
+                        borrador.notas,
+                        borrador.subtareas.size,
+                    )
+                ) {
+                    return
+                }
+                val creada = repositorioTareas.crearTarea(
+                    Tarea(
+                        titulo = ReglasEditor.tituloVisible(borrador.titulo, etiquetaSinTitulo),
+                        notas = borrador.notas,
+                        materiaId = borrador.materiaId,
+                        entregaEn = borrador.entregaEn,
+                        prioridad = borrador.prioridad,
+                        estado = borrador.estado,
                     ),
                 )
-                loadedTask = taskRepository.getTask(created)
-                _state.update { it.copy(taskId = created, saveError = false) }
+                tareaCargada = repositorioTareas.obtenerTarea(creada)
+                _estado.update { it.copy(tareaId = creada, errorGuardado = false) }
             } else {
-                if (revisionAtStart == savedRevision) return
-                val base = loadedTask
-                    ?: taskRepository.getTask(draft.taskId)?.also { loadedTask = it }
+                if (revisionAlIniciar == revisionGuardada) return
+                val base = tareaCargada
+                    ?: repositorioTareas.obtenerTarea(borrador.tareaId)?.also {
+                        tareaCargada = it
+                    }
                     ?: return
-                val updated = base.copy(
-                    title = EditorRules.displayTitle(draft.title, untitledLabel),
-                    notes = draft.notes,
-                    subjectId = draft.subjectId,
-                    dueAt = draft.dueAt,
-                    priority = draft.priority,
-                    status = draft.status,
+                val actualizada = base.copy(
+                    titulo = ReglasEditor.tituloVisible(borrador.titulo, etiquetaSinTitulo),
+                    notas = borrador.notas,
+                    materiaId = borrador.materiaId,
+                    entregaEn = borrador.entregaEn,
+                    prioridad = borrador.prioridad,
+                    estado = borrador.estado,
                 )
-                taskRepository.updateTask(updated)
-                loadedTask = updated
-                _state.update { it.copy(saveError = false) }
+                repositorioTareas.actualizarTarea(actualizada)
+                tareaCargada = actualizada
+                _estado.update { it.copy(errorGuardado = false) }
             }
-            savedRevision = revisionAtStart
-            lastWriteAt = clock()
-        } catch (cancelled: CancellationException) {
-            throw cancelled
+            revisionGuardada = revisionAlIniciar
+            ultimaEscrituraEn = reloj()
+        } catch (cancelada: CancellationException) {
+            throw cancelada
         } catch (_: Exception) {
-            _state.update { it.copy(saveError = true) }
+            _estado.update { it.copy(errorGuardado = true) }
         }
     }
 
@@ -282,31 +293,31 @@ class EditorViewModel(
      * borrador está vacío, el título se guarda como "Sin título" porque la
      * subtarea que se está agregando ya es contenido.
      */
-    private suspend fun ensureTaskId(): Long? = persistMutex.withLock {
-        val current = _state.value
-        current.taskId.takeIf { it != 0L }?.let { return@withLock it }
-        if (deleted) return@withLock null
-        val revisionAtStart = revision
+    private suspend fun asegurarTareaId(): Long? = mutexPersistencia.withLock {
+        val actual = _estado.value
+        actual.tareaId.takeIf { it != 0L }?.let { return@withLock it }
+        if (eliminada) return@withLock null
+        val revisionAlIniciar = revision
         return@withLock try {
-            val id = taskRepository.createTask(
-                Task(
-                    title = EditorRules.displayTitle(current.title, untitledLabel),
-                    notes = current.notes,
-                    subjectId = current.subjectId,
-                    dueAt = current.dueAt,
-                    priority = current.priority,
-                    status = current.status,
+            val id = repositorioTareas.crearTarea(
+                Tarea(
+                    titulo = ReglasEditor.tituloVisible(actual.titulo, etiquetaSinTitulo),
+                    notas = actual.notas,
+                    materiaId = actual.materiaId,
+                    entregaEn = actual.entregaEn,
+                    prioridad = actual.prioridad,
+                    estado = actual.estado,
                 ),
             )
-            loadedTask = taskRepository.getTask(id)
-            _state.update { it.copy(taskId = id) }
-            savedRevision = revisionAtStart
-            lastWriteAt = clock()
+            tareaCargada = repositorioTareas.obtenerTarea(id)
+            _estado.update { it.copy(tareaId = id) }
+            revisionGuardada = revisionAlIniciar
+            ultimaEscrituraEn = reloj()
             id
-        } catch (cancelled: CancellationException) {
-            throw cancelled
+        } catch (cancelada: CancellationException) {
+            throw cancelada
         } catch (_: Exception) {
-            _state.update { it.copy(saveError = true) }
+            _estado.update { it.copy(errorGuardado = true) }
             null
         }
     }
@@ -316,172 +327,174 @@ class EditorViewModel(
     // ---------------------------------------------------------------------
 
     /**
-     * Agrega una subtarea y solo entonces confirma con [onAdded]. Si la
+     * Agrega una subtarea y solo entonces confirma con [alAgregar]. Si la
      * escritura falla, el campo conserva el texto y se muestra el error de
      * guardado; nunca se limpia antes de tener la fila persistida.
      */
-    fun addSubtask(title: String, onAdded: () -> Unit = {}) {
-        val trimmed = title.trim()
-        if (trimmed.isEmpty()) return
+    fun agregarSubtarea(titulo: String, alAgregar: () -> Unit = {}) {
+        val recortado = titulo.trim()
+        if (recortado.isEmpty()) return
         viewModelScope.launch {
-            opsMutex.withLock {
-                val id = ensureTaskId() ?: return@withLock
+            mutexOperaciones.withLock {
+                val id = asegurarTareaId() ?: return@withLock
                 try {
-                    taskRepository.addSubtask(id, trimmed)
-                    syncSubtasks(id)
-                    onAdded()
-                } catch (cancelled: CancellationException) {
-                    throw cancelled
+                    repositorioTareas.agregarSubtarea(id, recortado)
+                    sincronizarSubtareas(id)
+                    alAgregar()
+                } catch (cancelada: CancellationException) {
+                    throw cancelada
                 } catch (_: Exception) {
-                    _state.update { it.copy(saveError = true) }
+                    _estado.update { it.copy(errorGuardado = true) }
                 }
             }
         }
     }
 
-    fun toggleSubtask(row: EditorSubtask) {
-        if (row.id <= 0L) return
+    fun alternarSubtarea(fila: SubtareaEditor) {
+        if (fila.id <= 0L) return
         viewModelScope.launch {
-            opsMutex.withLock {
+            mutexOperaciones.withLock {
                 try {
-                    taskRepository.toggleSubtask(row.id)
-                    syncSubtasks(_state.value.taskId)
-                } catch (cancelled: CancellationException) {
-                    throw cancelled
+                    repositorioTareas.alternarSubtarea(fila.id)
+                    sincronizarSubtareas(_estado.value.tareaId)
+                } catch (cancelada: CancellationException) {
+                    throw cancelada
                 } catch (_: Exception) {
-                    _state.update { it.copy(saveError = true) }
+                    _estado.update { it.copy(errorGuardado = true) }
                 }
             }
         }
     }
 
-    fun deleteSubtask(row: EditorSubtask) {
-        if (row.id <= 0L) return
+    fun eliminarSubtarea(fila: SubtareaEditor) {
+        if (fila.id <= 0L) return
         viewModelScope.launch {
-            opsMutex.withLock {
+            mutexOperaciones.withLock {
                 try {
-                    taskRepository.deleteSubtask(row.id)
-                    syncSubtasks(_state.value.taskId)
-                    _events.emit(EditorEvent.SubtaskDeleted(row.title, row.isDone))
-                } catch (cancelled: CancellationException) {
-                    throw cancelled
+                    repositorioTareas.eliminarSubtarea(fila.id)
+                    sincronizarSubtareas(_estado.value.tareaId)
+                    _eventos.emit(EventoEditor.SubtareaEliminada(fila.titulo, fila.hecha))
+                } catch (cancelada: CancellationException) {
+                    throw cancelada
                 } catch (_: Exception) {
-                    _state.update { it.copy(saveError = true) }
+                    _estado.update { it.copy(errorGuardado = true) }
                 }
             }
         }
     }
 
-    fun undoDeleteSubtask(event: EditorEvent.SubtaskDeleted) {
+    fun deshacerEliminarSubtarea(evento: EventoEditor.SubtareaEliminada) {
         viewModelScope.launch {
-            opsMutex.withLock {
-                val id = ensureTaskId() ?: return@withLock
+            mutexOperaciones.withLock {
+                val id = asegurarTareaId() ?: return@withLock
                 try {
-                    val newId = taskRepository.addSubtask(id, event.title)
-                    if (event.wasDone) taskRepository.setSubtaskDone(newId, true)
-                    syncSubtasks(id)
-                } catch (cancelled: CancellationException) {
-                    throw cancelled
+                    val nuevoId = repositorioTareas.agregarSubtarea(id, evento.titulo)
+                    if (evento.estabaHecha) {
+                        repositorioTareas.cambiarSubtareaHecha(nuevoId, true)
+                    }
+                    sincronizarSubtareas(id)
+                } catch (cancelada: CancellationException) {
+                    throw cancelada
                 } catch (_: Exception) {
-                    _state.update { it.copy(saveError = true) }
+                    _estado.update { it.copy(errorGuardado = true) }
                 }
             }
         }
     }
 
-    private suspend fun syncSubtasks(taskId: Long) {
-        if (taskId == 0L) return
-        val rows = taskRepository.getTaskWithSubtasks(taskId)
-            ?.subtasks
-            ?.sortedBy { it.position }
-            ?.map { it.toRow() }
+    private suspend fun sincronizarSubtareas(tareaId: Long) {
+        if (tareaId == 0L) return
+        val filas = repositorioTareas.obtenerTareaConSubtareas(tareaId)
+            ?.subtareas
+            ?.sortedBy { it.posicion }
+            ?.map { it.aFila() }
             .orEmpty()
-        _state.update { it.copy(subtasks = rows) }
+        _estado.update { it.copy(subtareas = filas) }
     }
 
     // ---------------------------------------------------------------------
     // Materias y eliminación
     // ---------------------------------------------------------------------
 
-    fun defaultSubjectColor(): Long {
-        val swatches = NotallySubjectSwatches
-        return swatches[_subjects.value.size % swatches.size].argb
+    fun colorMateriaPorDefecto(): Long {
+        val muestras = MuestrasMaterias
+        return muestras[_materias.value.size % muestras.size].argb
     }
 
-    fun clearNewSubjectError() {
-        _newSubjectError.value = null
+    fun limpiarErrorNuevaMateria() {
+        _errorNuevaMateria.value = null
     }
 
-    /** Crea una materia y la selecciona. [onCreated] se ejecuta en el hilo principal. */
-    fun createSubjectAndSelect(
-        name: String,
-        colorArgb: Long,
-        onCreated: () -> Unit,
+    /** Crea una materia y la selecciona. [alCrear] se ejecuta en el hilo principal. */
+    fun crearMateriaYSeleccionar(
+        nombre: String,
+        color: Long,
+        alCrear: () -> Unit,
     ) {
-        val trimmed = name.trim()
-        if (trimmed.isEmpty()) return
+        val recortado = nombre.trim()
+        if (recortado.isEmpty()) return
         viewModelScope.launch {
             try {
-                val id = subjectRepository.createSubject(
-                    name = trimmed,
-                    colorArgb = colorArgb,
+                val id = repositorioMaterias.crearMateria(
+                    nombre = recortado,
+                    color = color,
                 )
-                _newSubjectError.value = null
-                update { it.copy(subjectId = id) }
-                onCreated()
-            } catch (cancelled: CancellationException) {
-                throw cancelled
+                _errorNuevaMateria.value = null
+                actualizarBorrador { it.copy(materiaId = id) }
+                alCrear()
+            } catch (cancelada: CancellationException) {
+                throw cancelada
             } catch (_: SQLiteConstraintException) {
-                _newSubjectError.value = EditorSubjectError.DUPLICATE
+                _errorNuevaMateria.value = ErrorMateriaEditor.DUPLICADO
             } catch (_: Exception) {
-                _newSubjectError.value = EditorSubjectError.GENERIC
+                _errorNuevaMateria.value = ErrorMateriaEditor.GENERICO
             }
         }
     }
 
-    fun deleteTask(onDeleted: () -> Unit) {
-        debounceJob?.cancel()
+    fun eliminarTarea(alEliminar: () -> Unit) {
+        trabajoDebounce?.cancel()
         viewModelScope.launch {
             try {
-                persistMutex.withLock {
-                    deleted = true
-                    val id = _state.value.taskId
-                    if (id != 0L) taskRepository.deleteTask(id)
+                mutexPersistencia.withLock {
+                    eliminada = true
+                    val id = _estado.value.tareaId
+                    if (id != 0L) repositorioTareas.eliminarTarea(id)
                 }
-                onDeleted()
-            } catch (cancelled: CancellationException) {
-                throw cancelled
+                alEliminar()
+            } catch (cancelada: CancellationException) {
+                throw cancelada
             } catch (_: Exception) {
-                deleted = false
-                _state.update { it.copy(saveError = true) }
+                eliminada = false
+                _estado.update { it.copy(errorGuardado = true) }
             }
         }
     }
 
     override fun onCleared() {
         super.onCleared()
-        persistScope.launch { persist() }
+        alcancePersistencia.launch { persistir() }
     }
 
     companion object {
-        private const val DEBOUNCE_MS = 500L
-        private const val MIN_WRITE_INTERVAL_MS = 1_000L
-        private const val FLUSH_TIMEOUT_MS = 800L
+        private const val MS_DEBOUNCE = 500L
+        private const val MS_INTERVALO_MIN_ESCRITURA = 1_000L
+        private const val MS_TIMEOUT_VOLCADO = 800L
 
-        fun factory(context: Context, taskId: Long?): ViewModelProvider.Factory =
+        fun factory(context: Context, tareaId: Long?): ViewModelProvider.Factory =
             viewModelFactory {
                 initializer {
-                    val container = context.notallyContainer
+                    val contenedor = context.contenedorNotally
                     EditorViewModel(
-                        taskId = taskId,
-                        taskRepository = container.taskRepository,
-                        subjectRepository = container.subjectRepository,
-                        untitledLabel = context.getString(R.string.editor_untitled),
+                        tareaId = tareaId,
+                        repositorioTareas = contenedor.repositorioTareas,
+                        repositorioMaterias = contenedor.repositorioMaterias,
+                        etiquetaSinTitulo = context.getString(R.string.editor_untitled),
                     )
                 }
             }
     }
 }
 
-private fun Subtask.toRow(): EditorSubtask =
-    EditorSubtask(id = id, title = title, isDone = isDone)
+private fun Subtarea.aFila(): SubtareaEditor =
+    SubtareaEditor(id = id, titulo = titulo, hecha = hecha)
