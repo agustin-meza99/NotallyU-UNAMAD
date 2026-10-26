@@ -40,6 +40,12 @@ object DateFormat {
 
     private val weekdayShort: DateTimeFormatter =
         DateTimeFormatter.ofPattern("EEE d MMM", SpanishLocale)
+    private val weekdayAbbrev: DateTimeFormatter =
+        DateTimeFormatter.ofPattern("EEE", SpanishLocale)
+    private val weekdayLong: DateTimeFormatter =
+        DateTimeFormatter.ofPattern("EEEE", SpanishLocale)
+    private val monthLong: DateTimeFormatter =
+        DateTimeFormatter.ofPattern("MMMM", SpanishLocale)
     private val dayMonthYear: DateTimeFormatter =
         DateTimeFormatter.ofPattern("d MMM yyyy", SpanishLocale)
     private val eyebrowFormatter: DateTimeFormatter =
@@ -112,6 +118,21 @@ object DateFormat {
         zone: ZoneId = ZoneId.systemDefault(),
     ): String = capitalize(eyebrowFormatter.format(localDate(epochMillis, zone)))
         .uppercase(SpanishLocale)
+
+    /** "LUN": tres letras del día, sin punto y en mayúsculas (§7.1.1). */
+    fun weekdayAbbreviation(date: LocalDate): String =
+        weekdayAbbrev.format(date)
+            .removeSuffix(".")
+            .take(3)
+            .uppercase(SpanishLocale)
+
+    /** "Domingo" con inicial mayúscula, para la etiqueta de accesibilidad. */
+    fun weekdayName(date: LocalDate): String =
+        capitalize(weekdayLong.format(date))
+
+    /** "octubre" en minúscula, tal como va dentro de una frase. */
+    fun monthName(date: LocalDate): String =
+        monthLong.format(date).lowercase(SpanishLocale)
 
     /** `true` si el instante no cae exactamente en la medianoche local. */
     fun hasTimeOfDay(

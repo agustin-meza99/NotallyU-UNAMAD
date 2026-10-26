@@ -18,7 +18,7 @@ class SubjectColorsTest {
     @Test
     fun `los valores respetan la tabla del documento`() {
         assertEquals(
-            listOf(0xFF3A5A9EL, 0xFF2F6A4EL, 0xFF99482EL, 0xFF7A5E14L, 0xFF7B3F6DL, 0xFF1D5F6AL),
+            listOf(0xFF3A5A9EL, 0xFF2F6A4EL, 0xFF99482EL, 0xFF5F7300L, 0xFF7A5F87L, 0xFF1D5F6AL),
             SubjectColors.all,
         )
     }

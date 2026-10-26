@@ -12,10 +12,10 @@ object SubjectColors {
     const val INDIGO: Long = 0xFF3A5A9E
     const val FOREST: Long = 0xFF2F6A4E
     const val TERRACOTTA: Long = 0xFF99482E
-    const val OCHRE: Long = 0xFF7A5E14
-    const val PLUM: Long = 0xFF7B3F6D
+    const val LIME: Long = 0xFF5F7300
+    const val LAVENDER: Long = 0xFF7A5F87
     const val PETROL: Long = 0xFF1D5F6A
 
     /** Orden de la tabla del documento, usado por los swatches. */
-    val all: List<Long> = listOf(INDIGO, FOREST, TERRACOTTA, OCHRE, PLUM, PETROL)
+    val all: List<Long> = listOf(INDIGO, FOREST, TERRACOTTA, LIME, LAVENDER, PETROL)
 }

@@ -162,16 +162,33 @@ Fórmula usada: `(L_claro + 0.05) / (L_oscuro + 0.05)`, con luminancia relativa 
 
 ### 2.5 Acentos de materia
 
-Seis swatches fijos, con variante clara y oscura. El texto sobre el contenedor del swatch (chip de selección en "Editar materia") también cumple AA.
+Seis swatches fijos, con variante clara y oscura. El texto sobre el contenedor del swatch (chip de selección en "Editar materia") también cumple AA. **Cambio aprobado 2026-10-26:** salen Ocre y Ciruela; entran Lima y Lavanda. La lima pura de referencia (~`#D4E86A`) queda rechazada: da 1.29:1 sobre `surface` claro y no puede usarse ni como swatch oscuro ni como texto. Se conserva el patrón de la tabla: tono oscuro y saturado en tema claro, pastel claro en tema oscuro.
 
 | Token | Nombre UI | Claro | Oscuro | Contenedor claro | Contenedor oscuro | Texto claro | Texto oscuro | Sobre surface claro/oscuro |
 |---|---|---|---|---|---|---|---|---|
 | subjectIndigo | Índigo | `#3A5A9E` | `#AFC3EE` | `#E9ECF5` | `#222B3F` | 5.67 | 7.99 | 6.42 / 10.48 |
 | subjectForest | Bosque | `#2F6A4E` | `#9FC9B2` | `#E6EFE8` | `#1D2C24` | 5.43 | 7.98 | 6.11 / 10.13 |
 | subjectTerracotta | Terracota | `#99482E` | `#E7AE97` | `#F4E8E2` | `#33231C` | 5.27 | 7.80 | 6.06 / 9.62 |
-| subjectOchre | Ocre | `#7A5E14` | `#DCC27A` | `#F2ECDA` | `#2E2716` | 5.17 | 8.49 | 5.85 / 10.63 |
-| subjectPlum | Ciruela | `#7B3F6D` | `#E0A9D1` | `#F2E7EF` | `#2F2130` | 6.29 | 7.79 | 7.25 / 9.51 |
+| subjectLime | Lima | `#5F7300` | `#D8E5A0` | `#F3F5E0` | `#2A2B16` | 4.81 | 10.74 | 5.11 / 13.81 |
+| subjectLavender | Lavanda | `#7A5F87` | `#CAA8B8` | `#F3EDF5` | `#2B2233` | 4.78 | 7.11 | 5.27 / 8.66 |
 | subjectPetrol | Petróleo | `#1D5F6A` | `#96CDD6` | `#E3EEEE` | `#182B2E` | 6.12 | 8.43 | 6.94 / 10.60 |
+
+Los ratios se recalcularon el 2026-10-26 con la fórmula de §2.4 sobre los hex exactos. "Texto claro" es el acento claro sobre su contenedor claro; "Texto oscuro", el acento oscuro sobre su contenedor oscuro; "Sobre surface" es acento claro/surface claro y acento oscuro/surface oscuro.
+
+**Por qué salen Ocre y Ciruela.** Ocre (`#7A5E14`) ya era un oliva sucio en la misma familia amarillo-verde que Lima; mantener los dos dejaba dos de seis swatches casi en el mismo tono. Ciruela (`#7B3F6D`) competía con Lavanda en la familia violeta: dos violetas entre seis reducen la discriminación, sobre todo en protanopía. Se conservan Terracota (naranja-rojo), Bosque (verde azulado) y Petróleo (cian) para que las seis familias sigan separadas.
+
+**Distinguibilidad en daltonismo (deuteranopía/protanopía).** Simulación con las matrices de severidad 1.0 de Machado et al. (2009) sobre sRGB lineal y distancia CIELAB ΔE76; no hay umbral normativo WCAG para CVD, así que se usa como diagnóstico. Pares de riesgo:
+
+| Par | Normal | Deuteranopía | Protanopía |
+|---|---|---|---|
+| Lima / Bosque (claro) | 41.2 | 39.7 | 37.9 |
+| Lavanda / Índigo (claro) | 24.5 | 26.9 | 18.8 |
+| Lima / Bosque (oscuro) | 27.8 | 28.6 | 27.1 |
+| Lavanda / Índigo (oscuro) | 21.4 | 22.8 | 18.9 |
+
+Lima se eligió con L* 46 (claro), por encima de Bosque (L* 40) y Terracota (L* 41), precisamente para que el par amarillo-verde no dependa solo del tono. Lavanda se ajustó de un violeta azulado a un malva (`#7A5F87` claro / `#CAA8B8` oscuro) porque la variante azulada se confundía con Índigo en protanopía (ΔE 6.6 en claro, 2.1 en oscuro) y con Petróleo en oscuro. Quedan dos pares secundarios por debajo de 15: Lima/Terracota en deuteranopía (13.5 claro, 15.0 oscuro) y Lavanda/Petróleo (9.8–11.9). No se fuerza más el hex: los swatches siempre llevan su nombre visible en la hoja y el nombre de la materia siempre acompaña al punto en la fila, así que el color nunca es el único portador. Si se quisiera un umbral más estricto, habría que retirar otro swatch, no seguir retocando estos dos sin revalidar los cuatro restantes.
+
+**Cambio esperado en código (no improvisar).** En `data/SubjectColors.kt` desaparecen `OCHRE` y `PLUM`; entran `LIME = 0xFF5F7300` y `LAVENDER = 0xFF7A5F87`, en las posiciones 4 y 5 de `all` para conservar el orden de esta tabla. `NotallySubjectSwatches` debe usar los pares claro/oscuro y contenedores de arriba, y los recursos de nombre pasan a `subject_color_lime` / `subject_color_lavender` ("Lima" / "Lavanda"). Los valores antiguos guardados en `Subject.colorArgb` no se migran: `SubjectPalette.resolve` ya resuelve por cercanía RGB, pero una materia Ocre existente cambiará de aspecto al swatch más próximo. No se añade un séptimo color ni un segundo acento de UI.
 
 Reglas:
 - Asignación por defecto: orden de la lista, sin relación semántica con el nombre de la materia. El swatch es una elección del usuario, no una categoría.
@@ -253,9 +270,9 @@ Estilos extra (fuera de `Typography`, en `NotallyType`):
 | shapeXS | 4 | Badges y detalles mínimos |
 | shapeS | 8 | Contenedores internos pequeños |
 | shapeM | 12 | Snackbar, campos compactos, fondo de swipe |
-| shapeL | 16 | Tarjetas, toolbar flotante, FAB |
+| shapeL | 16 | Tarjetas, toolbar flotante, tarjeta focal |
 | shapeXL | 28 | Bottom sheets, diálogos |
-| shapeFull | 50 % | Checkbox, chips, puntos, indicador de nav |
+| shapeFull | 50 % | Checkbox, chips, puntos, indicador de nav, FAB y "+" de Materias (52 dp, §7.10) |
 
 - El radio debe crecer con el tamaño del componente; nunca 28 dp en una fila de lista.
 - Sin morphing de formas al presionar: en 1.4.0 no hay API pública y añade ruido.
@@ -323,13 +340,52 @@ Reglas:
 - Eyebrow: `labelSmall` uppercase, `onSurfaceVariant`, "DOMINGO, 25 DE OCTUBRE".
 - Título: `displaySmall` serif, `onSurface`, "Hoy".
 - Resumen: `bodySmall` + `numeric`, `onSurfaceVariant`, "3 de 7 completadas" (solo si hay tareas).
+- Tira de días: siete celdas, debajo del resumen y antes de los chips (§7.7).
 - Sin iconos, sin avatar, sin campana.
 
-**Medidas:** top 24 dp desde el inset; eyebrow → título 4 dp; título → resumen 8 dp; bloque → primera sección 32 dp.
+**Medidas:** top 24 dp desde el inset; eyebrow → título 4 dp; título → resumen 8 dp; resumen → tira 16 dp; tira → chips 16 dp; chips → primer bloque 24 dp. Si la tira no se muestra, resumen → chips 16 dp. En ≥ 600 dp se mantienen los márgenes de 24 dp.
 
-**Estados:** sin tareas → no se muestra resumen. Con tareas → el resumen se actualiza en el sitio, sin animación de conteo.
+**Estados:** sin tareas → no se muestra resumen ni tira. Con tareas → el resumen se actualiza en el sitio, sin animación de conteo.
 
-**Micro-interacción:** ninguna. El encabezado no es interactivo.
+**Micro-interacción:** el título y el resumen no son interactivos; la tira sí, con las reglas siguientes. Ninguna animación de entrada.
+
+#### 7.1.1 Tira de días (aprobada 2026-10-26)
+
+**Qué muestra.** La semana actual, de lunes a domingo, respetando el ajuste "La semana inicia en lunes" (§7.12). No es una tira móvil de siete días desde hoy: la semana fija permite leer los días atrasados de la misma semana y encaja con las secciones de §7.3. Se oculta si no hay ninguna tarea pendiente con fecha dentro de esa semana o si el filtro activo es "Completadas"; no se muestra una tira vacía ni una navegación que no lleva a ninguna fila.
+
+**Anatomía de la celda**
+1. Día de la semana: `labelSmall` uppercase, `onSurfaceVariant`, tres letras ("LUN", "MAR").
+2. Número: `titleSmall` (14/20), `onSurface`, sin serif.
+3. Punto de hoy: 4 dp `tertiary`, a la derecha del día de la semana, con 4 dp de separación.
+4. Barra de pendientes: 16 × 2 dp, radio full, `outline`, centrada en el borde inferior; el área inferior de 8 dp se reserva siempre para que aparecer o desaparecer no cambie la altura.
+5. Sin fondo, sin iconos, sin contador por día.
+
+**Medidas.** Ancho mínimo 48 dp (crece con la fuente), alto mínimo 64 dp, gap 8 dp, radio 12, padding 8 dp, target mínimo 48 × 64. A 360 dp el ancho de contenido es 320 dp y caben cinco celdas completas más 40 dp de la sexta: **la tira se desplaza horizontalmente**, con el mismo scroll sin barra que los chips. No se reduce el target para que entren las siete: 7 × 48 + 6 × 8 = 384 dp. A partir de 424 dp de ancho de pantalla caben las siete. La celda de hoy se lleva al centro en la primera composición con scroll inmediato, sin animación.
+
+**Estados**
+| Estado | Cambio visual |
+|---|---|
+| default | Sin fondo; día `onSurfaceVariant`, número `onSurface`; sin borde |
+| con pendientes | Barra inferior `outline` visible; el número no cambia |
+| today | Punto de 4 dp `tertiary` junto al día; no cambia el fondo |
+| selected | Fondo `primaryContainer` + borde 1 dp `onSurfaceVariant` + día y número `onPrimaryContainer`; la barra de pendientes pasa a `onPrimaryContainer`. El borde y el cambio de texto son el indicador exigido por §2.1: nunca solo `primaryContainer` |
+| today + selected | Fondo y borde de selected + punto `tertiary` visible (5.95:1 sobre `primaryContainer` claro; 7.19:1 en oscuro) |
+| focused | Anillo de 2 dp `tertiary` por fuera, con offset 2 dp; se dibuja sobre `surface`, no sobre la celda, y no sustituye al borde de selección |
+| sin pendientes | No es clicable, sin ripple; día y número en `onSurfaceVariant`; TalkBack no anuncia acción |
+
+**Qué hace el tap.** Navega a la sección donde ya vive esa tarea; **no filtra**:
+- Día pasado con pendientes → primera fila de "Atrasadas" con esa fecha.
+- Hoy → primera fila de "Para hoy"; si no hay, la primera de "Sin hora"; si tampoco, el encabezado.
+- Día futuro con pendientes → expande "Próximas" si está colapsada y baja a la primera fila con esa fecha.
+- Día sin pendientes → no hace nada y no es clicable.
+
+Motivo: filtrar por una fecha arbitraria obligaría a redefinir "Atrasadas", "Para hoy" y "Próximas", el resumen "3 de 7 completadas" y el propio título "Hoy"; además crearía un estado que el modelo de datos actual no necesita. La tira es un atajo a las secciones existentes, no un segundo modelo de agenda. El salto es inmediato, sin animación de scroll; solo el cambio de selección usa 120 ms de color (patrón 3). La selección se conserva hasta que se toca otro día o se cambia de pestaña; no altera secciones, conteos ni el resumen.
+
+**Accesibilidad y 200 %**
+- Etiqueta de celda: "Domingo, 26 de octubre, 4 tareas pendientes."; sin pendientes: "…, sin tareas pendientes." La acción: "Ver tareas en Atrasadas" / "Ver tareas en Para hoy" / "Ver tareas en Próximas".
+- `stateDescription` "Seleccionado" cuando corresponde. La tira no se fusiona en un solo nodo: cada celda es un botón propio, y las no clicables no tienen `onClick`.
+- A 200 % la celda crece en ancho y alto, la tira sigue en una fila y se desplaza; no se trunca el día ni el número. El punto y la barra son dp fijos y no escalan.
+- Si el usuario activa "Quitar animaciones", el cambio de selección es instantáneo.
 
 ---
 
@@ -381,6 +437,45 @@ Reglas:
 - La sección "Completadas" incluye solo las tareas de la agenda de hoy; el filtro "Completadas" muestra todo el historial.
 - Contador en la etiqueta solo en Completadas y Próximas: "COMPLETADAS · 4", "PRÓXIMAS · 8".
 
+#### 7.3.1 Tarea focal (aprobada 2026-10-26)
+
+Una sola tarea destacada por pantalla, como único bloque invertido. No es una segunda lista ni una tarjeta tipo ticket: es un bloque editorial que señala lo más urgente y no duplica la fila.
+
+**Elección (determinista, sin datos nuevos).** Se calcula sobre el mismo snapshot que alimenta las secciones:
+1. Candidatas: tareas no archivadas con `status != DONE` que ya aparecen en Atrasadas, Para hoy, Sin hora o Próximas. Quedan fuera Completadas y cualquier tarea que no esté en la pantalla.
+2. Bucket, en este orden: Atrasadas (`dueAt` anterior al inicio de hoy), Para hoy (`dueAt` dentro de hoy), Sin hora (`dueAt == null`), Próximas (`dueAt` posterior a hoy).
+3. Dentro del bucket: `Priority.HIGH > MEDIUM > LOW`; después `dueAt` ascendente (`null` al final); después `createdAt` ascendente; después `id` ascendente. El `id` garantiza un resultado único y estable.
+
+La prioridad manda dentro del bucket, aunque §7.3 ordene las secciones por fecha: la tarjeta es un énfasis editorial, no una sección, y la prioridad es la única señal que el usuario declara explícitamente. El orden de las secciones no cambia.
+
+**Posición.** Después de los chips, con 24 dp arriba y 24 dp hasta la primera sección. Si no hay candidata, la primera sección empieza a 24 dp de los chips. Ocupa el ancho de contenido, con los márgenes laterales de §4.1.
+
+**Anatomía**
+- Contenedor `inverseSurface`, radio `shapeL` 16, sin borde y sin sombra. En claro es el bloque casi negro (`#2E2A25`); en oscuro es papel sobre tinta (`#ECE7DE`). Se elige `inverseSurface` y no `primary` porque nombra el rol "inverso de la página" y no reutiliza el color de acción del FAB/checkbox. Un bloque fijo oscuro en tema oscuro quedaría a 1.19:1 de `surface` y rompería el límite de 3:1 para componentes no textuales.
+- Padding 16 dp.
+- Barra de prioridad: 2 dp de ancho, 20 dp de alto para Alta, 12 dp para Media, transparente para Baja, radio full, color `inverseOnSurface`, separada 8 dp del texto y alineada con el título. Reutiliza el lenguaje de altura de §7.2; no hay píldora "Alta" ni borde de prioridad.
+- Eyebrow `labelSmall` uppercase, `inverseOnSurface`: "ATRASADAS", "PARA HOY", "SIN HORA" o "PRÓXIMAS".
+- 8 dp; título `titleLarge` (22/28, sans), `inverseOnSurface`, sin serif. No lleva `maxLines`: la tarjeta crece y garantiza un título de 60 caracteres incluso a 200 %. Es la excepción al máximo de tres líneas de las filas, porque es un solo bloque y no una lista.
+- 8 dp; meta `bodySmall`, `inverseOnSurface`: nombre de materia + " · " + etiqueta de entrega ("Hoy", "Vie 31 oct", "Sin fecha"). Sin punto de materia: sobre `inverseSurface` los acentos claros dan 1.97–2.67:1 (Lima 2.67, Lavanda 2.59), por debajo de 3:1; el nombre en texto conserva la identificación.
+- Sin checkbox, sin chevron, sin botón secundario. Toda la tarjeta abre el editor.
+- Alto mínimo 96 dp; crece con el contenido. A 360 dp y 60 caracteres ocupa unas tres líneas a 1.0; a 200 % crece en alto y la página hace scroll, sin recortes ni solapamientos.
+- Contraste real: `inverseOnSurface` / `inverseSurface` = 12.76 claro y 10.95 oscuro. Como referencia, `onPrimary` / `primary` = 14.99 y 12.12; ambos pasan, pero se usa `inverseSurface` por rol, no por urgencia de contraste. El límite del bloque contra `surface` es 13.65 claro / 15.06 oscuro.
+
+**Estados**
+| Estado | Cambio visual |
+|---|---|
+| default | `inverseSurface`, sin borde |
+| pressed | Ripple `inverseOnSurface`; sin cambio de tamaño ni de color de fondo |
+| focused | Anillo de 2 dp `tertiary` por fuera, offset 2 dp, dibujado sobre `surface` (7.41 claro / 10.84 oscuro); no se dibuja sobre el bloque |
+| completada / eliminada | No es un estado de la tarjeta: desaparece y se recalcula la siguiente |
+| disabled | No existe |
+
+**Sin tareas.** No se muestra tarjeta. Si no hay ninguna pendiente, se aplican las reglas de secciones y de estado vacío. Si el filtro activo es "Completadas", la tarjeta no se muestra; con "Todas" y "Pendientes", sí.
+
+**Evitar el doble render.** El `focalTaskId` se calcula una vez por snapshot y las listas de sección filtran `task.id != focalTaskId`; los contadores de sección usan esas listas ya filtradas, así que "PRÓXIMAS · 8" pasa a "PRÓXIMAS · 7" si la focal salió de ahí. No se elimina nada de la base ni se guarda una copia de `Task`: se guarda el id y se busca en el snapshot vigente para que un cambio de título o de fecha no deje datos viejos. Si una sección se queda sin filas al extraer la focal, se oculta con las mismas reglas de sección vacía; la tarjeta sigue siendo la única representación. Al completar, posponer, editar o eliminar, Room emite un snapshot nuevo y la focal se recalcula; la sustitución usa fade-through 180 ms (patrón 1), sin animación de entrada en la carga inicial. La tarea completada sigue el flujo normal: snackbar "Tarea completada · Deshacer" y paso a Completadas si pertenece a la agenda de hoy.
+
+**Accesibilidad.** Un solo nodo: "Tarea destacada. {título}. {materia}. {entrega}. Prioridad {alta/media/baja}."; `onClickLabel` "Abrir tarea". No se anuncia la barra de prioridad por separado; la altura ya se explica en el texto de prioridad.
+
 ---
 
 ### 7.4 SubjectCard (Materias)
@@ -404,7 +499,7 @@ Reglas:
 
 **Micro-interacción:** tap abre `ModalBottomSheet` "Editar materia" (nombre, 6 swatches, "Eliminar materia" en `error`). Sin animación de escala.
 
-**Materias — encabezado:** título `displaySmall` "Materias"; subtítulo `bodySmall` "4 materias · 12 pendientes"; línea "5 entregas esta semana" (conteo real, afectado por el inicio de semana). Acción "Nueva materia" como `IconButton` de 48 dp con `+` y `contentDescription`, alineada al título; se oculta cuando el estado vacío ya ofrece esa acción. Orden de tarjetas: fecha de creación ascendente; sin reordenar en V1.
+**Materias — encabezado:** título `displaySmall` "Materias"; subtítulo `bodySmall` "4 materias · 12 pendientes"; línea "5 entregas esta semana" (conteo real, afectado por el inicio de semana). Acción "Nueva materia" como botón circular de 52 dp con `+` e icono de 24 dp (`contentDescription` "Nueva materia", §7.10), alineada al título; se oculta cuando el estado vacío ya ofrece esa acción. Orden de tarjetas: fecha de creación ascendente; sin reordenar en V1.
 
 ---
 
@@ -451,14 +546,25 @@ Reglas:
 ---
 
 ### 7.7 Chips de filtro
-- En Hoy, 16 dp debajo del resumen: "Todas", "Pendientes", "Completadas". Selección única; el filtro no se persiste entre sesiones.
+- En Hoy, 16 dp debajo de la tira de días (o del resumen si la tira no se muestra): "Todas", "Pendientes", "Completadas". Selección única; el filtro no se persiste entre sesiones.
 - `FilterChip` de 32 dp visual (target 48), radio full. Seleccionado: `tertiaryContainer` + `onTertiaryContainer` + check de 16 dp. No seleccionado: transparente + borde 1 dp `outlineVariant`, texto `onSurfaceVariant`. El check ocupa un slot fijo de 16 dp en ambos estados: seleccionar no cambia el ancho.
 - Cambio de selección: solo color, 120 ms. Prohibido cambiar altura, padding o escala (evita jitter).
-- Los tres chips caben en 360 dp a 1.0; a 200 % se usa un contenedor con scroll horizontal y sin barra visible.
+- Con contador, los tres chips ya no caben en 360 dp a 1.0; el contenedor usa scroll horizontal y sin barra visible desde 1.0, también a 200 %. No se reduce el texto ni el target para forzar el encaje.
 - Semántica: "Pendientes" oculta "Completadas"; "Completadas" muestra una lista plana de completadas (sin secciones de tiempo). "Todas" restaura las secciones.
 - Si el filtro no tiene resultados, se usa un estado vacío con acción "Ver todas" (o "Ver pendientes"); no se deja el área en blanco.
 - El filtro no altera el conteo del encabezado: "3 de 7 completadas" siempre refleja el día completo.
 - Estados del chip: default (borde `outlineVariant`), pressed (`surfaceContainerLow`), focused (anillo 2 dp `tertiary`), selected (`tertiaryContainer` + check); disabled no existe: un filtro sin resultados muestra su estado vacío.
+
+**Contador (aprobado 2026-10-26)**
+- Cada chip muestra un número a la derecha del texto, en `numeric` (12/16, `tnum`), separado por 4 dp y alineado a la línea base. Sin fondo: el contenedor del chip pasa a través, así que nunca compite con `tertiaryContainer`. No es una píldora ni un badge; no lleva borde propio.
+- Slot de ancho mínimo 24 dp, alineado a la derecha. El ancho del chip no cambia al alternar selección; al pasar de dos a tres cifras el slot crece lo necesario (a 1.0, tres dígitos caben en 24 dp; a 200 %, el chip crece y la fila se desplaza). No se abrevia, no se redondea y no se usa "99+": el número es el conteo real.
+- Color: `onSurfaceVariant` sin seleccionar; `onTertiaryContainer` seleccionado. Contrastes 7.06 / 10.41 en claro y 8.16 / 8.34 en oscuro (≥ 4.5).
+- Qué cuenta cada chip, sobre el snapshot vigente:
+  - "Todas": tareas distintas que renderiza la vista por secciones = Atrasadas + Para hoy + Sin hora + Próximas + Completadas de hoy. Incluye la focal una sola vez y cuenta también las secciones colapsadas.
+  - "Pendientes": Atrasadas + Para hoy + Sin hora + Próximas.
+  - "Completadas": todo el historial completado que muestra ese filtro (§7.3), no solo el de hoy.
+- Los tres números no son sumables: "Completadas" abarca historial y "Todas" no. Es una diferencia de alcance deliberada; cada número coincide con lo que el usuario verá al tocar ese chip, que es la propiedad que importa. El contador no altera el resumen "3 de 7 completadas" ni los contadores de sección.
+- Accesibilidad: el chip se anuncia como un solo nodo, "Pendientes, 4 tareas" (singular "1 tarea", plural con `<plurals>`), más "seleccionado" cuando corresponde. El número no se anuncia como nodo aparte.
 
 ---
 
@@ -481,10 +587,12 @@ Reglas:
 ---
 
 ### 7.10 FAB y menú de FAB
-- **V1:** un solo `FloatingActionButton` de 56 dp, radio 16, `primary`/`onPrimary`, icono `+` de 24 dp, `contentDescription` "Nueva tarea", márgenes 16 dp sobre la barra de navegación, sombra 2 dp. Sin texto extendido (el contexto "Hoy" lo hace obvio).
+- **V1 (actualizado 2026-10-26):** un solo `FloatingActionButton` de 52 dp, **circular** (`CircleShape`), `primary`/`onPrimary`, icono `+` de 24 dp, `contentDescription` "Nueva tarea", márgenes 16 dp sobre la barra de navegación, sombra 2 dp. Sin texto extendido (el contexto "Hoy" lo hace obvio). El target es el propio círculo de 52 dp; no se añade halo ni badge.
+- **"+" de Materias (§7.4):** mismo lenguaje circular de 52 dp, `primary`/`onPrimary`, icono 24 dp, `contentDescription` "Nueva materia", alineado al título. Sustituye al `IconButton` de 48 dp; el target sube a 52 y no lleva sombra porque vive en el flujo del encabezado, no se superpone.
+- Foco de ambos: anillo de 2 dp `tertiary` por fuera del círculo, offset 2 dp, dibujado sobre `surface`; no se depende del ripple. Pressed: ripple estándar, sin cambio de tamaño ni de color. No hay estado disabled; el "+" se oculta cuando el estado vacío ya ofrece "Nueva materia".
 - Se oculta al hacer scroll hacia abajo y reaparece al subir (solo en Hoy), con fade/scale 150 ms; nunca se mueve con el dedo. También se oculta cuando Hoy no tiene ninguna tarea: en ese caso la única acción es el CTA del estado vacío.
 - **Menú de FAB (solo si en V1.1 aparece una segunda acción global):** emulación con overlay propio: 1 acción principal + hasta 3 secundarias en columna sobre el FAB, etiquetas a la izquierda en `labelLarge`, contenedor `surfaceContainerHigh` radio 16. Apertura 180 ms (fade + escala 0.9→1, `spatialFast`), cierre 120 ms; sin stagger; scrim 0; cierra con back, tap fuera y al elegir. No se implementa en V1.
-- Estados del FAB: default, pressed (ripple, sin cambio de tamaño), focused (anillo 2 dp `tertiary`); disabled no existe. Menú: cerrado, abierto, ítem pressed/focused; sin estado disabled.
+- Estados del FAB y del "+": default, pressed (ripple, sin cambio de tamaño), focused (anillo 2 dp `tertiary` exterior); disabled no existe. Menú: cerrado, abierto, ítem pressed/focused; sin estado disabled. No hay nav flotante oscura ni badges en V1.
 
 ---
 
@@ -594,6 +702,12 @@ Reglas:
 | a11y.deleteSubtask | "Eliminar subtarea" |
 | a11y.completeTask | "Completar tarea: %s" |
 | a11y.uncompleteTask | "Marcar como pendiente: %s" |
+| a11y.week.day | "%1$s, %2$d de %3$s, %4$s" (el cuarto argumento es `today.pendingCount`) |
+| today.pendingCount | "%d tareas pendientes" (plural; 1 → "1 tarea pendiente"; 0 → "Sin tareas pendientes") |
+| a11y.week.open | "Ver tareas en %s" (Atrasadas / Para hoy / Próximas) |
+| a11y.week.selected | "Seleccionado" |
+| a11y.featuredTask | "Tarea destacada" |
+| a11y.filter.count | "%1$s, %2$d tareas" (plural; 1 → "%1$s, 1 tarea") |
 | confirm.deleteTask.title | "¿Eliminar la tarea?" |
 | confirm.deleteTask.body | "Se eliminará «%1$s» con sus %2$d subtareas." |
 | confirm.deleteTask.bodyNoSub | "Se eliminará «%s»." |
@@ -615,7 +729,7 @@ Reglas de formato:
 - Fechas: "Hoy", "Mañana", "Ayer", "Vie 31 oct" (día abreviado de 3 letras, sin punto), "31 oct 2026" si es otro año. Español con inicial mayúscula en el eyebrow.
 - Hora: 24 h si el sistema está en 24 h; si no, "11:59 p. m." con espacio fino. Nunca "23:59 h".
 - Números: sin decimales; conteos con cifras ("3 de 7"), nunca "tres de siete".
-- Sin plurales automáticos mal formados. Se implementan con `<plurals>`: `today.summary`, `subjects.summary`, `subjects.week`, `subject.progress`, `confirm.deleteTask.body`, `confirm.deleteSubject.body`. Los textos de la tabla muestran la forma plural.
+- Sin plurales automáticos mal formados. Se implementan con `<plurals>`: `today.summary`, `today.pendingCount`, `subjects.summary`, `subjects.week`, `subject.progress`, `a11y.filter.count`, `confirm.deleteTask.body`, `confirm.deleteSubject.body`. Los textos de la tabla muestran la forma plural.
 - El título de una tarea sin texto se guarda como "Sin título" solo si tiene notas o subtareas.
 
 ---
@@ -643,7 +757,7 @@ Reglas de formato:
 
 ### 9.3 Fuente grande (hasta 200 %)
 - Sin alturas fijas en filas: `heightIn(min = 48.dp)`, nunca `height(56.dp)`.
-- Título de tarea: máximo 3 líneas; meta: máximo 2 líneas; sin truncar el nombre de la materia en el editor.
+- Título de tarea: máximo 3 líneas; meta: máximo 2 líneas; sin truncar el nombre de la materia en el editor. La tarjeta focal (§7.3.1) es la excepción: crece sin `maxLines` para no truncar un título de 60 caracteres.
 - Fila de propiedad: si `fontScale ≥ 1.3`, etiqueta arriba y valor debajo (columna), no en dos columnas.
 - Toolbar flotante: si `fontScale ≥ 1.5`, iconos sin etiqueta, manteniendo `contentDescription`.
 - Barra de navegación: etiquetas en 1–2 líneas; la barra puede crecer hasta 88 dp. Prohibido ellipsis en "Materias"/"Ajustes".
@@ -725,17 +839,25 @@ Regla de decisión: **usar** si el símbolo compila con material3 1.4.0; **emula
 | 1.4.0 estable; eliminación de `ExperimentalMaterial3ExpressiveApi` en beta01; fin de `material-icons` | Release notes de Compose Material 3: `https://developer.android.com/jetpack/androidx/releases/compose-material3` (1.4.0: 2025-09-24; beta01: 2025-07-30) | consultado 2026-10-25 |
 | `MaterialExpressiveTheme`/`MotionScheme` internal; shapes 4/8/12/16/28/48; springs expressive 0.8/380, 0.6/800, 1.0/1600, 1.0/3800; `ShortNavigationBar` público | Inspección del artefacto `material3-android-1.4.0-sources.jar` (Maven de Google) | 2026-10-25 |
 | Fórmula de contraste y umbrales 4.5/3.0 | WCAG 2.2, `https://www.w3.org/TR/WCAG22/#dfn-contrast-ratio` | consultado 2026-10-25 |
+| Simulación de deuteranopía/protanopía (severidad 1.0) y ΔE76 | Machado, Oliveira y Fernandes, "A Physiologically-based Model for Simulation of Color Vision Deficiency", IEEE TVCG 15(6), `doi:10.1109/TVCG.2009.113` | consultado 2026-10-26 |
 | Intención de Material 3 Expressive (motion/shapes) | `https://m3.material.io/blog/building-with-m3-expressive` | 2025-05 (consulta 2026-10-25) |
 
-Los ratios de la sección 2.4 y 2.5 se calcularon con la fórmula anterior sobre los hex listados, no se copiaron de una herramienta externa.
+Los ratios de la sección 2.4 y 2.5 se calcularon con la fórmula anterior sobre los hex listados, no se copiaron de una herramienta externa. Los ratios de los swatches Lima y Lavanda se recalcularon el 2026-10-26; las simulaciones CVD usan sRGB lineal y CIELAB ΔE76.
 
 ---
 
-## 13. Desviaciones aprobadas (2026-10-25)
+## 13. Desviaciones aprobadas (2026-10-25; ampliado 2026-10-26)
 
-Estas excepciones están implementadas y verificadas; el resto del documento sigue vigente.
+Las excepciones 1–4 están implementadas y verificadas. La 5 está aprobada el 2026-10-26 y pendiente de implementación; se anota antes de tocar código, como exige §0. El resto del documento sigue vigente.
 
 1. **Hoja de Entrega abierta para elegir hora (§7.9).** La hoja de Entrega no se cierra al elegir la fecha: permanece abierta para ofrecer "Elegir hora"/"Quitar hora" y solo se cierra al tocar fuera, con el gesto de vuelta o al elegir "Sin fecha". Se mantiene porque la hora es opcional y el date picker no debe forzar una segunda apertura.
 2. **`SwipeTaskRow` usa el constructor deprecado de `SwipeToDismissBoxState`.** En material3 1.4.0 el constructor principal perdió `confirmValueChange`; la alternativa pública es `onDismiss` + `reset()`, que deja que la fila llegue al ancho completo antes de volver (salto visible). Se usa el constructor deprecado, todavía público en 1.4.0, con `confirmValueChange` devolviendo `false` para ejecutar la acción y volver a `Settled` sin expulsar la fila. Se retirará cuando el componente estable ofrezca el mismo control sin parpadeo.
 3. **Navegación y back.** El editor no intercepta el gesto predictivo: `PredictiveBackHandler` hace el flush y sale. En las pestañas secundarias se conserva un `BackHandler` únicamente para volver a Hoy (navegación interna); en Hoy el back lo gestiona el sistema. Esta excepción no aplica al editor, donde §6/§10.5 se cumple literalmente.
 4. **Etiqueta "Atrasada · ayer".** Se implementa con `<plurals quantity="one">` en lugar de la clave única `task.overdue` de §8, para que singular y plural compartan una sola fuente de verdad.
+5. **Vocabulario visual aprobado el 2026-10-26 (vocabulario, no layout).** Se adopta de la referencia el repertorio de formas y señales, sin copiar su composición:
+   - **Tira de 7 días (§7.1.1).** Celdas de 48 × 64 dp, scroll horizontal porque 7 × 48 + 6 × 8 = 384 dp no cabe en 320; el tap navega a la sección existente (Atrasadas / Para hoy / Próximas), no filtra. Mantiene el título serif "Hoy" y el modelo de datos actual.
+   - **Tarea focal (§7.3.1).** Un solo bloque `inverseSurface` por pantalla, radio 16, sin sombra, con texto `inverseOnSurface` (12.76 / 10.95). No es una tarjeta tipo ticket ni duplica la fila: se excluye de su sección y de sus contadores. En tema oscuro el bloque es claro (papel sobre tinta), no negro, porque un bloque oscuro fijo quedaría por debajo de 3:1 contra `#151310`.
+   - **Contadores en chips (§7.7).** Número `numeric` sin fondo, con slot de 24 dp mínimo; se define qué cuenta cada chip y se acepta que los tres no sean sumables porque "Completadas" abarca historial.
+   - **FAB y "+" de Materias de 52 dp circulares (§7.10, §7.4).** Sustituyen al FAB de 56 dp con radio 16 y al `IconButton` de 48 dp; icono 24 dp, target 52, foco exterior de 2 dp `tertiary`. Esto ajusta §4.2 (el FAB deja `shapeL` y pasa a `shapeFull`) y no cambia la sombra de 2 dp del FAB.
+   - **Swatches Lima y Lavanda (§2.5).** Entran por Ocre y Ciruela, solo como acentos de materia y con los hex y ratios de §2.5. No se añade un segundo acento de UI: `tertiary` sigue siendo el único acento funcional. El papel cálido y la tinta no cambian.
+   **No adoptado de la referencia:** fondo blanco frío (se mantiene `#FBFAF7` / `#151310`), nav flotante oscura de 4 iconos (se mantiene `ShortNavigationBar` de 3 destinos, §6), tarjetas tipo ticket con muesca (se mantienen las filas de §7.2), píldoras de estado "In review / In progress" (se mantienen "Pendiente / En curso / Completada" como texto y el punto de prioridad), texto blanco sobre lima (prohibido: lima solo como swatch y con variante oscura), y sombras decorativas (solo FAB, snackbar y diálogo; la tarjeta focal no lleva).

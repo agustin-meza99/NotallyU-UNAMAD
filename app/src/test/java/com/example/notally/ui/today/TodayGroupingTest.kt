@@ -154,9 +154,12 @@ class TodayGroupingTest {
 
     @Test
     fun `atrasadas ordena de la mas antigua a la mas reciente y solo pendientes`() {
-        val overdue = groups().overdue
+        val result = groups()
 
-        assertEquals(listOf(1L, 2L), overdue.map { it.task.id })
+        // La tarea 1 es la focal (§7.3.1) y por eso no se repite en la sección.
+        assertEquals(listOf(2L), result.overdue.map { it.task.id })
+        assertEquals(1L, result.focal?.taskId)
+        assertEquals(TodaySectionType.OVERDUE, result.focal?.bucket)
     }
 
     @Test
@@ -192,11 +195,12 @@ class TodayGroupingTest {
             subjectsById = subjects,
         )
 
-        assertEquals(listOf(11L, 12L), farFutureOnly.upcoming.map { it.task.id })
+        assertEquals(listOf(12L), farFutureOnly.upcoming.map { it.task.id })
+        assertEquals(11L, farFutureOnly.focal?.taskId)
         val section = buildTodaySections(farFutureOnly, TodayFilter.ALL)
             .single { it.type == TodaySectionType.UPCOMING }
         assertTrue(section.expanded)
-        assertEquals(2, section.count)
+        assertEquals(1, section.count)
     }
 
     @Test
@@ -280,17 +284,20 @@ class TodayGroupingTest {
 
     @Test
     fun `completadas se abre por defecto si no queda nada pendiente`() {
-        val onlyCompleted = groups().copy(
-            overdue = emptyList(),
-            today = emptyList(),
-            anytime = emptyList(),
-            upcoming = emptyList(),
+        val onlyCompleted = groupToday(
+            now = now,
+            zone = utc,
+            dayTasks = listOf(todayDone),
+            upcomingTasks = emptyList(),
+            activeTasks = listOf(todayDone, oldDone),
+            subjectsById = subjects,
         )
 
         val sections = buildTodaySections(onlyCompleted, TodayFilter.ALL)
         val completed = sections.single { it.type == TodaySectionType.COMPLETED }
 
         assertTrue(completed.expanded)
+        assertNull(onlyCompleted.focal)
     }
 
     @Test
@@ -305,5 +312,99 @@ class TodayGroupingTest {
         assertTrue(completed.expanded)
         assertTrue(completed.collapsible)
         assertNull(sections.first { it.type == TodaySectionType.TODAY }.count)
+    }
+
+    @Test
+    fun `la focal desempata prioridad antes que fecha dentro del bucket`() {
+        val highOlder = task(
+            id = 20,
+            title = "Alta antigua",
+            dueAt = epoch("2026-10-10", "10:00"),
+            priority = Priority.HIGH,
+        )
+        val lowNewer = task(
+            id = 21,
+            title = "Baja reciente",
+            dueAt = epoch("2026-10-24", "10:00"),
+            priority = Priority.LOW,
+        )
+
+        val result = groupToday(
+            now = now,
+            zone = utc,
+            dayTasks = emptyList(),
+            upcomingTasks = emptyList(),
+            activeTasks = listOf(highOlder, lowNewer),
+            subjectsById = subjects,
+        )
+
+        assertEquals(20L, result.focal?.taskId)
+        assertEquals(listOf(21L), result.overdue.map { it.task.id })
+    }
+
+    @Test
+    fun `la focal respeta el orden de bucket antes que la prioridad`() {
+        val overdueLow = task(
+            id = 22,
+            title = "Atrasada baja",
+            dueAt = epoch("2026-10-24", "10:00"),
+            priority = Priority.LOW,
+        )
+        val todayHigh = task(
+            id = 23,
+            title = "Hoy alta",
+            dueAt = epoch("2026-10-25", "18:00"),
+            priority = Priority.HIGH,
+        )
+
+        val result = groupToday(
+            now = now,
+            zone = utc,
+            dayTasks = listOf(todayHigh),
+            upcomingTasks = emptyList(),
+            activeTasks = listOf(overdueLow, todayHigh),
+            subjectsById = subjects,
+        )
+
+        assertEquals(22L, result.focal?.taskId)
+        assertEquals(TodaySectionType.OVERDUE, result.focal?.bucket)
+    }
+
+    @Test
+    fun `los contadores de los chips coinciden con lo que muestra cada filtro`() {
+        val counts = groups().filterCounts
+
+        assertEquals(9, counts.all)
+        assertEquals(7, counts.pending)
+        assertEquals(5, counts.done)
+    }
+
+    @Test
+    fun `la tira semanal cuenta pendientes por dia desde el lunes`() {
+        val week = groups().weekDays
+
+        assertEquals(7, week.size)
+        assertEquals(LocalDate.parse("2026-10-19"), week.first().date)
+        assertEquals(LocalDate.parse("2026-10-25"), week.last().date)
+        assertEquals(1, week.single { it.date == LocalDate.parse("2026-10-20") }.pendingCount)
+        assertEquals(1, week.single { it.date == LocalDate.parse("2026-10-24") }.pendingCount)
+        assertEquals(1, week.single { it.date == LocalDate.parse("2026-10-25") }.pendingCount)
+        assertEquals(0, week.single { it.date == LocalDate.parse("2026-10-21") }.pendingCount)
+    }
+
+    @Test
+    fun `la tira semanal puede empezar en domingo`() {
+        val week = groupToday(
+            now = now,
+            zone = utc,
+            dayTasks = listOf(todayLate, todayDone),
+            upcomingTasks = emptyList(),
+            activeTasks = allTasks,
+            subjectsById = subjects,
+            weekStartsMonday = false,
+        ).weekDays
+
+        assertEquals(LocalDate.parse("2026-10-25"), week.first().date)
+        assertEquals(LocalDate.parse("2026-10-31"), week.last().date)
     }
 }

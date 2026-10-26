@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
@@ -30,15 +31,21 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.notally.R
 import com.example.notally.ui.theme.NotallyMotion
+import com.example.notally.ui.theme.NotallyType
 
 /** Opción de filtro; el componente no conoce el dominio. */
 data class FilterOption(
     val id: String,
     val label: String,
+    val count: Int? = null,
 )
 
 /**
@@ -91,9 +98,18 @@ private fun FilterChipItem(
         animationSpec = tween(NotallyMotion.colorMs),
         label = "filterChipLabel",
     )
+    val countColor by animateColorAsState(
+        targetValue = if (selected) colors.onTertiaryContainer else colors.onSurfaceVariant,
+        animationSpec = tween(NotallyMotion.colorMs),
+        label = "filterChipCount",
+    )
     val borderModifier = when {
         selected -> Modifier
         else -> Modifier.border(1.dp, colors.outlineVariant, CircleShape)
+    }
+    // El contador se anuncia dentro del mismo nodo del chip (§7.7).
+    val countDescription = option.count?.let { count ->
+        pluralStringResource(R.plurals.a11y_filter_count, count, option.label, count)
     }
 
     // El target de 48×48 y el gesto viven aquí, no en el dibujo de 32 dp.
@@ -105,7 +121,10 @@ private fun FilterChipItem(
                 selected = selected,
                 role = Role.RadioButton,
                 onClick = onClick,
-            ),
+            )
+            .semantics(mergeDescendants = true) {
+                if (countDescription != null) contentDescription = countDescription
+            },
         contentAlignment = Alignment.Center,
     ) {
         Row(
@@ -132,12 +151,28 @@ private fun FilterChipItem(
                 }
             }
             Spacer(Modifier.width(6.dp))
-            Text(
-                text = option.label,
-                style = MaterialTheme.typography.labelMedium,
-                color = labelColor,
-                maxLines = 1,
-            )
+            Row {
+                Text(
+                    text = option.label,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = labelColor,
+                    maxLines = 1,
+                    modifier = Modifier.alignByBaseline(),
+                )
+                if (option.count != null) {
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        text = option.count.toString(),
+                        style = NotallyType.numeric,
+                        color = countColor,
+                        maxLines = 1,
+                        textAlign = TextAlign.End,
+                        modifier = Modifier
+                            .widthIn(min = 24.dp)
+                            .alignByBaseline(),
+                    )
+                }
+            }
         }
     }
 }

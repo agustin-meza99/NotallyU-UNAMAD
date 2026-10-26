@@ -19,6 +19,11 @@
     <string name="today_empty_title">Nada para hoy</string>
     <string name="today_empty_body">Agrega la primera tarea del día.</string>
     <string name="today_empty_cta">Nueva tarea</string>
+    <plurals name="today_pending_count">
+        <item quantity="one">%d tarea pendiente</item>
+        <item quantity="other">%d tareas pendientes</item>
+    </plurals>
+    <string name="today_pending_none">Sin tareas pendientes</string>
 
     <!-- Tarea -->
     <string name="task_due_today">Hoy</string>
@@ -102,8 +107,8 @@
     <string name="subject_color_indigo">Índigo</string>
     <string name="subject_color_forest">Bosque</string>
     <string name="subject_color_terracotta">Terracota</string>
-    <string name="subject_color_ochre">Ocre</string>
-    <string name="subject_color_plum">Ciruela</string>
+    <string name="subject_color_lime">Lima</string>
+    <string name="subject_color_lavender">Lavanda</string>
     <string name="subject_color_petrol">Petróleo</string>
 
     <!-- Editor de tarea -->
@@ -162,6 +167,14 @@
     <string name="a11y_collapse_section">Contraer sección</string>
     <string name="section_expanded">Expandida</string>
     <string name="section_collapsed">Contraída</string>
+    <string name="a11y_week_day">%1$s, %2$d de %3$s, %4$s</string>
+    <string name="a11y_week_open">Ver tareas en %s</string>
+    <string name="a11y_week_selected">Seleccionado</string>
+    <string name="a11y_featured_task">Tarea destacada. %1$s. %2$s. %3$s. %4$s.</string>
+    <plurals name="a11y_filter_count">
+        <item quantity="one">%1$s, %2$d tarea</item>
+        <item quantity="other">%1$s, %2$d tareas</item>
+    </plurals>
 
     <!-- Confirmaciones -->
     <string name="confirm_deleteTask_title">¿Eliminar la tarea?</string>

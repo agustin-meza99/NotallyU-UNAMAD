@@ -5,9 +5,11 @@ import com.example.notally.data.model.Priority
 import com.example.notally.data.model.Status
 import com.example.notally.data.model.Subject
 import com.example.notally.data.model.Task
+import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.temporal.TemporalAdjusters
 import java.util.Locale
 
 /** Filtro de Hoy (§7.7). No se persiste entre sesiones. */
@@ -31,13 +33,36 @@ data class TodaySectionUi(
     val count: Int?,
 )
 
+/** Día de la tira semanal (§7.1.1) con su número de pendientes. */
+data class TodayWeekDay(
+    val date: LocalDate,
+    val pendingCount: Int,
+)
+
+/** Tarea destacada (§7.3.1): id estable, instantánea vigente y su bucket. */
+data class TodayFocalTask(
+    val taskId: Long,
+    val item: TodayItem,
+    val bucket: TodaySectionType,
+)
+
+/** Conteos de los chips de filtro (§7.7), calculados antes de extraer la focal. */
+data class TodayFilterCounts(
+    val all: Int = 0,
+    val pending: Int = 0,
+    val done: Int = 0,
+)
+
 /**
  * Resultado puro de agrupar las tareas de Hoy.
  *
- * - Atrasadas / Para hoy / Sin hora / Próximas: solo pendientes.
+ * - Atrasadas / Para hoy / Sin hora / Próximas: solo pendientes y ya sin la
+ *   tarea focal, para no duplicar su fila.
  * - Completadas: tareas hechas de la agenda de hoy (con o sin hora).
  * - completedHistory: todo el historial, para el filtro "Completadas".
  * - summary: conteo del día (Atrasadas + Para hoy + Sin hora); Próximas fuera.
+ * - filterCounts: lo que cuenta cada chip; se mide sobre las listas completas,
+ *   así que la focal entra una sola vez.
  */
 data class TodayGroups(
     val overdue: List<TodayItem> = emptyList(),
@@ -46,19 +71,25 @@ data class TodayGroups(
     val upcoming: List<TodayItem> = emptyList(),
     val completed: List<TodayItem> = emptyList(),
     val completedHistory: List<TodayItem> = emptyList(),
+    val weekDays: List<TodayWeekDay> = emptyList(),
+    val focal: TodayFocalTask? = null,
+    val filterCounts: TodayFilterCounts = TodayFilterCounts(),
     val summaryCompleted: Int = 0,
     val summaryTotal: Int = 0,
+    private val agendaPendingCount: Int = 0,
+    private val upcomingPendingCount: Int = 0,
 ) {
     val isEmpty: Boolean
-        get() = overdue.isEmpty() && today.isEmpty() && anytime.isEmpty() &&
-            upcoming.isEmpty() && completed.isEmpty()
+        get() = filterCounts.all == 0
 
     val hasPending: Boolean
-        get() = overdue.isNotEmpty() || today.isNotEmpty() || anytime.isNotEmpty() ||
-            upcoming.isNotEmpty()
+        get() = filterCounts.pending > 0
 
     val pendingAgendaEmpty: Boolean
-        get() = overdue.isEmpty() && today.isEmpty() && anytime.isEmpty()
+        get() = agendaPendingCount == 0
+
+    val hasUpcomingPending: Boolean
+        get() = upcomingPendingCount > 0
 }
 
 /**
@@ -67,8 +98,9 @@ data class TodayGroups(
  * @param dayTasks tareas con `dueAt` dentro de hoy (incluye completadas).
  * @param upcomingTasks todo el futuro desde mañana (sin tope superior; incluye
  *   completadas). La consulta no recorta a siete días.
- * @param activeTasks tareas no archivadas; se usan para "Sin hora", atrasadas e
- *   historial de completadas.
+ * @param activeTasks tareas no archivadas; se usan para "Sin hora", atrasadas,
+ *   historial de completadas y el conteo de la tira semanal.
+ * @param weekStartsMonday ajuste "La semana inicia en lunes" (§7.12).
  */
 fun groupToday(
     now: Long,
@@ -77,6 +109,7 @@ fun groupToday(
     upcomingTasks: List<Task>,
     activeTasks: List<Task>,
     subjectsById: Map<Long, Subject>,
+    weekStartsMonday: Boolean = true,
 ): TodayGroups {
     val today = Instant.ofEpochMilli(now).atZone(zone).toLocalDate()
     val todayStart = DateRanges.dayRange(today, zone).first
@@ -92,22 +125,22 @@ fun groupToday(
     val active = activeTasks.filter { !it.isArchived }
     val noDate = active.filter { it.dueAt == null }
 
-    val overdue = active
+    val overdueItems = active
         .filter { isPending(it) && it.dueAt != null && it.dueAt < todayStart }
         .sortedWith(dueComparator)
         .map(::item)
 
-    val todayPending = dayTasks
+    val todayItems = dayTasks
         .filter { isPending(it) && it.dueAt != null }
         .sortedWith(dueComparator)
         .map(::item)
 
-    val anytime = noDate
+    val anytimeItems = noDate
         .filter(::isPending)
         .sortedWith(anytimeComparator)
         .map(::item)
 
-    val upcoming = upcomingTasks
+    val upcomingItems = upcomingTasks
         .filter { isPending(it) && it.dueAt != null && it.dueAt >= tomorrowStart }
         .sortedWith(dueComparator)
         .map(::item)
@@ -118,12 +151,12 @@ fun groupToday(
         } == true
     }
 
-    val completed = (dayTasks.filter { !isPending(it) } + noDateCompletedToday)
+    val completedItems = (dayTasks.filter { !isPending(it) } + noDateCompletedToday)
         .distinctBy { it.id }
         .sortedWith(completedComparator)
         .map(::item)
 
-    val completedHistory = active
+    val completedHistoryItems = active
         .filter { !isPending(it) }
         .sortedWith(completedComparator)
         .map(::item)
@@ -132,16 +165,98 @@ fun groupToday(
         isPending(task) || task.completedAt?.let { toLocalDate(it, zone) == today } == true
     }
 
-    return TodayGroups(
-        overdue = overdue,
-        today = todayPending,
-        anytime = anytime,
-        upcoming = upcoming,
-        completed = completed,
-        completedHistory = completedHistory,
-        summaryCompleted = completed.size,
-        summaryTotal = overdue.size + dayTasks.size + noDateInSummary,
+    // Conteos de los chips (§7.7): sobre las listas completas, sin extraer la
+    // focal, de modo que cada número coincide con lo que verá el usuario.
+    val pendingCount = (overdueItems + todayItems + anytimeItems + upcomingItems)
+        .distinctBy { it.task.id }
+        .size
+    val allCount = (overdueItems + todayItems + anytimeItems + upcomingItems + completedItems)
+        .distinctBy { it.task.id }
+        .size
+    val doneCount = completedHistoryItems.distinctBy { it.task.id }.size
+
+    val focal = selectFocal(
+        overdue = overdueItems,
+        today = todayItems,
+        anytime = anytimeItems,
+        upcoming = upcomingItems,
     )
+    val filtered = if (focal == null) {
+        null
+    } else {
+        focal.taskId
+    }
+
+    return TodayGroups(
+        overdue = overdueItems.filterNot { it.task.id == filtered },
+        today = todayItems.filterNot { it.task.id == filtered },
+        anytime = anytimeItems.filterNot { it.task.id == filtered },
+        upcoming = upcomingItems.filterNot { it.task.id == filtered },
+        completed = completedItems,
+        completedHistory = completedHistoryItems,
+        weekDays = buildWeekDays(today, zone, weekStartsMonday, active),
+        focal = focal,
+        filterCounts = TodayFilterCounts(
+            all = allCount,
+            pending = pendingCount,
+            done = doneCount,
+        ),
+        summaryCompleted = completedItems.size,
+        summaryTotal = overdueItems.size + dayTasks.size + noDateInSummary,
+        agendaPendingCount = overdueItems.size + todayItems.size + anytimeItems.size,
+        upcomingPendingCount = upcomingItems.size,
+    )
+}
+
+/**
+ * Elige la tarea focal de forma determinista (§7.3.1): bucket Atrasadas > Para
+ * hoy > Sin hora > Próximas; dentro, prioridad, fecha, creación e id.
+ */
+private fun selectFocal(
+    overdue: List<TodayItem>,
+    today: List<TodayItem>,
+    anytime: List<TodayItem>,
+    upcoming: List<TodayItem>,
+): TodayFocalTask? {
+    val buckets = listOf(
+        TodaySectionType.OVERDUE to overdue,
+        TodaySectionType.TODAY to today,
+        TodaySectionType.ANYTIME to anytime,
+        TodaySectionType.UPCOMING to upcoming,
+    )
+    buckets.forEach { (type, items) ->
+        val best = items.minWithOrNull(focalComparator) ?: return@forEach
+        return TodayFocalTask(taskId = best.task.id, item = best, bucket = type)
+    }
+    return null
+}
+
+private val focalComparator: Comparator<TodayItem> =
+    compareBy<TodayItem> { priorityRank(it.task) }
+        .thenBy { it.task.dueAt ?: Long.MAX_VALUE }
+        .thenBy { it.task.createdAt }
+        .thenBy { it.task.id }
+
+/** Siete días de la semana en curso, con sus pendientes con fecha. */
+private fun buildWeekDays(
+    today: LocalDate,
+    zone: ZoneId,
+    weekStartsMonday: Boolean,
+    active: List<Task>,
+): List<TodayWeekDay> {
+    val firstDay = if (weekStartsMonday) DayOfWeek.MONDAY else DayOfWeek.SUNDAY
+    val weekStart = today.with(TemporalAdjusters.previousOrSame(firstDay))
+    val pendingWithDate = active.filter { it.status != Status.DONE && it.dueAt != null }
+    return (0L..6L).map { offset ->
+        val date = weekStart.plusDays(offset)
+        val range = DateRanges.dayRange(date, zone)
+        TodayWeekDay(
+            date = date,
+            pendingCount = pendingWithDate.count { task ->
+                task.dueAt?.let { it in range } == true
+            },
+        )
+    }
 }
 
 private fun toLocalDate(epochMillis: Long, zone: ZoneId): LocalDate =
@@ -161,8 +276,8 @@ fun buildTodaySections(
 ): List<TodaySectionUi> {
     if (filter == TodayFilter.DONE) return emptyList()
 
-    val upcomingDefault = groups.pendingAgendaEmpty && groups.upcoming.isNotEmpty()
-    val completedDefault = groups.pendingAgendaEmpty && groups.upcoming.isEmpty()
+    val upcomingDefault = groups.pendingAgendaEmpty && groups.hasUpcomingPending
+    val completedDefault = groups.pendingAgendaEmpty && !groups.hasUpcomingPending
 
     fun section(
         type: TodaySectionType,

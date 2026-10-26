@@ -27,7 +27,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
@@ -318,15 +317,34 @@ private fun SubjectsHeader(
             }
         }
         if (showAdd) {
-            IconButton(onClick = onAdd) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_add),
-                    contentDescription = stringResource(R.string.subjects_new),
-                    tint = colors.onSurface,
-                    modifier = Modifier.size(24.dp),
-                )
-            }
+            AddSubjectButton(onClick = onAdd)
         }
+    }
+}
+
+/** "+" de Materias: 52 dp circular, `primary`/`onPrimary`, sin sombra (§7.10). */
+@Composable
+private fun AddSubjectButton(onClick: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    var focused by remember { mutableStateOf(false) }
+    val description = stringResource(R.string.subjects_new)
+    Box(
+        modifier = Modifier
+            .size(52.dp)
+            .onFocusChanged { focused = it.isFocused }
+            .focusRing(visible = focused, shape = CircleShape)
+            .clip(CircleShape)
+            .background(colors.primary)
+            .clickable(role = Role.Button, onClick = onClick)
+            .semantics { contentDescription = description },
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            painter = painterResource(R.drawable.ic_add),
+            contentDescription = null,
+            tint = colors.onPrimary,
+            modifier = Modifier.size(24.dp),
+        )
     }
 }
 

@@ -46,7 +46,7 @@ object SeedData {
         SeedSubject("Cálculo III", SubjectColors.INDIGO, "Dra. Mariana Quispe", 4),
         SeedSubject("Estructuras de Datos", SubjectColors.FOREST, "Ing. Carlos Mendoza", 5),
         SeedSubject("Bases de Datos", SubjectColors.TERRACOTTA, "Mg. Lucía Fernández", 4),
-        SeedSubject("Ética Profesional", SubjectColors.OCHRE, "Dr. Jorge Salazar", 2),
+        SeedSubject("Ética Profesional", SubjectColors.LIME, "Dr. Jorge Salazar", 2),
     )
 
     private val TASKS = listOf(

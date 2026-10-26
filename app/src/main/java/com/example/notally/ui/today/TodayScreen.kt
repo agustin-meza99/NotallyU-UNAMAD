@@ -1,5 +1,6 @@
 package com.example.notally.ui.today
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween
@@ -7,6 +8,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,8 +23,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
@@ -40,8 +44,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
@@ -52,19 +61,27 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.notally.R
+import com.example.notally.ui.components.DayStrip
+import com.example.notally.ui.components.DayStripDay
 import com.example.notally.ui.components.EmptyState
 import com.example.notally.ui.components.ErrorBanner
 import com.example.notally.ui.components.ErrorBlock
 import com.example.notally.ui.components.FilterChipRow
 import com.example.notally.ui.components.FilterOption
+import com.example.notally.ui.components.FocalTaskCard
 import com.example.notally.ui.components.LoadingRows
 import com.example.notally.ui.components.SectionHeader
 import com.example.notally.ui.components.SwipeTaskRow
+import com.example.notally.ui.components.focusRing
 import com.example.notally.ui.theme.NotallyMotion
-import com.example.notally.ui.theme.NotallyShape
 import com.example.notally.ui.theme.NotallySpacing
 import com.example.notally.ui.theme.NotallyType
 import com.example.notally.ui.theme.screenHorizontalMargin
+import com.example.notally.ui.util.DateFormat
+import com.example.notally.ui.util.dateLabelText
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.withTimeoutOrNull
@@ -149,6 +166,116 @@ fun TodayScreen(
         }
     }
 
+    val todayDate = remember(state.now) {
+        Instant.ofEpochMilli(state.now).atZone(ZoneId.systemDefault()).toLocalDate()
+    }
+    val stripDays = remember(state.weekDays, todayDate) {
+        state.weekDays.map { day ->
+            val sectionRes = when {
+                day.pendingCount == 0 -> null
+                day.date.isBefore(todayDate) -> R.string.today_section_overdue
+                day.date == todayDate -> R.string.today_section_today
+                else -> R.string.today_section_upcoming
+            }
+            DayStripDay(
+                date = day.date,
+                pendingCount = day.pendingCount,
+                isToday = day.date == todayDate,
+                sectionLabelRes = sectionRes,
+            )
+        }
+    }
+    val showStrip = state.hasCachedData && !state.loading &&
+        state.filter != TodayFilter.DONE &&
+        stripDays.any { it.pendingCount > 0 }
+
+    // La selección vive en la pantalla: se conserva hasta tocar otro día o
+    // cambiar de pestaña, y nunca altera secciones, conteos ni resumen.
+    var selectedDayEpoch by remember { mutableStateOf<Long?>(null) }
+    val selectedDate = selectedDayEpoch?.let(LocalDate::ofEpochDay)
+
+    val focalEligible = state.filter != TodayFilter.DONE && !showLoading &&
+        !(state.error && !state.hasCachedData) && state.empty == null
+    val focal = if (focalEligible) state.focal else null
+    val showFocal = focal != null
+    val sectionsBaseIndex = 1 +
+        (if (state.error && state.hasCachedData) 1 else 0) +
+        (if (showStrip) 1 else 0) +
+        (if (!state.isEmptyTotal) 1 else 0) +
+        (if (showFocal) 1 else 0)
+
+    // Destino de la tira: se guarda la intención y el efecto hace el salto
+    // inmediato cuando la sección destino ya está compuesta.
+    var pendingJump by remember { mutableStateOf<DayJump?>(null) }
+    var viewportTop by remember { mutableStateOf(0f) }
+    val rowCoordinates = remember { mutableMapOf<Long, LayoutCoordinates>() }
+
+    LaunchedEffect(pendingJump, state.sections, sectionsBaseIndex, focal?.taskId) {
+        val jump = pendingJump ?: return@LaunchedEffect
+        if (jump.expandUpcoming) {
+            val upcoming = state.sections.firstOrNull {
+                it.type == TodaySectionType.UPCOMING
+            }
+            if (upcoming != null && !upcoming.expanded) {
+                viewModel.toggleSection(TodaySectionType.UPCOMING)
+                return@LaunchedEffect
+            }
+        }
+
+        fun sectionItemId(type: TodaySectionType): Long? =
+            state.sections.firstOrNull { it.type == type }?.items
+                ?.firstOrNull { item ->
+                    item.task.dueAt?.let {
+                        DateFormat.localDate(it) == jump.dueDate
+                    } == true
+                }
+                ?.task
+                ?.id
+
+        var targetSection: TodaySectionType? = jump.section
+        var targetTaskId = sectionItemId(jump.section)
+        if (jump.section == TodaySectionType.TODAY && targetTaskId == null) {
+            // "Hoy" sin filas propias baja a la primera de "Sin hora" (§7.1.1).
+            targetSection = TodaySectionType.ANYTIME
+            targetTaskId = state.sections
+                .firstOrNull { it.type == TodaySectionType.ANYTIME }
+                ?.items
+                ?.firstOrNull()
+                ?.task
+                ?.id
+        }
+        val focalMatches = focal?.let { item ->
+            (item.bucket == targetSection || item.bucket == jump.section) &&
+                item.item.task.dueAt?.let {
+                    DateFormat.localDate(it) == jump.dueDate
+                } == true
+        } == true
+        if (targetTaskId == null && focalMatches) {
+            targetSection = null
+            targetTaskId = focal?.taskId
+        }
+        val sectionIndex = targetSection?.let { type ->
+            val position = state.sections.indexOfFirst { it.type == type }
+            if (position >= 0) sectionsBaseIndex + position else null
+        }
+        val index = when {
+            targetSection == null -> if (showFocal) sectionsBaseIndex - 1 else 0
+            sectionIndex != null -> sectionIndex
+            // Sin sección ni fila destino: el encabezado (§7.1.1).
+            else -> 0
+        }
+
+        listState.scrollToItem(index)
+        withFrameNanos { }
+        withFrameNanos { }
+        val coordinates = targetTaskId?.let(rowCoordinates::get)
+        if (coordinates != null) {
+            val delta = coordinates.positionInRoot().y - viewportTop
+            if (delta != 0f) listState.scrollBy(delta)
+        }
+        pendingJump = null
+    }
+
     // FAB: se oculta al bajar y reaparece al subir (fade + escala 150 ms).
     var fabVisible by remember { mutableStateOf(true) }
     LaunchedEffect(listState) {
@@ -176,6 +303,7 @@ fun TodayScreen(
 
     val showFab = fabVisible && !state.isEmptyTotal && !state.loading &&
         !(state.error && !state.hasCachedData)
+    var fabFocused by remember { mutableStateOf(false) }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -198,8 +326,11 @@ fun TodayScreen(
             ) {
                 FloatingActionButton(
                     onClick = onCreateTask,
-                    modifier = Modifier.size(56.dp),
-                    shape = NotallyShape.l,
+                    modifier = Modifier
+                        .size(52.dp)
+                        .onFocusChanged { fabFocused = it.isFocused }
+                        .focusRing(visible = fabFocused, shape = CircleShape),
+                    shape = CircleShape,
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
                     elevation = FloatingActionButtonDefaults.elevation(
@@ -229,7 +360,8 @@ fun TodayScreen(
                 modifier = Modifier
                     .fillMaxHeight()
                     .widthIn(max = NotallySpacing.maxContentWidth)
-                    .fillMaxWidth(),
+                    .fillMaxWidth()
+                    .onGloballyPositioned { viewportTop = it.positionInRoot().y },
                 contentPadding = PaddingValues(
                     start = margin,
                     end = margin,
@@ -255,10 +387,24 @@ fun TodayScreen(
                     }
                 }
 
+                if (showStrip) {
+                    item(key = "day_strip") {
+                        DayStrip(
+                            days = stripDays,
+                            selectedDate = selectedDate,
+                            onDayClick = { day ->
+                                selectedDayEpoch = day.date.toEpochDay()
+                                pendingJump = resolveDayJump(day, todayDate)
+                            },
+                            modifier = Modifier.padding(top = 16.dp),
+                        )
+                    }
+                }
+
                 if (!state.isEmptyTotal) {
                     item(key = "filters") {
                         FilterChipRow(
-                            options = filterOptions(),
+                            options = filterOptions(state.filterCounts),
                             selectedId = state.filter.id,
                             onSelect = { id ->
                                 viewModel.setFilter(
@@ -271,6 +417,46 @@ fun TodayScreen(
                             },
                             modifier = Modifier.padding(top = 16.dp),
                         )
+                    }
+                }
+
+                if (focal != null) {
+                    item(key = "focal_task") {
+                        AnimatedContent(
+                            targetState = focal,
+                            transitionSpec = {
+                                fadeIn(
+                                    animationSpec = tween(
+                                        durationMillis = NotallyMotion.fadeThroughMs / 2,
+                                        delayMillis = NotallyMotion.fadeThroughMs / 2,
+                                        easing = NotallyMotion.fadeThroughEasing,
+                                    ),
+                                ) togetherWith fadeOut(
+                                    animationSpec = tween(
+                                        durationMillis = NotallyMotion.fadeThroughMs / 2,
+                                        easing = NotallyMotion.fadeThroughEasing,
+                                    ),
+                                )
+                            },
+                            label = "focalTask",
+                            modifier = Modifier.padding(top = 24.dp),
+                        ) { target ->
+                            val task = target.item.task
+                            FocalTaskCard(
+                                title = task.title,
+                                eyebrow = sectionTitle(target.bucket),
+                                subjectText = target.item.subject?.name
+                                    ?: stringResource(R.string.task_noSubject),
+                                dueText = task.dueAt?.let {
+                                    dateLabelText(it, state.now)
+                                } ?: stringResource(R.string.task_noDate),
+                                priority = task.priority,
+                                modifier = Modifier.onGloballyPositioned {
+                                    rowCoordinates[target.taskId] = it
+                                },
+                                onClick = { onOpenTask(task.id) },
+                            )
+                        }
                     }
                 }
 
@@ -321,6 +507,9 @@ fun TodayScreen(
                                         now = state.now,
                                         viewModel = viewModel,
                                         onOpenTask = onOpenTask,
+                                        modifier = Modifier.onGloballyPositioned {
+                                            rowCoordinates[item.task.id] = it
+                                        },
                                     )
                                 }
                             }
@@ -328,7 +517,7 @@ fun TodayScreen(
                     }
 
                     else -> {
-                        state.sections.forEachIndexed { index, section ->
+                        state.sections.forEach { section ->
                             item(key = "section_${section.type.name}") {
                                 Column(
                                     modifier = Modifier
@@ -336,7 +525,7 @@ fun TodayScreen(
                                             placementSpec = tween(NotallyMotion.itemMoveMs),
                                         )
                                         .animateContentSize(NotallyMotion.spatialDefault())
-                                        .padding(top = if (index == 0) 32.dp else 24.dp),
+                                        .padding(top = 24.dp),
                                 ) {
                                     SectionHeader(
                                         title = sectionTitle(section.type),
@@ -357,6 +546,9 @@ fun TodayScreen(
                                                     now = state.now,
                                                     viewModel = viewModel,
                                                     onOpenTask = onOpenTask,
+                                                    modifier = Modifier.onGloballyPositioned {
+                                                        rowCoordinates[item.task.id] = it
+                                                    },
                                                 )
                                             }
                                         }
@@ -414,12 +606,14 @@ private fun TaskItem(
     now: Long,
     viewModel: TodayViewModel,
     onOpenTask: (Long) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     SwipeTaskRow(
         task = item.task,
         subjectName = item.subject?.name,
         subjectColorArgb = item.subject?.colorArgb,
         now = now,
+        modifier = modifier,
         onClick = { onOpenTask(item.task.id) },
         onToggleDone = { viewModel.toggleDone(item.task) },
         onComplete = { viewModel.complete(item.task) },
@@ -471,11 +665,27 @@ private val TodayFilter.id: String
     }
 
 @Composable
-private fun filterOptions(): List<FilterOption> = listOf(
-    FilterOption("all", stringResource(R.string.filter_all)),
-    FilterOption("pending", stringResource(R.string.filter_pending)),
-    FilterOption("done", stringResource(R.string.filter_done)),
+private fun filterOptions(counts: TodayFilterCounts): List<FilterOption> = listOf(
+    FilterOption("all", stringResource(R.string.filter_all), counts.all),
+    FilterOption("pending", stringResource(R.string.filter_pending), counts.pending),
+    FilterOption("done", stringResource(R.string.filter_done), counts.done),
 )
+
+/** Destino de la tira de días: sección existente, no un filtro (§7.1.1). */
+private data class DayJump(
+    val section: TodaySectionType,
+    val dueDate: LocalDate,
+    val expandUpcoming: Boolean,
+)
+
+private fun resolveDayJump(day: DayStripDay, today: LocalDate): DayJump = when {
+    day.date.isBefore(today) ->
+        DayJump(TodaySectionType.OVERDUE, day.date, expandUpcoming = false)
+    day.date == today ->
+        DayJump(TodaySectionType.TODAY, day.date, expandUpcoming = false)
+    else ->
+        DayJump(TodaySectionType.UPCOMING, day.date, expandUpcoming = true)
+}
 
 @Composable
 private fun sectionTitle(type: TodaySectionType): String = stringResource(

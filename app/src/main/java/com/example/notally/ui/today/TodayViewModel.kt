@@ -12,6 +12,7 @@ import com.example.notally.data.model.Status
 import com.example.notally.data.model.Subject
 import com.example.notally.data.model.Task
 import com.example.notally.data.repository.SubjectRepository
+import com.example.notally.data.repository.SettingsRepository
 import com.example.notally.data.repository.TaskRepository
 import com.example.notally.ui.util.DateFormat
 import java.time.Instant
@@ -60,6 +61,9 @@ data class TodayUiState(
     val now: Long = System.currentTimeMillis(),
     val sections: List<TodaySectionUi> = emptyList(),
     val flatCompleted: List<TodayItem> = emptyList(),
+    val weekDays: List<TodayWeekDay> = emptyList(),
+    val focal: TodayFocalTask? = null,
+    val filterCounts: TodayFilterCounts = TodayFilterCounts(),
     val summary: TodaySummary? = null,
     val empty: TodayEmpty? = null,
     val isEmptyTotal: Boolean = true,
@@ -89,6 +93,7 @@ sealed interface TodayEvent {
 class TodayViewModel(
     private val taskRepository: TaskRepository,
     private val subjectRepository: SubjectRepository,
+    private val settingsRepository: SettingsRepository,
     private val clock: () -> Long = System::currentTimeMillis,
     private val zone: ZoneId = ZoneId.systemDefault(),
 ) : ViewModel() {
@@ -98,6 +103,7 @@ class TodayViewModel(
         val upcoming: List<Task>,
         val active: List<Task>,
         val subjects: List<Subject>,
+        val weekStartsMonday: Boolean,
     )
 
     private sealed interface LoadState {
@@ -144,13 +150,15 @@ class TodayViewModel(
                 taskRepository.observeFutureTasks(tomorrowStart - 1),
                 taskRepository.observeActiveTasks(),
                 subjectRepository.observeSubjects(),
-            ) { day, upcoming, active, subjects ->
+                settingsRepository.settings,
+            ) { day, upcoming, active, subjects, settings ->
                 LoadState.Ready(
                     RawData(
                         day = day,
                         upcoming = upcoming,
                         active = active,
                         subjects = subjects,
+                        weekStartsMonday = settings.weekStartsMonday,
                     ),
                 )
             }
@@ -302,6 +310,7 @@ class TodayViewModel(
             upcomingTasks = raw.upcoming,
             activeTasks = raw.active,
             subjectsById = subjectsById,
+            weekStartsMonday = raw.weekStartsMonday,
         )
 
         val sections = if (filter == TodayFilter.DONE) {
@@ -335,6 +344,9 @@ class TodayViewModel(
             } else {
                 emptyList()
             },
+            weekDays = groups.weekDays,
+            focal = if (filter == TodayFilter.DONE) null else groups.focal,
+            filterCounts = groups.filterCounts,
             summary = if (groups.summaryTotal > 0) {
                 TodaySummary(
                     completed = groups.summaryCompleted,
@@ -356,6 +368,7 @@ class TodayViewModel(
                 TodayViewModel(
                     taskRepository = container.taskRepository,
                     subjectRepository = container.subjectRepository,
+                    settingsRepository = container.settingsRepository,
                 )
             }
         }
