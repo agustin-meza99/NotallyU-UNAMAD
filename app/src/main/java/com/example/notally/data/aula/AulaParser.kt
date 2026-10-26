@@ -123,6 +123,7 @@ object AulaParser {
                         finalizada = objeto.optBoolean("isEnded", false),
                         intentos = objeto.optInt("attempts", 0),
                         grupal = objeto.optBoolean("isGroup", false),
+                        entregada = objeto.entero("homeworkstds") > 0,
                     ),
                 )
             }
@@ -224,5 +225,19 @@ object AulaParser {
     private fun JSONObject.texto(clave: String): String? {
         if (!has(clave) || isNull(clave)) return null
         return optString(clave, "").takeUnless { it.isBlank() }
+    }
+
+    /**
+     * Entero que puede llegar como número o como string numérico; `0` si el
+     * campo falta o no se puede interpretar.
+     */
+    private fun JSONObject.entero(clave: String): Int {
+        if (!has(clave) || isNull(clave)) return 0
+        val valor = opt(clave)
+        return when (valor) {
+            is Number -> valor.toInt()
+            is String -> valor.trim().toIntOrNull() ?: 0
+            else -> 0
+        }
     }
 }

@@ -35,4 +35,6 @@ data class AulaTarea(
     val finalizada: Boolean = false,
     val intentos: Int = 0,
     val grupal: Boolean = false,
+    /** `homeworkstds > 0`: el alumno ya registra entregas en el Aula. */
+    val entregada: Boolean = false,
 )

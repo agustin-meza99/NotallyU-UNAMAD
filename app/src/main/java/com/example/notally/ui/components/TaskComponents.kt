@@ -97,7 +97,7 @@ fun TaskRow(
 ) {
     val colores = MaterialTheme.colorScheme
     val hecha = tarea.estado == Estado.COMPLETADA
-    val atrasada = !hecha && tarea.entregaEn != null &&
+    val atrasada = !hecha && !tarea.entregada && tarea.entregaEn != null &&
         DateFormat.diasAtraso(tarea.entregaEn, ahora) > 0
 
     val contexto = LocalContext.current
@@ -109,7 +109,7 @@ fun TaskRow(
     val sinFecha = stringResource(R.string.task_noDate)
     val textoFecha = when {
         tarea.entregaEn == null -> sinFecha
-        hecha -> textoEtiquetaFecha(tarea.entregaEn, ahora)
+        hecha || tarea.entregada -> textoEtiquetaFecha(tarea.entregaEn, ahora)
         else -> textoAtraso(DateFormat.diasAtraso(tarea.entregaEn, ahora))
             ?: textoEtiquetaFecha(tarea.entregaEn, ahora)
     }
@@ -117,6 +117,11 @@ fun TaskRow(
 
     val textoPrioridad = priorityLabelForA11y(tarea.prioridad)
     val textoGrupal = if (tarea.esGrupal) stringResource(R.string.task_group) else null
+    val textoEntregada = if (tarea.entregada) {
+        stringResource(R.string.task_delivered)
+    } else {
+        null
+    }
     val descripcionEntrega = tarea.entregaEn?.let {
         stringResource(R.string.a11y_task_due, textoFraseEntrega(it, ahora, es24Horas))
     }
@@ -127,6 +132,7 @@ fun TaskRow(
             descripcionEntrega,
             textoPrioridad,
             textoGrupal,
+            textoEntregada,
             hecha,
         ) {
             buildList {
@@ -135,6 +141,7 @@ fun TaskRow(
                 if (descripcionEntrega != null) add(descripcionEntrega)
                 add(textoPrioridad)
                 if (textoGrupal != null) add(textoGrupal)
+                if (textoEntregada != null) add(textoEntregada)
             }.joinToString(". ") + "."
         }
 
@@ -243,6 +250,12 @@ fun TaskRow(
                     if (textoGrupal != null) {
                         append(separador)
                         append(textoGrupal)
+                    }
+                    if (textoEntregada != null) {
+                        append(separador)
+                        withStyle(SpanStyle(color = colores.primary)) {
+                            append(textoEntregada)
+                        }
                     }
                 },
                 style = MaterialTheme.typography.bodySmall,

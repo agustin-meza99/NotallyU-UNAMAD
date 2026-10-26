@@ -16,12 +16,13 @@ import com.example.notally.data.model.Tarea
 
 /**
  * Base de datos local. El nombre del archivo físico se conserva; la versión 2
- * retira el color de los cursos, la 3 añade el `externalId` del Aula Virtual y
- * la 4 añade datos opcionales del curso y de la tarea.
+ * retira el color de los cursos, la 3 añade el `externalId` del Aula Virtual,
+ * la 4 añade datos opcionales del curso y de la tarea y la 5 añade si el
+ * alumno ya entregó la tarea.
  */
 @Database(
     entities = [Curso::class, Tarea::class, Subtarea::class],
-    version = 4,
+    version = 5,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -112,13 +113,26 @@ abstract class NotallyDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Migración 4 → 5: añade `entregada` a las tareas. Es aditiva: las
+         * filas existentes conservan todos sus datos y quedan como no
+         * entregadas.
+         */
+        val MIGRACION_4_5: Migration = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "ALTER TABLE `tasks` ADD COLUMN `entregada` INTEGER NOT NULL DEFAULT 0",
+                )
+            }
+        }
+
         fun construir(context: Context): NotallyDatabase =
             Room.databaseBuilder(
                 context.applicationContext,
                 NotallyDatabase::class.java,
                 NOMBRE,
             )
-                .addMigrations(MIGRACION_1_2, MIGRACION_2_3, MIGRACION_3_4)
+                .addMigrations(MIGRACION_1_2, MIGRACION_2_3, MIGRACION_3_4, MIGRACION_4_5)
                 .build()
     }
 }

@@ -53,6 +53,7 @@ data class BorradorTarea(
     val prioridad: Prioridad = Prioridad.MEDIA,
     val estado: Estado = Estado.PENDIENTE,
     val esGrupal: Boolean = false,
+    val entregada: Boolean = false,
     val subtareas: List<SubtareaEditor> = emptyList(),
     val cargando: Boolean = true,
     val errorCarga: Boolean = false,
@@ -146,6 +147,7 @@ class EditorViewModel(
             prioridad = instantanea.tarea.prioridad,
             estado = instantanea.tarea.estado,
             esGrupal = instantanea.tarea.esGrupal,
+            entregada = instantanea.tarea.entregada,
             subtareas = instantanea.subtareas.sortedBy { it.posicion }.map { it.aFila() },
             cargando = false,
         )

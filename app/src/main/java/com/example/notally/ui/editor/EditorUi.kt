@@ -182,6 +182,9 @@ internal fun EditorContent(
             if (estado.esGrupal) {
                 EditorReadOnlyRow(texto = stringResource(R.string.task_group_yes))
             }
+            if (estado.entregada) {
+                EditorReadOnlyRow(texto = stringResource(R.string.task_delivered_yes))
+            }
 
             Spacer(Modifier.height(24.dp))
             BasicTextField(

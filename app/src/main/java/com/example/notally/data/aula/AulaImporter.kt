@@ -171,6 +171,7 @@ class AulaImporter(
                         inicioEn = tareaAula.inicioEn,
                         intentos = tareaAula.intentos,
                         esGrupal = tareaAula.grupal,
+                        entregada = tareaAula.entregada,
                     )
                     val aGuardar = if (existente == null) {
                         base

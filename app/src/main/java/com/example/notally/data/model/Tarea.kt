@@ -75,6 +75,12 @@ data class Tarea(
     /** `isGroup` del Aula Virtual. La UI solo muestra la etiqueta "Grupal". */
     @ColumnInfo(name = "esGrupal")
     val esGrupal: Boolean = false,
+    /**
+     * `homeworkstds > 0` del Aula Virtual: el alumno ya tiene entregas. Es
+     * informativo y no altera el estado, la prioridad ni la sincronización.
+     */
+    @ColumnInfo(name = "entregada")
+    val entregada: Boolean = false,
 )
 
 enum class Prioridad {
