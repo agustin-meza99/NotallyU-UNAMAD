@@ -16,13 +16,13 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Test
 
-class TaskMapperTest {
+class TareaMapperTest {
 
     private fun tarea(
         id: Long = 7L,
         titulo: String = "Ensayo de historia",
         notas: String = "Fuentes primarias",
-        materiaId: Long? = 3L,
+        cursoId: Long? = 3L,
         entregaEn: Long? = 1_700_000_000_000L,
         prioridad: Prioridad = Prioridad.ALTA,
         estado: Estado = Estado.EN_CURSO,
@@ -34,7 +34,7 @@ class TaskMapperTest {
         id = id,
         titulo = titulo,
         notas = notas,
-        materiaId = materiaId,
+        cursoId = cursoId,
         entregaEn = entregaEn,
         prioridad = prioridad,
         estado = estado,
@@ -52,7 +52,7 @@ class TaskMapperTest {
         val vuelta = remoto.toLocal(localId = local.id)
 
         assertEquals(local, vuelta)
-        assertEquals("3", remoto.subjectId)
+        assertEquals("3", remoto.courseId)
         assertEquals("HIGH", remoto.priority)
         assertEquals("IN_PROGRESS", remoto.status)
         assertNull(remoto.deletedAt)
@@ -72,7 +72,7 @@ class TaskMapperTest {
     @Test
     fun `los campos nulos sobreviven como nulos`() {
         val local = tarea(
-            materiaId = null,
+            cursoId = null,
             entregaEn = null,
             completadoEn = null,
         )
@@ -80,11 +80,11 @@ class TaskMapperTest {
         val remoto = local.toRemote()
         val vuelta = remoto.toLocal(localId = local.id)
 
-        assertNull(remoto.subjectId)
+        assertNull(remoto.courseId)
         assertNull(remoto.dueAt)
         assertNull(remoto.completedAt)
         assertNull(remoto.deletedAt)
-        assertNull(vuelta.materiaId)
+        assertNull(vuelta.cursoId)
         assertNull(vuelta.entregaEn)
         assertNull(vuelta.completadoEn)
     }
@@ -261,12 +261,12 @@ class TaskMapperTest {
     }
 
     @Test
-    fun `un subjectId remoto no numerico falla en vez de perder la relacion`() {
+    fun `un courseId remoto no numerico falla en vez de perder la relacion`() {
         val remoto = RemoteTask(
-            title = "Materia futura",
+            title = "Curso futura",
             priority = "LOW",
             status = "PENDING",
-            subjectId = "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+            courseId = "f47ac10b-58cc-4372-a567-0e02b2c3d479",
         )
 
         assertThrows(IllegalArgumentException::class.java) {
@@ -277,15 +277,15 @@ class TaskMapperTest {
     @Test
     fun `un id local explicito reemplaza al remoto parseado`() {
         val remoto = RemoteTask(
-            title = "Con materia",
+            title = "Con curso",
             priority = "LOW",
             status = "PENDING",
-            subjectId = "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+            courseId = "f47ac10b-58cc-4372-a567-0e02b2c3d479",
         )
 
-        val local = remoto.toLocal(localSubjectId = 5L)
+        val local = remoto.toLocal(localCursoId = 5L)
 
-        assertEquals(5L, local.materiaId)
+        assertEquals(5L, local.cursoId)
     }
 
     @Test

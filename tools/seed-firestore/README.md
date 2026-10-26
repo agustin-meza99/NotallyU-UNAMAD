@@ -1,7 +1,7 @@
 # Seed de Firestore (Notally)
 
 Script en Node.js puro que siembra en Firestore el mismo contenido de
-`app/src/main/java/com/example/notally/data/SeedData.kt`: **4 materias y 11
+`app/src/main/java/com/example/notally/data/SeedData.kt`: **4 cursos y 11
 tareas** en español, con fechas relativas a hoy, subtareas, una tarea `DONE` y
 una `IN_PROGRESS`.
 
@@ -49,13 +49,14 @@ credenciales hardcodeadas.**
 
 - `--dry-run`: autentica y consulta el estado actual, imprime qué documentos
   crearía/actualizaría y no escribe nada.
-- `--reset`: lista `users/{uid}/tasks` y `users/{uid}/subjects`, borra **solo**
-  los documentos cuyos IDs pertenecen al seed y luego los recrea. No toca otros
-  documentos del usuario.
+- `--reset`: lista `users/{uid}/tasks` y `users/{uid}/courses`, borra **solo**
+  los documentos cuyos IDs pertenecen al seed y luego los recrea. Además elimina
+  los documentos heredados de la colección `subjects` (migración de demo). No
+  toca otros documentos del usuario.
 
 ## IDs e idempotencia
 
-Los IDs son deterministas y legibles, por ejemplo `subject-calculo`,
+Los IDs son deterministas y legibles, por ejemplo `course-calculo`,
 `task-lab-avl` o `task-consultas-sql`. Volver a ejecutar el script actualiza los
 mismos documentos en lugar de duplicarlos.
 
@@ -66,7 +67,7 @@ conserva con el `timestampValue` remoto (la regla exige
 `REQUEST_TIME`.
 
 Nota: `SeedData.kt` usa `createdAt` históricos (por ejemplo, "hace 30 días" para
-las materias), pero las reglas obligan a que `createdAt` sea la hora del servidor
+los cursos), pero las reglas obligan a que `createdAt` sea la hora del servidor
 en el alta. Por eso el seed remoto no replica esas marcas históricas; el resto
 de los campos (títulos, notas, prioridades, estados, subtareas y `dueAt`
 relativo a hoy) sí es idéntico.

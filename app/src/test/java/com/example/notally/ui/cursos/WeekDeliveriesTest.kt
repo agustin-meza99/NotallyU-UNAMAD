@@ -1,4 +1,4 @@
-package com.example.notally.ui.subjects
+package com.example.notally.ui.cursos
 
 import java.time.LocalDate
 import java.time.LocalTime

@@ -14,7 +14,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.notally.data.model.Ajustes
+import com.example.notally.data.model.Settings
 import com.example.notally.data.model.ModoTema
 import com.example.notally.ui.NotallyRoot
 import com.example.notally.ui.theme.TemaNotally
@@ -32,6 +32,10 @@ class MainActivity : ComponentActivity() {
                 android.graphics.Color.TRANSPARENT,
             ),
         )
+        // El cluster flota sobre el contenido y consume el inset de navegación
+        // con `navigationBarsPadding()`; sin el scrim del sistema la píldora no
+        // queda apoyada sobre una banda opaca.
+        window.isNavigationBarContrastEnforced = false
         setContent {
             RaizAplicacion()
         }
@@ -41,11 +45,11 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun RaizAplicacion() {
     val contexto = LocalContext.current
-    val ajustes by contexto.contenedorNotally.repositorioAjustes.ajustes
-        .collectAsStateWithLifecycle(initialValue = Ajustes())
+    val settings by contexto.contenedorNotally.repositorioSettings.settings
+        .collectAsStateWithLifecycle(initialValue = Settings())
 
     val sistemaOscuro = isSystemInDarkTheme()
-    val temaOscuro = when (ajustes.modoTema) {
+    val temaOscuro = when (settings.modoTema) {
         ModoTema.SISTEMA -> sistemaOscuro
         ModoTema.CLARO -> false
         ModoTema.OSCURO -> true

@@ -96,7 +96,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.notally.R
 import com.example.notally.data.model.Estado
-import com.example.notally.data.model.Materia
+import com.example.notally.data.model.Curso
 import com.example.notally.data.model.Prioridad
 import com.example.notally.ui.components.BloqueError
 import com.example.notally.ui.components.FilasCargando
@@ -137,8 +137,8 @@ fun EditorScreen(
         factory = EditorViewModel.factory(contexto, tareaId),
     )
     val estado by viewModel.estado.collectAsStateWithLifecycle()
-    val materias by viewModel.materias.collectAsStateWithLifecycle()
-    val errorNuevaMateria by viewModel.errorNuevaMateria.collectAsStateWithLifecycle()
+    val cursos by viewModel.cursos.collectAsStateWithLifecycle()
+    val errorNuevoCurso by viewModel.errorNuevoCurso.collectAsStateWithLifecycle()
 
     val estadoSnackbar = remember { SnackbarHostState() }
     val margen = margenHorizontalPantalla
@@ -291,7 +291,7 @@ fun EditorScreen(
                         else -> {
                             ContenidoEditor(
                                 estado = estado,
-                                materias = materias,
+                                cursos = cursos,
                                 nuevaSubtarea = nuevaSubtarea,
                                 alCambiarNuevaSubtarea = { nuevaSubtarea = it },
                                 subtareaEnfocada = subtareaEnfocada,
@@ -342,15 +342,15 @@ fun EditorScreen(
     AnfitrionEditorSheets(
         hoja = hoja,
         borrador = estado,
-        materias = materias,
-        colorMateriaPorDefecto = viewModel.colorMateriaPorDefecto(),
-        errorNuevaMateria = errorNuevaMateria,
+        cursos = cursos,
+        colorCursoPorDefecto = viewModel.colorCursoPorDefecto(),
+        errorNuevoCurso = errorNuevoCurso,
         alDescartar = { hoja = null },
-        alSeleccionarMateria = viewModel::cambiarMateria,
-        alCrearMateria = { nombre, color ->
-            viewModel.crearMateriaYSeleccionar(nombre, color) { hoja = null }
+        alSeleccionarCurso = viewModel::cambiarCurso,
+        alCrearCurso = { nombre, color ->
+            viewModel.crearCursoYSeleccionar(nombre, color) { hoja = null }
         },
-        alLimpiarErrorMateria = viewModel::limpiarErrorNuevaMateria,
+        alLimpiarErrorCurso = viewModel::limpiarErrorNuevoCurso,
         alCambiarEntrega = viewModel::cambiarEntrega,
         alCambiarPrioridad = viewModel::cambiarPrioridad,
         alCambiarEstado = viewModel::cambiarEstado,
@@ -442,7 +442,7 @@ private fun BarraSuperiorEditor(
 @Composable
 private fun ContenidoEditor(
     estado: BorradorTarea,
-    materias: List<Materia>,
+    cursos: List<Curso>,
     nuevaSubtarea: String,
     alCambiarNuevaSubtarea: (String) -> Unit,
     subtareaEnfocada: Boolean,
@@ -467,7 +467,7 @@ private fun ContenidoEditor(
     val etiquetaTitulo = stringResource(R.string.editor_title_placeholder)
     val etiquetaNotas = stringResource(R.string.editor_notes_placeholder)
 
-    val nombreMateria = materias.firstOrNull { it.id == estado.materiaId }?.nombre
+    val nombreCurso = cursos.firstOrNull { it.id == estado.cursoId }?.nombre
         ?: stringResource(R.string.task_noSubject)
     val textoEntrega = estado.entregaEn?.let { entregaEn ->
         val fecha = textoEtiquetaFecha(entregaEn, zona = zona)
@@ -534,8 +534,8 @@ private fun ContenidoEditor(
             Spacer(Modifier.height(16.dp))
             FilaPropiedadEditor(
                 etiqueta = stringResource(R.string.editor_property_subject),
-                valor = nombreMateria,
-                alPulsar = { alAbrirPropiedad(HojaEditor.MATERIA) },
+                valor = nombreCurso,
+                alPulsar = { alAbrirPropiedad(HojaEditor.CURSO) },
             )
             FilaPropiedadEditor(
                 etiqueta = stringResource(R.string.editor_property_due),

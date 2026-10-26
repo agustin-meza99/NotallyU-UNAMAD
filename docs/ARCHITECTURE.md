@@ -70,24 +70,24 @@ app/src/main/java/com/example/notally/
 ├── NotallyApp.kt                    ✓ Application + AppContainer
 ├── MainActivity.kt                  ✓ entry point Compose
 ├── data/
-│   ├── model/                       ✓ Tarea, Materia, Subtarea, relaciones, Ajustes
-│   ├── local/                       ✓ TareaDao, MateriaDao, SubtareaDao
-│   ├── repository/                  ✓ TareasRepository, MateriasRepository, AjustesRepository
-│   ├── remote/firestore/            ✗ contrato y mappers puros (Task/Subject/Subtask)
+│   ├── model/                       ✓ Tarea, Curso, Subtarea, relaciones, Settings
+│   ├── local/                       ✓ TareaDao, CursoDao, SubtareaDao
+│   ├── repository/                  ✓ TareasRepository, CursosRepository, SettingsRepository
+│   ├── remote/firestore/            ✗ contrato y mappers puros (RemoteTask/RemoteCurso/RemoteSubtask, TareaMapper/CursoMapper)
 │   ├── sync/                        ◇ SyncEngine, OutboxDao, SyncState (futuro)
 │   ├── NotallyDatabase.kt           ✓ Room v1
 │   ├── Converters.kt                ✓ enums persistidos por nombre
 │   ├── DateRanges.kt                ✓ rangos de día en hora local
-│   └── ColoresMateria.kt            ✓ paleta de materias (fuente única)
+│   └── ColoresCurso.kt              ✓ paleta de cursos (fuente única)
 ├── core/
 │   └── AppContainer.kt              ✓ punto de composición + utilidades transversales
 ├── ui/
 │   ├── theme/                       ✓ tokens, tipografía, formas, movimiento
 │   ├── components/                  ✓ componentes reutilizables
 │   ├── today/                       ✓ TodayScreen, agrupación, reglas de postergar
-│   ├── subjects/                    ✓ SubjectsScreen, formulario, entregas de semana
+│   ├── cursos/                      ✓ CursosScreen, CursoSheet, entregas de semana
 │   ├── editor/                      ✓ detalle/editor de tarea
-│   ├── settings/                    ✓ ajustes
+│   ├── settings/                    ✓ SettingsScreen
 │   ├── util/                        ✓ DateFormat, DateText (solo UI)
 │   ├── NotallyRoot.kt               ✓ navegación y tabs
 │   └── auth/                        ◇ pantalla de acceso (futuro)
@@ -114,7 +114,7 @@ arranca **vacía**, sin seed local.
 2. `data.local.**` **no** importa `ui.**`.
 3. `data.remote.firestore` no importa `com.google.firebase.*`: es Kotlin puro y se prueba en JVM.
 4. Los ViewModels no importan DAOs ni `FirebaseFirestore`; hablan con repositorios.
-5. Excepción documentada: `ui/theme/Color.kt` consume `data/SubjectColors.kt` para construir los swatches de materia. Es una dependencia de **tokens de color**, no de estado ni de persistencia; se mantiene para que la paleta tenga una sola fuente de verdad y no duplique hex en UI.
+5. Excepción documentada: `ui/theme/ColoresMaterial.kt` consume `data/ColoresCurso.kt` para construir los swatches de curso. Es una dependencia de **tokens de color**, no de estado ni de persistencia; se mantiene para que la paleta tenga una sola fuente de verdad y no duplique hex en UI.
 
 ---
 
@@ -152,17 +152,17 @@ La UI **nunca** lee Firestore y nunca espera a la red para pintar: pinta la emis
 
 ## 5. Contrato de datos remoto
 
-Alineado con `firestore.rules` (deny-by-default, auth obligatoria). Rutas: `users/{uid}/tasks/{taskId}` y `users/{uid}/subjects/{subjectId}`.
+Alineado con `firestore.rules` (deny-by-default, auth obligatoria). Rutas: `users/{uid}/tasks/{taskId}` y `users/{uid}/courses/{courseId}`.
 
 ### 5.1 Tarea (`validTask`)
 
-Claves **permitidas** (`hasOnly`): `title`, `notes`, `subjectId`, `dueAt`, `priority`, `status`, `subtasks`, `createdAt`, `updatedAt`, `completedAt`, `deletedAt`. Obligatorias: `title`, `notes`, `priority`, `status`, `subtasks`, `createdAt`, `updatedAt`.
+Claves **permitidas** (`hasOnly`): `title`, `notes`, `courseId`, `dueAt`, `priority`, `status`, `subtasks`, `createdAt`, `updatedAt`, `completedAt`, `deletedAt`. Obligatorias: `title`, `notes`, `priority`, `status`, `subtasks`, `createdAt`, `updatedAt`.
 
 | Campo | Tipo | Límite / valor |
 |---|---|---|
 | `title` | `string` | 1..300 |
 | `notes` | `string` | 0..20000 |
-| `subjectId` | `string \| null` | ≤128 |
+| `courseId` | `string \| null` | ≤128 |
 | `dueAt` | `number \| null` | epoch ms |
 | `priority` | `string` | `LOW`, `MEDIUM`, `HIGH` |
 | `status` | `string` | `PENDING`, `IN_PROGRESS`, `DONE` |
@@ -173,7 +173,7 @@ Claves **permitidas** (`hasOnly`): `title`, `notes`, `subjectId`, `dueAt`, `prio
 
 En create, las reglas exigen `createdAt == request.time` y `updatedAt == request.time`. En update, `createdAt` debe conservar el valor existente y `updatedAt == request.time`. Por eso el mapper modela los timestamps como `Long?` epoch ms y documenta que `null` en el borde significa `FieldValue.serverTimestamp()`; el borde decide create vs update.
 
-### 5.2 Materia (`validSubject`)
+### 5.2 Curso (`validCurso`)
 
 Claves permitidas: `name`, `colorArgb`, `professor`, `credits`, `createdAt`, `updatedAt`, `deletedAt`. Obligatorias: `name`, `colorArgb`, `createdAt`, `updatedAt`.
 
@@ -186,25 +186,25 @@ Claves permitidas: `name`, `colorArgb`, `professor`, `credits`, `createdAt`, `up
 | `createdAt` / `updatedAt` | `timestamp` | **serverTimestamp** |
 | `deletedAt` | `timestamp \| null` | tombstone |
 
-### 5.3 Gap: `Task.isArchived` no existe en las reglas
+### 5.3 Gap: `Tarea.archivada` no existe en las reglas
 
-Room tiene `isArchived: Boolean`; las reglas no permiten ese campo y `hasOnly` rechaza cualquier clave extra. **Decisión V1: no se sincronizan las tareas archivadas.** `Task.toRemote()` lanza `IllegalArgumentException` si `isArchived == true` en lugar de perder el dato en silencio. Una tarea archivada sigue viviendo solo en Room; las tareas borradas se representan con `deletedAt` (tombstone) cuando el sync exista.
+Room tiene `archivada: Boolean`; las reglas no permiten ese campo y `hasOnly` rechaza cualquier clave extra. **Decisión V1: no se sincronizan las tareas archivadas.** `Tarea.toRemote()` lanza `IllegalArgumentException` si `archivada == true` en lugar de perder el dato en silencio. Una tarea archivada sigue viviendo solo en Room; las tareas borradas se representan con `deletedAt` (tombstone) cuando el sync exista.
 
-**Deuda:** si se quiere sincronizar el archivo, añadir `archivedAt: timestamp | null` a la regla y a `RemoteTask`, y migrar `isArchived` a ese timestamp. No se hace ahora porque requiere redesplegar reglas (fuera de alcance de esta fase).
+**Deuda:** si se quiere sincronizar el archivo, añadir `archivedAt: timestamp | null` a la regla y a `RemoteTask`, y migrar `archivada` a ese timestamp. No se hace ahora porque requiere redesplegar reglas (fuera de alcance de esta fase).
 
 ### 5.4 Gap de identidad: `Long` local vs docId estable
 
-Room usa `Long` autogenerado. Firestore necesita un docId estable entre dispositivos. Mientras no haya sync, el mapper usa `id.toString()` y `toLocal()` exige que `subjectId` sea numérico (falla explícito si llega un UUID).
+Room usa `Long` autogenerado. Firestore necesita un docId estable entre dispositivos. Mientras no haya sync, el mapper usa `id.toString()` y `toLocal()` exige que `courseId` sea numérico (falla explícito si llega un UUID).
 
 **Migración propuesta (cuando se active el sync):**
 
-1. Añadir `remoteId: String = UUID.randomUUID().toString()` a `Task` y `Subject` (y, si se necesita diff de subtareas, a `Subtask`).
+1. Añadir `remoteId: String = UUID.randomUUID().toString()` a `Tarea` y `Curso` (y, si se necesita diff de subtareas, a `Subtask`).
 2. Room **v1 → v2**: `ALTER TABLE ... ADD COLUMN remoteId TEXT NOT NULL DEFAULT ''`, backfill con UUID en la migración y crear índice único.
-3. `docId = remoteId`; las referencias de materia usan `remoteId`, no `id`.
-4. Cambiar los mappers para aceptar `remoteSubjectId` y resolverlo contra Room.
+3. `docId = remoteId`; las referencias de curso usan `remoteId`, no `id`.
+4. Cambiar los mappers para aceptar `remoteCursoId` y resolverlo contra Room.
 5. Nunca reutilizar `id.toString()` una vez migrado.
 
-Hasta entonces, cualquier documento remoto con UUID en `subjectId` falla de forma explícita: mejor un error visible que una relación perdida.
+Hasta entonces, cualquier documento remoto con UUID en `courseId` falla de forma explícita: mejor un error visible que una relación perdida.
 
 ---
 
@@ -212,7 +212,7 @@ Hasta entonces, cualquier documento remoto con UUID en `subjectId` falla de form
 
 `data/sync` no existe todavía. El diseño acordado:
 
-- **Pull:** `addSnapshotListener(metadataChanges = INCLUDE)` sobre `users/{uid}/tasks` y `users/{uid}/subjects`. Los cambios se aplican a Room en una `withTransaction`, comparando `updatedAt`. La metadata permite distinguir datos de caché de datos confirmados por el servidor.
+- **Pull:** `addSnapshotListener(metadataChanges = INCLUDE)` sobre `users/{uid}/tasks` y `users/{uid}/courses`. Los cambios se aplican a Room en una `withTransaction`, comparando `updatedAt`. La metadata permite distinguir datos de caché de datos confirmados por el servidor.
 - **Escritura optimista:** primero Room (la UI responde al instante), luego el outbox. Si el push falla, la operación queda pendiente y se reintenta con backoff. La UI nunca se bloquea esperando red.
 - **Outbox:** tabla Room con `operation` (UPSERT/DELETE), `entityType`, `entityLocalId`, `attempts`, `lastError`, `createdAt`. Se drena en orden y se elimina al confirmar el servidor.
 - **Last-write-wins por `updatedAt`:** si el remoto es más nuevo, se aplica a Room; si el local es más nuevo, se encola. Empates: gana el remoto por determinismo.
@@ -242,7 +242,7 @@ Para habilitarlo: activar Email/Password en la consola → añadir `ui/auth` y s
 - **Eventos one-shot** (navegación, snackbar) por `SharedFlow`, nunca dentro del `UiState`.
 - **Textos:** todo lo visible en `res/values/strings.xml`. Nada hardcodeado en composables.
 - **Fechas:** solo con `ui/util/DateFormat` (y `DateText`). No formatear con `SimpleDateFormat` suelto en pantallas.
-- **Colores:** solo tokens de `ui/theme/Color.kt`. Prohibido `Color(0xFF…)` en pantallas o componentes; los colores de materia salen de `data/SubjectColors`.
+- **Colores:** solo tokens de `ui/theme/ColoresMaterial.kt`. Prohibido `Color(0xFF…)` en pantallas o componentes; los colores de curso salen de `data/ColoresCurso.kt`.
 - **Errores de contrato:** los mappers fallan con `require` y mensaje accionable; no se ignoran campos.
 
 ---
@@ -264,7 +264,7 @@ Para habilitarlo: activar Email/Password en la consola → añadir `ui/auth` y s
 
 1. **Auth:** habilitar Email/Password, construir `ui/auth`, adjuntar `uid`, y solo después evaluar `remoteEnabled`.
 2. **Sync v1:** `data/sync` con listener, outbox, LWW y `clearPersistence()` al cerrar sesión; test de integración con emulador de Firestore.
-3. **Migración UUID:** `remoteId` en `Task`/`Subject`, Room v1→v2 y mappers por `remoteId`. Prerrequisito para multi-dispositivo real.
+3. **Migración UUID:** `remoteId` en `Tarea`/`Curso`, Room v1→v2 y mappers por `remoteId`. Prerrequisito para multi-dispositivo real.
 4. **Tombstones locales:** borrado suave + `deletedAt` para propagar deletes sin perder el rastro.
 5. **Split de `EditorScreen.kt`:** extraer secciones/hojas para volver al límite de 600 líneas.
 6. **Tests instrumentados:** navegación, editor y sync con Room real.

@@ -2,7 +2,7 @@ package com.example.notally.ui.today
 
 import com.example.notally.data.DateRanges
 import com.example.notally.data.model.Estado
-import com.example.notally.data.model.Materia
+import com.example.notally.data.model.Curso
 import com.example.notally.data.model.Prioridad
 import com.example.notally.data.model.Tarea
 import java.time.DayOfWeek
@@ -18,10 +18,10 @@ enum class FiltroHoy { TODAS, PENDIENTES, COMPLETADAS }
 /** Secciones de Hoy, en el orden del documento (§7.3). */
 enum class TipoSeccionHoy { ATRASADAS, HOY, SIN_HORA, PROXIMAS, COMPLETADAS }
 
-/** Tarea con su materia resuelta, lista para pintar una fila. */
+/** Tarea con su curso resuelta, lista para pintar una fila. */
 data class ElementoHoy(
     val tarea: Tarea,
-    val materia: Materia?,
+    val curso: Curso?,
 )
 
 /** Sección ya resuelta para la UI. */
@@ -116,7 +116,7 @@ fun agruparHoy(
     tareasDelDia: List<Tarea>,
     tareasProximas: List<Tarea>,
     tareasActivas: List<Tarea>,
-    materiasPorId: Map<Long, Materia>,
+    cursosPorId: Map<Long, Curso>,
     semanaEmpiezaLunes: Boolean = true,
 ): GruposHoy {
     val hoy = Instant.ofEpochMilli(ahora).atZone(zona).toLocalDate()
@@ -125,7 +125,7 @@ fun agruparHoy(
 
     fun elemento(tarea: Tarea) = ElementoHoy(
         tarea = tarea,
-        materia = tarea.materiaId?.let(materiasPorId::get),
+        curso = tarea.cursoId?.let(cursosPorId::get),
     )
 
     fun estaPendiente(tarea: Tarea) = tarea.estado != Estado.COMPLETADA

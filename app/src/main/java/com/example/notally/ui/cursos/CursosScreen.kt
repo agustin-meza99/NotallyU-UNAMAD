@@ -1,4 +1,4 @@
-package com.example.notally.ui.subjects
+package com.example.notally.ui.cursos
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
@@ -60,7 +60,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.notally.R
-import com.example.notally.data.model.Materia
+import com.example.notally.data.model.Curso
 import com.example.notally.ui.components.AvisoError
 import com.example.notally.ui.components.BloqueError
 import com.example.notally.ui.components.EmptyState
@@ -70,24 +70,24 @@ import com.example.notally.ui.theme.EspaciadoNotally
 import com.example.notally.ui.theme.FormaNotally
 import com.example.notally.ui.theme.MovimientoNotally
 import com.example.notally.ui.theme.TipografiaNotally
-import com.example.notally.ui.theme.colorMateria
+import com.example.notally.ui.theme.colorCurso
 import com.example.notally.ui.theme.margenHorizontalPantalla
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.withTimeoutOrNull
 
 /**
- * Pantalla Materias (§7.4, §7.8, §7.13).
+ * Pantalla Cursos (§7.4, §7.8, §7.13).
  *
- * La tarjeta es la única acción: abre la hoja "Editar materia". No hay ruta de
- * detalle de materia en V1 (§0.5). Los conteos salen de Room; "entregas esta
+ * La tarjeta es la única acción: abre la hoja "Editar curso". No hay ruta de
+ * detalle de curso en V1 (§0.5). Los conteos salen de Room; "entregas esta
  * semana" se recalcula con el ajuste de inicio de semana.
  */
 @Composable
-fun SubjectsScreen(
+fun CursosScreen(
     modifier: Modifier = Modifier,
-    viewModel: SubjectsViewModel = viewModel(
-        factory = SubjectsViewModel.factory(LocalContext.current),
+    viewModel: CursosViewModel = viewModel(
+        factory = CursosViewModel.factory(LocalContext.current),
     ),
 ) {
     val estado by viewModel.estadoUi.collectAsStateWithLifecycle()
@@ -95,7 +95,7 @@ fun SubjectsScreen(
     val estadoSnackbar = remember { SnackbarHostState() }
     val margen = margenHorizontalPantalla
 
-    var objetivoHoja by remember { mutableStateOf<ObjetivoSubjectSheet?>(null) }
+    var objetivoHoja by remember { mutableStateOf<ObjetivoCursoSheet?>(null) }
 
     val errorEliminar = stringResource(R.string.subject_delete_error)
     val etiquetaReintentar = stringResource(R.string.action_retry)
@@ -105,7 +105,7 @@ fun SubjectsScreen(
     LaunchedEffect(viewModel, errorEliminar, etiquetaReintentar) {
         viewModel.eventos.collectLatest { evento ->
             when (evento) {
-                is EventoMaterias.Fallo -> {
+                is EventoCursos.Fallo -> {
                     val resultado = withTimeoutOrNull(MovimientoNotally.snackbarMs) {
                         estadoSnackbar.showSnackbar(
                             message = errorEliminar,
@@ -159,16 +159,16 @@ fun SubjectsScreen(
                 ),
             ) {
                 item(key = "header") {
-                    EncabezadoMaterias(
-                        cantidadMaterias = estado.materias.size,
+                    EncabezadoCursos(
+                        cantidadCursos = estado.cursos.size,
                         totalPendientes = estado.totalPendientes,
                         entregasSemanales = estado.entregasSemanales,
                         mostrarConteos = estado.tieneDatosEnCache &&
-                            estado.materias.isNotEmpty(),
-                        mostrarAgregar = estado.materias.isNotEmpty(),
+                            estado.cursos.isNotEmpty(),
+                        mostrarAgregar = estado.cursos.isNotEmpty(),
                         alAgregar = {
                             viewModel.limpiarErrorFormulario()
-                            objetivoHoja = ObjetivoSubjectSheet.Nueva
+                            objetivoHoja = ObjetivoCursoSheet.Nueva
                         },
                         modifier = Modifier.padding(bottom = 16.dp),
                     )
@@ -205,7 +205,7 @@ fun SubjectsScreen(
                         }
                     }
 
-                    estado.materias.isEmpty() -> {
+                    estado.cursos.isEmpty() -> {
                         item(key = "empty") {
                             EmptyState(
                                 titulo = stringResource(R.string.subjects_empty_title),
@@ -213,7 +213,7 @@ fun SubjectsScreen(
                                 etiquetaAccion = stringResource(R.string.subjects_empty_cta),
                                 alAccionar = {
                                     viewModel.limpiarErrorFormulario()
-                                    objetivoHoja = ObjetivoSubjectSheet.Nueva
+                                    objetivoHoja = ObjetivoCursoSheet.Nueva
                                 },
                                 modifier = Modifier.padding(top = 48.dp),
                             )
@@ -222,14 +222,14 @@ fun SubjectsScreen(
 
                     else -> {
                         items(
-                            items = estado.materias,
-                            key = { it.materia.id },
+                            items = estado.cursos,
+                            key = { it.curso.id },
                         ) { tarjeta ->
-                            TarjetaMateria(
+                            TarjetaCurso(
                                 tarjeta = tarjeta,
                                 alPulsar = {
                                     viewModel.limpiarErrorFormulario()
-                                    objetivoHoja = ObjetivoSubjectSheet.Editar(tarjeta)
+                                    objetivoHoja = ObjetivoCursoSheet.Editar(tarjeta)
                                 },
                                 modifier = Modifier.padding(bottom = 12.dp),
                             )
@@ -242,23 +242,23 @@ fun SubjectsScreen(
 
     val objetivo = objetivoHoja
     if (objetivo != null) {
-        SubjectSheet(
+        CursoSheet(
             objetivo = objetivo,
-            colorPorDefecto = viewModel.colorPorDefecto(estado.materias.size),
+            colorPorDefecto = viewModel.colorPorDefecto(estado.cursos.size),
             errorFormulario = errorFormulario,
             alDescartar = {
                 viewModel.limpiarErrorFormulario()
                 objetivoHoja = null
             },
-            alGuardar = { existente: Materia?, nombre: String, color: Long ->
-                viewModel.guardarMateria(existente, nombre, color)
+            alGuardar = { existente: Curso?, nombre: String, color: Long ->
+                viewModel.guardarCurso(existente, nombre, color)
             },
             alGuardado = {
                 viewModel.limpiarErrorFormulario()
                 objetivoHoja = null
             },
-            alEliminar = { materia ->
-                viewModel.eliminarMateria(materia) {
+            alEliminar = { curso ->
+                viewModel.eliminarCurso(curso) {
                     viewModel.limpiarErrorFormulario()
                     objetivoHoja = null
                 }
@@ -269,8 +269,8 @@ fun SubjectsScreen(
 }
 
 @Composable
-private fun EncabezadoMaterias(
-    cantidadMaterias: Int,
+private fun EncabezadoCursos(
+    cantidadCursos: Int,
     totalPendientes: Int,
     entregasSemanales: Int,
     mostrarConteos: Boolean,
@@ -300,8 +300,8 @@ private fun EncabezadoMaterias(
                 Text(
                     text = pluralStringResource(
                         R.plurals.subjects_summary,
-                        cantidadMaterias,
-                        cantidadMaterias,
+                        cantidadCursos,
+                        cantidadCursos,
                         textoPendientes,
                     ),
                     style = MaterialTheme.typography.bodySmall,
@@ -320,14 +320,14 @@ private fun EncabezadoMaterias(
             }
         }
         if (mostrarAgregar) {
-            BotonAgregarMateria(alPulsar = alAgregar)
+            BotonAgregarCurso(alPulsar = alAgregar)
         }
     }
 }
 
-/** "+" de Materias: 52 dp circular, `primary`/`onPrimary`, sin sombra (§7.10). */
+/** "+" de Cursos: 52 dp circular, `primary`/`onPrimary`, sin sombra (§7.10). */
 @Composable
-private fun BotonAgregarMateria(alPulsar: () -> Unit) {
+private fun BotonAgregarCurso(alPulsar: () -> Unit) {
     val colores = MaterialTheme.colorScheme
     var enfocado by remember { mutableStateOf(false) }
     val descripcion = stringResource(R.string.subjects_new)
@@ -352,13 +352,13 @@ private fun BotonAgregarMateria(alPulsar: () -> Unit) {
 }
 
 @Composable
-private fun TarjetaMateria(
-    tarjeta: TarjetaMateriaUi,
+private fun TarjetaCurso(
+    tarjeta: TarjetaCursoUi,
     alPulsar: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colores = MaterialTheme.colorScheme
-    val acento = colorMateria(tarjeta.materia.color)
+    val acento = colorCurso(tarjeta.curso.color)
     val fuenteInteraccion = remember { MutableInteractionSource() }
     val pulsada by fuenteInteraccion.collectIsPressedAsState()
     var enfocada by remember { mutableStateOf(false) }
@@ -366,12 +366,12 @@ private fun TarjetaMateria(
     val contenedor by animateColorAsState(
         targetValue = if (pulsada) colores.surfaceContainerLow else colores.surface,
         animationSpec = tween(MovimientoNotally.colorMs),
-        label = "subjectCardContainer",
+        label = "cursoCardContainer",
     )
     val colorBorde by animateColorAsState(
         targetValue = if (pulsada) colores.outline else colores.outlineVariant,
         animationSpec = tween(MovimientoNotally.colorMs),
-        label = "subjectCardBorder",
+        label = "cursoCardBorder",
     )
 
     val completa = tarjeta.totalTareas > 0 && tarjeta.tareasHechas == tarjeta.totalTareas
@@ -413,7 +413,7 @@ private fun TarjetaMateria(
         )
     }
     val etiquetaAbrir = stringResource(R.string.a11y_editSubject)
-    val descripcion = "${tarjeta.materia.nombre}. $descripcionProgreso."
+    val descripcion = "${tarjeta.curso.nombre}. $descripcionProgreso."
 
     Surface(
         modifier = modifier
@@ -449,7 +449,7 @@ private fun TarjetaMateria(
             Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = tarjeta.materia.nombre,
+                    text = tarjeta.curso.nombre,
                     style = MaterialTheme.typography.titleMedium,
                     color = colores.onSurface,
                     maxLines = 2,

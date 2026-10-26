@@ -9,11 +9,11 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import com.example.notally.R
-import com.example.notally.data.ColoresMateria
+import com.example.notally.data.ColoresCurso
 import kotlin.math.pow
 
 // ---------------------------------------------------------------------------
-// Helpers de distancia de color (solo para resolver acentos de materia).
+// Helpers de distancia de color (solo para resolver acentos de curso).
 // ---------------------------------------------------------------------------
 
 private fun rgb(argb: Long): Triple<Int, Int, Int> = Triple(
@@ -190,19 +190,19 @@ internal val EsquemaColoresOscuro: ColorScheme = darkColorScheme(
 )
 
 // ---------------------------------------------------------------------------
-// Acentos de materia (§2.5). Seis swatches fijos, con variante clara y oscura.
+// Acentos de curso (§2.5). Seis swatches fijos, con variante clara y oscura.
 // El argb almacenado por el usuario es el hex claro del swatch.
 // ---------------------------------------------------------------------------
 
 /**
- * Un swatch de materia.
+ * Un swatch de curso.
  *
- * [argb] es el valor canónico que se guarda en `Subject.colorArgb` (hex claro).
+ * [argb] es el valor canónico que se guarda en `Curso.colorArgb` (hex claro).
  * [light] / [dark] son los colores de identificación sobre superficie; los
  * contenedores se usan en la hoja de edición y en selección de swatch.
  */
 @Immutable
-data class MuestraMateria(
+data class MuestraCurso(
     val argb: Long,
     @param:StringRes val recursoNombre: Int,
     val claro: Color,
@@ -218,51 +218,51 @@ data class MuestraMateria(
 }
 
 /** Los seis acentos, en el orden de la tabla del documento. */
-val MuestrasMaterias: List<MuestraMateria> = listOf(
-    MuestraMateria(
-        argb = ColoresMateria.INDIGO,
+val MuestrasCursos: List<MuestraCurso> = listOf(
+    MuestraCurso(
+        argb = ColoresCurso.INDIGO,
         recursoNombre = R.string.subject_color_indigo,
-        claro = Color(ColoresMateria.INDIGO),
+        claro = Color(ColoresCurso.INDIGO),
         oscuro = Color(0xFFAFC3EE),
         contenedorClaro = Color(0xFFE9ECF5),
         contenedorOscuro = Color(0xFF222B3F),
     ),
-    MuestraMateria(
-        argb = ColoresMateria.FOREST,
+    MuestraCurso(
+        argb = ColoresCurso.FOREST,
         recursoNombre = R.string.subject_color_forest,
-        claro = Color(ColoresMateria.FOREST),
+        claro = Color(ColoresCurso.FOREST),
         oscuro = Color(0xFF9FC9B2),
         contenedorClaro = Color(0xFFE6EFE8),
         contenedorOscuro = Color(0xFF1D2C24),
     ),
-    MuestraMateria(
-        argb = ColoresMateria.TERRACOTTA,
+    MuestraCurso(
+        argb = ColoresCurso.TERRACOTTA,
         recursoNombre = R.string.subject_color_terracotta,
-        claro = Color(ColoresMateria.TERRACOTTA),
+        claro = Color(ColoresCurso.TERRACOTTA),
         oscuro = Color(0xFFE7AE97),
         contenedorClaro = Color(0xFFF4E8E2),
         contenedorOscuro = Color(0xFF33231C),
     ),
-    MuestraMateria(
-        argb = ColoresMateria.LIME,
+    MuestraCurso(
+        argb = ColoresCurso.LIME,
         recursoNombre = R.string.subject_color_lime,
-        claro = Color(ColoresMateria.LIME),
+        claro = Color(ColoresCurso.LIME),
         oscuro = Color(0xFFD8E5A0),
         contenedorClaro = Color(0xFFF3F5E0),
         contenedorOscuro = Color(0xFF2A2B16),
     ),
-    MuestraMateria(
-        argb = ColoresMateria.LAVENDER,
+    MuestraCurso(
+        argb = ColoresCurso.LAVENDER,
         recursoNombre = R.string.subject_color_lavender,
-        claro = Color(ColoresMateria.LAVENDER),
+        claro = Color(ColoresCurso.LAVENDER),
         oscuro = Color(0xFFCAA8B8),
         contenedorClaro = Color(0xFFF3EDF5),
         contenedorOscuro = Color(0xFF2B2233),
     ),
-    MuestraMateria(
-        argb = ColoresMateria.PETROL,
+    MuestraCurso(
+        argb = ColoresCurso.PETROL,
         recursoNombre = R.string.subject_color_petrol,
-        claro = Color(ColoresMateria.PETROL),
+        claro = Color(ColoresCurso.PETROL),
         oscuro = Color(0xFF96CDD6),
         contenedorClaro = Color(0xFFE3EEEE),
         contenedorOscuro = Color(0xFF182B2E),
@@ -270,7 +270,7 @@ val MuestrasMaterias: List<MuestraMateria> = listOf(
 )
 
 /**
- * Resuelve el acento de una materia para el tema actual.
+ * Resuelve el acento de un curso para el tema actual.
  *
  * Los valores guardados con anterioridad y los de bases anteriores pueden no
  * coincidir con los seis swatches; en ese caso se elige el swatch más cercano en RGB para que la
@@ -278,11 +278,11 @@ val MuestrasMaterias: List<MuestraMateria> = listOf(
  * suelto fuera de la paleta).
  */
 @Immutable
-class PaletaMaterias internal constructor(
+class PaletaCursos internal constructor(
     val esOscuro: Boolean,
-    val muestras: List<MuestraMateria> = MuestrasMaterias,
+    val muestras: List<MuestraCurso> = MuestrasCursos,
 ) {
-    private fun resolver(argb: Long): MuestraMateria {
+    private fun resolver(argb: Long): MuestraCurso {
         val normalized = argb and 0xFFFFFFFFL
         muestras.firstOrNull { it.argb == normalized }?.let { return it }
         // Algunos datos antiguos guardan el hex oscuro del swatch; también se acepta.
@@ -291,26 +291,26 @@ class PaletaMaterias internal constructor(
         return muestras.minBy { distanciaColor(normalized, it.argb) }
     }
 
-    fun colorMateria(argb: Long): Color = resolver(argb).acento(esOscuro)
+    fun colorCurso(argb: Long): Color = resolver(argb).acento(esOscuro)
 
-    fun contenedorMateria(argb: Long): Color = resolver(argb).contenedor(esOscuro)
+    fun contenedorCurso(argb: Long): Color = resolver(argb).contenedor(esOscuro)
 
-    fun sobreContenedorMateria(argb: Long): Color = resolver(argb).sobreContenedor(esOscuro)
+    fun sobreContenedorCurso(argb: Long): Color = resolver(argb).sobreContenedor(esOscuro)
 
-    fun recursoNombreMateria(argb: Long): Int = resolver(argb).recursoNombre
+    fun recursoNombreCurso(argb: Long): Int = resolver(argb).recursoNombre
 
-    fun muestraMateria(argb: Long): MuestraMateria = resolver(argb)
+    fun muestraCurso(argb: Long): MuestraCurso = resolver(argb)
 
     companion object {
-        val Claro = PaletaMaterias(esOscuro = false)
-        val Oscuro = PaletaMaterias(esOscuro = true)
+        val Claro = PaletaCursos(esOscuro = false)
+        val Oscuro = PaletaCursos(esOscuro = true)
     }
 }
 
-/** Paleta de materia del tema activo. */
-val LocalPaletaMaterias = staticCompositionLocalOf { PaletaMaterias.Claro }
+/** Paleta de curso del tema activo. */
+val LocalPaletaCursos = staticCompositionLocalOf { PaletaCursos.Claro }
 
-/** Color de acento de materia resuelto para el tema actual. */
+/** Color de acento de curso resuelto para el tema actual. */
 @androidx.compose.runtime.Composable
 @androidx.compose.runtime.ReadOnlyComposable
-fun colorMateria(argb: Long): Color = LocalPaletaMaterias.current.colorMateria(argb)
+fun colorCurso(argb: Long): Color = LocalPaletaCursos.current.colorCurso(argb)

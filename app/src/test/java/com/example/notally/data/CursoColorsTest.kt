@@ -2,16 +2,16 @@ package com.example.notally.data
 
 import androidx.compose.ui.graphics.Color
 import com.example.notally.R
-import com.example.notally.ui.theme.MuestrasMaterias
+import com.example.notally.ui.theme.MuestrasCursos
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-class SubjectColorsTest {
+class CursoColorsTest {
 
     @Test
     fun `hay seis acentos opacos y distintos`() {
-        val colores = ColoresMateria.todos
+        val colores = ColoresCurso.todos
 
         assertEquals(6, colores.size)
         assertEquals(6, colores.distinct().size)
@@ -22,15 +22,15 @@ class SubjectColorsTest {
     fun `los valores respetan la tabla del documento`() {
         assertEquals(
             listOf(0xFF3A5A9EL, 0xFF2F6A4EL, 0xFF99482EL, 0xFF5F7300L, 0xFF7A5F87L, 0xFF1D5F6AL),
-            ColoresMateria.todos,
+            ColoresCurso.todos,
         )
     }
 
     @Test
     fun `las muestras conservan orden nombres y variantes del documento`() {
-        val muestras = MuestrasMaterias
+        val muestras = MuestrasCursos
 
-        assertEquals(ColoresMateria.todos, muestras.map { it.argb })
+        assertEquals(ColoresCurso.todos, muestras.map { it.argb })
         assertEquals(
             listOf(
                 R.string.subject_color_indigo,

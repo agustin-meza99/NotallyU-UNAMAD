@@ -45,7 +45,7 @@ import com.example.notally.ui.util.DateFormat
 fun FocalTaskCard(
     titulo: String,
     antetitulo: String,
-    textoMateria: String,
+    textoCurso: String,
     textoEntrega: String,
     prioridad: Prioridad,
     modifier: Modifier = Modifier,
@@ -65,7 +65,7 @@ fun FocalTaskCard(
     val descripcion = stringResource(
         R.string.a11y_featured_task,
         titulo,
-        textoMateria,
+        textoCurso,
         textoEntrega,
         etiquetaPrioridad,
     )
@@ -111,7 +111,7 @@ fun FocalTaskCard(
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                text = textoMateria + separador + textoEntrega,
+                text = textoCurso + separador + textoEntrega,
                 style = MaterialTheme.typography.bodySmall,
                 color = colores.inverseOnSurface,
             )

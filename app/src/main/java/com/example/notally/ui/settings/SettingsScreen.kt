@@ -51,7 +51,7 @@ import com.example.notally.ui.theme.margenHorizontalPantalla
 import com.example.notally.ui.util.DateFormat
 
 /**
- * Pantalla Ajustes (§7.12).
+ * Pantalla Settings (§7.12).
  *
  * Cambiar el tema no reinicia la pantalla ni pierde el scroll: el estado del
  * `LazyColumn` y el `ViewModel` viven por encima del `TemaNotally`.
@@ -63,7 +63,7 @@ fun SettingsScreen(
         factory = SettingsViewModel.factory(LocalContext.current),
     ),
 ) {
-    val ajustes by viewModel.ajustes.collectAsStateWithLifecycle()
+    val settings by viewModel.settings.collectAsStateWithLifecycle()
     val margen = margenHorizontalPantalla
     val contexto = LocalContext.current
     var mostrarHojaTema by remember { mutableStateOf(false) }
@@ -103,9 +103,9 @@ fun SettingsScreen(
                 EtiquetaSeccion(stringResource(R.string.settings_appearance))
             }
             item(key = "theme_row") {
-                FilaAjustes(
+                FilaSettings(
                     etiqueta = stringResource(R.string.settings_theme),
-                    valor = etiquetaTema(ajustes.modoTema),
+                    valor = etiquetaTema(settings.modoTema),
                     alPulsar = { mostrarHojaTema = true },
                 )
             }
@@ -117,10 +117,10 @@ fun SettingsScreen(
                 )
             }
             item(key = "week_row") {
-                FilaInterruptorAjustes(
+                FilaInterruptorSettings(
                     etiqueta = stringResource(R.string.settings_week),
                     soporte = stringResource(R.string.settings_week_support),
-                    marcado = ajustes.semanaEmpiezaLunes,
+                    marcado = settings.semanaEmpiezaLunes,
                     activo = true,
                     alCambiar = viewModel::cambiarSemanaEmpiezaLunes,
                 )
@@ -152,7 +152,7 @@ fun SettingsScreen(
 
     if (mostrarHojaTema) {
         HojaTema(
-            actual = ajustes.modoTema,
+            actual = settings.modoTema,
             alDescartar = { mostrarHojaTema = false },
             alSeleccionar = { modo ->
                 viewModel.cambiarModoTema(modo)
@@ -176,7 +176,7 @@ private fun EtiquetaSeccion(
 }
 
 @Composable
-private fun FilaAjustes(
+private fun FilaSettings(
     etiqueta: String,
     valor: String? = null,
     soporte: String? = null,
@@ -227,7 +227,7 @@ private fun FilaAjustes(
 }
 
 @Composable
-private fun FilaInterruptorAjustes(
+private fun FilaInterruptorSettings(
     etiqueta: String,
     soporte: String?,
     marcado: Boolean,

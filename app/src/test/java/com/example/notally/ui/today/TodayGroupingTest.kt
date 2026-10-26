@@ -1,7 +1,7 @@
 package com.example.notally.ui.today
 
 import com.example.notally.data.model.Estado
-import com.example.notally.data.model.Materia
+import com.example.notally.data.model.Curso
 import com.example.notally.data.model.Prioridad
 import com.example.notally.data.model.Tarea
 import java.time.LocalDate
@@ -26,12 +26,12 @@ class TodayGroupingTest {
 
     private val ahora = epoch("2026-10-25", "12:00")
 
-    private val materia = Materia(
+    private val curso = Curso(
         id = 1L,
         nombre = "Cálculo diferencial",
         color = 0xFF3A5A9E,
     )
-    private val materias = mapOf(1L to materia)
+    private val cursos = mapOf(1L to curso)
 
     private fun tarea(
         id: Long,
@@ -41,11 +41,11 @@ class TodayGroupingTest {
         prioridad: Prioridad = Prioridad.MEDIA,
         creadoEn: Long = epoch("2026-10-01", "08:00"),
         completadoEn: Long? = null,
-        materiaId: Long? = 1L,
+        cursoId: Long? = 1L,
     ) = Tarea(
         id = id,
         titulo = titulo,
-        materiaId = materiaId,
+        cursoId = cursoId,
         entregaEn = entregaEn,
         prioridad = prioridad,
         estado = estado,
@@ -154,7 +154,7 @@ class TodayGroupingTest {
             proximaMuyLejana,
         ),
         tareasActivas = todasLasTareas,
-        materiasPorId = materias,
+        cursosPorId = cursos,
     )
 
     @Test
@@ -172,7 +172,7 @@ class TodayGroupingTest {
         val hoy = grupos().hoy
 
         assertEquals(listOf(3L), hoy.map { it.tarea.id })
-        assertEquals(materia, hoy.single().materia)
+        assertEquals(curso, hoy.single().curso)
     }
 
     @Test
@@ -197,7 +197,7 @@ class TodayGroupingTest {
             tareasDelDia = emptyList(),
             tareasProximas = listOf(proximaLejana, proximaMuyLejana),
             tareasActivas = listOf(proximaLejana, proximaMuyLejana),
-            materiasPorId = materias,
+            cursosPorId = cursos,
         )
 
         assertEquals(listOf(12L), soloFuturoLejano.proximas.map { it.tarea.id })
@@ -239,7 +239,7 @@ class TodayGroupingTest {
             tareasDelDia = emptyList(),
             tareasProximas = emptyList(),
             tareasActivas = emptyList(),
-            materiasPorId = emptyMap(),
+            cursosPorId = emptyMap(),
         )
 
         assertTrue(vacio.estaVacio)
@@ -295,7 +295,7 @@ class TodayGroupingTest {
             tareasDelDia = listOf(hoyCompletada),
             tareasProximas = emptyList(),
             tareasActivas = listOf(hoyCompletada, completadaAntigua),
-            materiasPorId = materias,
+            cursosPorId = cursos,
         )
 
         val secciones = construirSeccionesHoy(soloCompletadas, FiltroHoy.TODAS)
@@ -340,7 +340,7 @@ class TodayGroupingTest {
             tareasDelDia = emptyList(),
             tareasProximas = emptyList(),
             tareasActivas = listOf(altaAntigua, bajaReciente),
-            materiasPorId = materias,
+            cursosPorId = cursos,
         )
 
         assertEquals(20L, resultado.focal?.tareaId)
@@ -368,7 +368,7 @@ class TodayGroupingTest {
             tareasDelDia = listOf(hoyAlta),
             tareasProximas = emptyList(),
             tareasActivas = listOf(atrasadaBaja, hoyAlta),
-            materiasPorId = materias,
+            cursosPorId = cursos,
         )
 
         assertEquals(22L, resultado.focal?.tareaId)
@@ -383,7 +383,7 @@ class TodayGroupingTest {
             tareasDelDia = listOf(hoyTarde),
             tareasProximas = emptyList(),
             tareasActivas = listOf(hoyTarde),
-            materiasPorId = materias,
+            cursosPorId = cursos,
         )
 
         assertEquals(TipoSeccionHoy.HOY, soloHoy.focal?.grupo)
@@ -403,7 +403,7 @@ class TodayGroupingTest {
             tareasDelDia = emptyList(),
             tareasProximas = emptyList(),
             tareasActivas = listOf(sinHora),
-            materiasPorId = materias,
+            cursosPorId = cursos,
         )
 
         assertEquals(TipoSeccionHoy.SIN_HORA, soloSinHora.focal?.grupo)
@@ -438,7 +438,7 @@ class TodayGroupingTest {
             tareasDelDia = emptyList(),
             tareasProximas = emptyList(),
             tareasActivas = listOf(completadaAntigua, sinHoraCompletadaAntigua),
-            materiasPorId = materias,
+            cursosPorId = cursos,
         )
 
         // "Todas" sigue contando solo las secciones de hoy (§7.7)...
@@ -482,7 +482,7 @@ class TodayGroupingTest {
             tareasDelDia = listOf(hoyTarde, hoyCompletada),
             tareasProximas = emptyList(),
             tareasActivas = todasLasTareas,
-            materiasPorId = materias,
+            cursosPorId = cursos,
             semanaEmpiezaLunes = false,
         ).diasSemana
 

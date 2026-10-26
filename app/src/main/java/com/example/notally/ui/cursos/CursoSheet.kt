@@ -1,4 +1,4 @@
-package com.example.notally.ui.subjects
+package com.example.notally.ui.cursos
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -48,20 +48,20 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.example.notally.R
-import com.example.notally.data.model.Materia
+import com.example.notally.data.model.Curso
 import com.example.notally.ui.theme.FormaNotally
-import com.example.notally.ui.theme.LocalPaletaMaterias
-import com.example.notally.ui.theme.MuestrasMaterias
+import com.example.notally.ui.theme.LocalPaletaCursos
+import com.example.notally.ui.theme.MuestrasCursos
 import kotlinx.coroutines.launch
 
-/** Qué muestra la hoja de materia: alta o edición de una tarjeta existente. */
-sealed interface ObjetivoSubjectSheet {
-    data object Nueva : ObjetivoSubjectSheet
-    data class Editar(val tarjeta: TarjetaMateriaUi) : ObjetivoSubjectSheet
+/** Qué muestra la hoja de curso: alta o edición de una tarjeta existente. */
+sealed interface ObjetivoCursoSheet {
+    data object Nueva : ObjetivoCursoSheet
+    data class Editar(val tarjeta: TarjetaCursoUi) : ObjetivoCursoSheet
 }
 
 /**
- * Hoja "Editar materia" / "Nueva materia" (§7.4, §7.9).
+ * Hoja "Editar curso" / "Nuevo curso" (§7.4, §7.9).
  *
  * La validación de vacío es local (deshabilita "Guardar"); el duplicado lo
  * detecta la base (`SQLiteConstraintException`) y se muestra como error
@@ -69,30 +69,30 @@ sealed interface ObjetivoSubjectSheet {
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SubjectSheet(
-    objetivo: ObjetivoSubjectSheet,
+fun CursoSheet(
+    objetivo: ObjetivoCursoSheet,
     colorPorDefecto: Long,
-    errorFormulario: ErrorFormularioMateria?,
+    errorFormulario: ErrorFormularioCurso?,
     alDescartar: () -> Unit,
-    alGuardar: suspend (existente: Materia?, nombre: String, color: Long) ->
-        ResultadoGuardarMateria,
+    alGuardar: suspend (existente: Curso?, nombre: String, color: Long) ->
+        ResultadoGuardarCurso,
     alGuardado: () -> Unit,
-    alEliminar: (Materia) -> Unit,
+    alEliminar: (Curso) -> Unit,
     alLimpiarError: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val paleta = LocalPaletaMaterias.current
-    val edicion = objetivo as? ObjetivoSubjectSheet.Editar
-    val claveObjetivo = edicion?.tarjeta?.materia?.id?.toString() ?: "new"
+    val paleta = LocalPaletaCursos.current
+    val edicion = objetivo as? ObjetivoCursoSheet.Editar
+    val claveObjetivo = edicion?.tarjeta?.curso?.id?.toString() ?: "new"
     var nombre by rememberSaveable(claveObjetivo) {
-        mutableStateOf(edicion?.tarjeta?.materia?.nombre.orEmpty())
+        mutableStateOf(edicion?.tarjeta?.curso?.nombre.orEmpty())
     }
     // Se normaliza al swatch canónico del tema: un color viejo fuera de los
     // seis tokens se marca y se guarda como su equivalente más cercano.
     var color by rememberSaveable(claveObjetivo) {
         mutableStateOf(
-            paleta.muestraMateria(
-                edicion?.tarjeta?.materia?.color ?: colorPorDefecto,
+            paleta.muestraCurso(
+                edicion?.tarjeta?.curso?.color ?: colorPorDefecto,
             ).argb,
         )
     }
@@ -109,7 +109,7 @@ fun SubjectSheet(
     } else {
         R.string.subject_edit_title
     }
-    val errorDuplicado = errorFormulario == ErrorFormularioMateria.DUPLICADO
+    val errorDuplicado = errorFormulario == ErrorFormularioCurso.DUPLICADO
 
     ModalBottomSheet(
         onDismissRequest = alDescartar,
@@ -138,13 +138,13 @@ fun SubjectSheet(
                 label = { Text(stringResource(R.string.subject_name)) },
                 singleLine = true,
                 isError = errorDuplicado ||
-                    errorFormulario == ErrorFormularioMateria.GENERICO,
+                    errorFormulario == ErrorFormularioCurso.GENERICO,
                 supportingText = when (errorFormulario) {
-                    ErrorFormularioMateria.DUPLICADO -> {
+                    ErrorFormularioCurso.DUPLICADO -> {
                         { Text(stringResource(R.string.subject_name_duplicate)) }
                     }
 
-                    ErrorFormularioMateria.GENERICO -> {
+                    ErrorFormularioCurso.GENERICO -> {
                         { Text(stringResource(R.string.subject_save_error)) }
                     }
 
@@ -190,18 +190,18 @@ fun SubjectSheet(
                 Spacer(Modifier.width(8.dp))
                 TextButton(
                     onClick = {
-                        if (!SubjectFormRules.puedeEnviar(nombre, guardando)) {
+                        if (!CursoFormRules.puedeEnviar(nombre, guardando)) {
                             return@TextButton
                         }
                         guardando = true
                         alcance.launch {
                             try {
                                 val resultado = alGuardar(
-                                    edicion?.tarjeta?.materia,
+                                    edicion?.tarjeta?.curso,
                                     nombre.trim(),
-                                    paleta.muestraMateria(color).argb,
+                                    paleta.muestraCurso(color).argb,
                                 )
-                                if (SubjectFormRules.termino(resultado)) alGuardado()
+                                if (CursoFormRules.termino(resultado)) alGuardado()
                             } finally {
                                 // Se reactiva siempre, también tras un segundo
                                 // fallo con el mismo error.
@@ -209,7 +209,7 @@ fun SubjectSheet(
                             }
                         }
                     },
-                    enabled = SubjectFormRules.puedeEnviar(nombre, guardando),
+                    enabled = CursoFormRules.puedeEnviar(nombre, guardando),
                 ) {
                     Text(stringResource(R.string.action_save))
                 }
@@ -218,13 +218,13 @@ fun SubjectSheet(
     }
 
     if (confirmarEliminar && edicion != null) {
-        DialogoEliminarMateria(
-            nombre = edicion.tarjeta.materia.nombre,
+        DialogoEliminarCurso(
+            nombre = edicion.tarjeta.curso.nombre,
             cantidadTareas = edicion.tarjeta.totalTareas,
             alDescartar = { confirmarEliminar = false },
             alConfirmar = {
                 confirmarEliminar = false
-                alEliminar(edicion.tarjeta.materia)
+                alEliminar(edicion.tarjeta.curso)
             },
         )
     }
@@ -236,14 +236,14 @@ private fun FilaMuestras(
     colorSeleccionado: Long,
     alSeleccionar: (Long) -> Unit,
 ) {
-    val paleta = LocalPaletaMaterias.current
-    val resuelto = paleta.muestraMateria(colorSeleccionado)
+    val paleta = LocalPaletaCursos.current
+    val resuelto = paleta.muestraCurso(colorSeleccionado)
     androidx.compose.foundation.layout.FlowRow(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        MuestrasMaterias.forEach { muestra ->
+        MuestrasCursos.forEach { muestra ->
             val nombre = stringResource(muestra.recursoNombre)
             val seleccionada = muestra.argb == resuelto.argb
             val relleno = muestra.contenedor(paleta.esOscuro)
@@ -289,7 +289,7 @@ private fun FilaMuestras(
 }
 
 @Composable
-private fun DialogoEliminarMateria(
+private fun DialogoEliminarCurso(
     nombre: String,
     cantidadTareas: Int,
     alDescartar: () -> Unit,

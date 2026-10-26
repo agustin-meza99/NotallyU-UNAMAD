@@ -10,14 +10,14 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.notally.R
 import com.example.notally.contenedorNotally
 import com.example.notally.data.model.Estado
-import com.example.notally.data.model.Materia
+import com.example.notally.data.model.Curso
 import com.example.notally.data.model.Prioridad
 import com.example.notally.data.model.Subtarea
 import com.example.notally.data.model.Tarea
 import com.example.notally.data.model.TareaConSubtareas
-import com.example.notally.data.repository.MateriasRepository
+import com.example.notally.data.repository.CursosRepository
 import com.example.notally.data.repository.TareasRepository
-import com.example.notally.ui.theme.MuestrasMaterias
+import com.example.notally.ui.theme.MuestrasCursos
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -49,7 +49,7 @@ data class BorradorTarea(
     val tareaId: Long = 0L,
     val titulo: String = "",
     val notas: String = "",
-    val materiaId: Long? = null,
+    val cursoId: Long? = null,
     val entregaEn: Long? = null,
     val prioridad: Prioridad = Prioridad.MEDIA,
     val estado: Estado = Estado.PENDIENTE,
@@ -59,8 +59,8 @@ data class BorradorTarea(
     val errorGuardado: Boolean = false,
 )
 
-/** Error al crear una materia desde la hoja del editor. */
-enum class ErrorMateriaEditor {
+/** Error al crear un curso desde la hoja del editor. */
+enum class ErrorCursoEditor {
     DUPLICADO,
     GENERICO,
 }
@@ -86,7 +86,7 @@ sealed interface EventoEditor {
 class EditorViewModel(
     private val tareaId: Long?,
     private val repositorioTareas: TareasRepository,
-    private val repositorioMaterias: MateriasRepository,
+    private val repositorioCursos: CursosRepository,
     private val etiquetaSinTitulo: String,
     private val reloj: () -> Long = System::currentTimeMillis,
 ) : ViewModel() {
@@ -96,11 +96,11 @@ class EditorViewModel(
     )
     val estado: StateFlow<BorradorTarea> = _estado.asStateFlow()
 
-    private val _materias = MutableStateFlow<List<Materia>>(emptyList())
-    val materias: StateFlow<List<Materia>> = _materias.asStateFlow()
+    private val _cursos = MutableStateFlow<List<Curso>>(emptyList())
+    val cursos: StateFlow<List<Curso>> = _cursos.asStateFlow()
 
-    private val _errorNuevaMateria = MutableStateFlow<ErrorMateriaEditor?>(null)
-    val errorNuevaMateria: StateFlow<ErrorMateriaEditor?> = _errorNuevaMateria.asStateFlow()
+    private val _errorNuevoCurso = MutableStateFlow<ErrorCursoEditor?>(null)
+    val errorNuevoCurso: StateFlow<ErrorCursoEditor?> = _errorNuevoCurso.asStateFlow()
 
     private val _eventos = MutableSharedFlow<EventoEditor>(extraBufferCapacity = 8)
     val eventos: SharedFlow<EventoEditor> = _eventos.asSharedFlow()
@@ -117,7 +117,7 @@ class EditorViewModel(
     private var eliminada = false
 
     init {
-        observarMaterias()
+        observarCursos()
         if (tareaId != null) cargar(tareaId) else _estado.update { it.copy(cargando = false) }
     }
 
@@ -147,7 +147,7 @@ class EditorViewModel(
             tareaId = instantanea.tarea.id,
             titulo = instantanea.tarea.titulo,
             notas = instantanea.tarea.notas,
-            materiaId = instantanea.tarea.materiaId,
+            cursoId = instantanea.tarea.cursoId,
             entregaEn = instantanea.tarea.entregaEn,
             prioridad = instantanea.tarea.prioridad,
             estado = instantanea.tarea.estado,
@@ -162,11 +162,11 @@ class EditorViewModel(
         cargar(id)
     }
 
-    private fun observarMaterias() {
+    private fun observarCursos() {
         viewModelScope.launch {
-            repositorioMaterias.observarMaterias()
+            repositorioCursos.observarCursos()
                 .catch { }
-                .collect { _materias.value = it }
+                .collect { _cursos.value = it }
         }
     }
 
@@ -178,7 +178,7 @@ class EditorViewModel(
 
     fun cambiarNotas(valor: String) = actualizarBorrador { it.copy(notas = valor) }
 
-    fun cambiarMateria(materiaId: Long?) = actualizarBorrador { it.copy(materiaId = materiaId) }
+    fun cambiarCurso(cursoId: Long?) = actualizarBorrador { it.copy(cursoId = cursoId) }
 
     fun cambiarEntrega(entregaEn: Long?) = actualizarBorrador { it.copy(entregaEn = entregaEn) }
 
@@ -252,7 +252,7 @@ class EditorViewModel(
                     Tarea(
                         titulo = EditorRules.tituloVisible(borrador.titulo, etiquetaSinTitulo),
                         notas = borrador.notas,
-                        materiaId = borrador.materiaId,
+                        cursoId = borrador.cursoId,
                         entregaEn = borrador.entregaEn,
                         prioridad = borrador.prioridad,
                         estado = borrador.estado,
@@ -270,7 +270,7 @@ class EditorViewModel(
                 val actualizada = base.copy(
                     titulo = EditorRules.tituloVisible(borrador.titulo, etiquetaSinTitulo),
                     notas = borrador.notas,
-                    materiaId = borrador.materiaId,
+                    cursoId = borrador.cursoId,
                     entregaEn = borrador.entregaEn,
                     prioridad = borrador.prioridad,
                     estado = borrador.estado,
@@ -303,7 +303,7 @@ class EditorViewModel(
                 Tarea(
                     titulo = EditorRules.tituloVisible(actual.titulo, etiquetaSinTitulo),
                     notas = actual.notas,
-                    materiaId = actual.materiaId,
+                    cursoId = actual.cursoId,
                     entregaEn = actual.entregaEn,
                     prioridad = actual.prioridad,
                     estado = actual.estado,
@@ -413,20 +413,20 @@ class EditorViewModel(
     }
 
     // ---------------------------------------------------------------------
-    // Materias y eliminación
+    // Cursos y eliminación
     // ---------------------------------------------------------------------
 
-    fun colorMateriaPorDefecto(): Long {
-        val muestras = MuestrasMaterias
-        return muestras[_materias.value.size % muestras.size].argb
+    fun colorCursoPorDefecto(): Long {
+        val muestras = MuestrasCursos
+        return muestras[_cursos.value.size % muestras.size].argb
     }
 
-    fun limpiarErrorNuevaMateria() {
-        _errorNuevaMateria.value = null
+    fun limpiarErrorNuevoCurso() {
+        _errorNuevoCurso.value = null
     }
 
-    /** Crea una materia y la selecciona. [alCrear] se ejecuta en el hilo principal. */
-    fun crearMateriaYSeleccionar(
+    /** Crea un curso y la selecciona. [alCrear] se ejecuta en el hilo principal. */
+    fun crearCursoYSeleccionar(
         nombre: String,
         color: Long,
         alCrear: () -> Unit,
@@ -435,19 +435,19 @@ class EditorViewModel(
         if (recortado.isEmpty()) return
         viewModelScope.launch {
             try {
-                val id = repositorioMaterias.crearMateria(
+                val id = repositorioCursos.crearCurso(
                     nombre = recortado,
                     color = color,
                 )
-                _errorNuevaMateria.value = null
-                actualizarBorrador { it.copy(materiaId = id) }
+                _errorNuevoCurso.value = null
+                actualizarBorrador { it.copy(cursoId = id) }
                 alCrear()
             } catch (cancelada: CancellationException) {
                 throw cancelada
             } catch (_: SQLiteConstraintException) {
-                _errorNuevaMateria.value = ErrorMateriaEditor.DUPLICADO
+                _errorNuevoCurso.value = ErrorCursoEditor.DUPLICADO
             } catch (_: Exception) {
-                _errorNuevaMateria.value = ErrorMateriaEditor.GENERICO
+                _errorNuevoCurso.value = ErrorCursoEditor.GENERICO
             }
         }
     }
@@ -488,7 +488,7 @@ class EditorViewModel(
                     EditorViewModel(
                         tareaId = tareaId,
                         repositorioTareas = contenedor.repositorioTareas,
-                        repositorioMaterias = contenedor.repositorioMaterias,
+                        repositorioCursos = contenedor.repositorioCursos,
                         etiquetaSinTitulo = context.getString(R.string.editor_untitled),
                     )
                 }

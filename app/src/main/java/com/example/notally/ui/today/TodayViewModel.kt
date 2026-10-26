@@ -9,10 +9,10 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.notally.contenedorNotally
 import com.example.notally.data.DateRanges
 import com.example.notally.data.model.Estado
-import com.example.notally.data.model.Materia
+import com.example.notally.data.model.Curso
 import com.example.notally.data.model.Tarea
-import com.example.notally.data.repository.AjustesRepository
-import com.example.notally.data.repository.MateriasRepository
+import com.example.notally.data.repository.SettingsRepository
+import com.example.notally.data.repository.CursosRepository
 import com.example.notally.data.repository.TareasRepository
 import com.example.notally.ui.util.DateFormat
 import java.time.Instant
@@ -92,8 +92,8 @@ sealed interface EventoHoy {
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class TodayViewModel(
     private val repositorioTareas: TareasRepository,
-    private val repositorioMaterias: MateriasRepository,
-    private val repositorioAjustes: AjustesRepository,
+    private val repositorioCursos: CursosRepository,
+    private val repositorioSettings: SettingsRepository,
     private val reloj: () -> Long = System::currentTimeMillis,
     private val zona: ZoneId = ZoneId.systemDefault(),
 ) : ViewModel() {
@@ -102,7 +102,7 @@ class TodayViewModel(
         val dia: List<Tarea>,
         val proximas: List<Tarea>,
         val activas: List<Tarea>,
-        val materias: List<Materia>,
+        val cursos: List<Curso>,
         val semanaEmpiezaLunes: Boolean,
     )
 
@@ -149,16 +149,16 @@ class TodayViewModel(
                 repositorioTareas.observarTareasDelDia(inicio, finDia),
                 repositorioTareas.observarTareasFuturas(inicioManana - 1),
                 repositorioTareas.observarTareasActivas(),
-                repositorioMaterias.observarMaterias(),
-                repositorioAjustes.ajustes,
-            ) { dia, proximas, activas, materias, ajustes ->
+                repositorioCursos.observarCursos(),
+                repositorioSettings.settings,
+            ) { dia, proximas, activas, cursos, settings ->
                 EstadoCarga.Listo(
                     DatosCrudos(
                         dia = dia,
                         proximas = proximas,
                         activas = activas,
-                        materias = materias,
-                        semanaEmpiezaLunes = ajustes.semanaEmpiezaLunes,
+                        cursos = cursos,
+                        semanaEmpiezaLunes = settings.semanaEmpiezaLunes,
                     ),
                 )
             }
@@ -319,14 +319,14 @@ class TodayViewModel(
             )
         }
 
-        val materiasPorId = datos.materias.associateBy { it.id }
+        val cursosPorId = datos.cursos.associateBy { it.id }
         val grupos = agruparHoy(
             ahora = ahora,
             zona = zona,
             tareasDelDia = datos.dia,
             tareasProximas = datos.proximas,
             tareasActivas = datos.activas,
-            materiasPorId = materiasPorId,
+            cursosPorId = cursosPorId,
             semanaEmpiezaLunes = datos.semanaEmpiezaLunes,
         )
 
@@ -388,8 +388,8 @@ class TodayViewModel(
                 val contenedor = context.contenedorNotally
                 TodayViewModel(
                     repositorioTareas = contenedor.repositorioTareas,
-                    repositorioMaterias = contenedor.repositorioMaterias,
-                    repositorioAjustes = contenedor.repositorioAjustes,
+                    repositorioCursos = contenedor.repositorioCursos,
+                    repositorioSettings = contenedor.repositorioSettings,
                 )
             }
         }

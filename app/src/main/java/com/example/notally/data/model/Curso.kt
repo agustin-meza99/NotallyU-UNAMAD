@@ -7,7 +7,7 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 
 /**
- * Materia o asignatura universitaria.
+ * Curso o asignatura universitaria.
  *
  * La tabla y las columnas físicas conservan sus nombres en inglés.
  *
@@ -17,7 +17,7 @@ import androidx.room.PrimaryKey
     tableName = "subjects",
     indices = [Index(value = ["name"], unique = true)],
 )
-data class Materia(
+data class Curso(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0L,
     @ColumnInfo(name = "name")
@@ -32,10 +32,10 @@ data class Materia(
     val creadoEn: Long = System.currentTimeMillis(),
 )
 
-/** Materia con el número de tareas no completadas y no archivadas. */
-data class MateriaConConteo(
+/** Curso con el número de tareas no completadas y no archivadas. */
+data class CursoConConteo(
     @Embedded
-    val materia: Materia,
+    val curso: Curso,
     @ColumnInfo(name = "pendingTaskCount")
     val tareasPendientes: Int,
 )

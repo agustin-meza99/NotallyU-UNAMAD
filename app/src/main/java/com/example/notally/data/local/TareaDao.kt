@@ -77,14 +77,14 @@ interface TareaDao {
     @Query(
         """
         SELECT * FROM tasks
-        WHERE isArchived = 0 AND subjectId = :subjectId
+        WHERE isArchived = 0 AND subjectId = :courseId
         ORDER BY status = 'DONE' ASC,
                  dueAt IS NULL ASC,
                  dueAt ASC,
                  createdAt DESC
         """
     )
-    fun observarTareasPorMateria(subjectId: Long): Flow<List<Tarea>>
+    fun observarTareasPorCurso(courseId: Long): Flow<List<Tarea>>
 
     @Transaction
     @Query("SELECT * FROM tasks WHERE id = :taskId")

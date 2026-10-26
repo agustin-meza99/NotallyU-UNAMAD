@@ -53,8 +53,8 @@ import com.example.notally.ui.theme.FormaNotally
 @Composable
 fun SwipeTaskRow(
     tarea: Tarea,
-    nombreMateria: String?,
-    colorMateriaArgb: Long?,
+    nombreCurso: String?,
+    colorCursoArgb: Long?,
     modifier: Modifier = Modifier,
     ahora: Long = System.currentTimeMillis(),
     alPulsar: () -> Unit = {},
@@ -158,8 +158,8 @@ fun SwipeTaskRow(
     ) {
         TaskRow(
             tarea = tarea,
-            nombreMateria = nombreMateria,
-            colorMateriaArgb = colorMateriaArgb,
+            nombreCurso = nombreCurso,
+            colorCursoArgb = colorCursoArgb,
             ahora = ahora,
             alPulsar = alPulsar,
             alAlternarCompletada = alAlternarCompletada,

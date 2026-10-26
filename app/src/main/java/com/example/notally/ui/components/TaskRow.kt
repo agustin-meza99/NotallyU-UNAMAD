@@ -60,7 +60,7 @@ import com.example.notally.data.model.Prioridad
 import com.example.notally.data.model.Tarea
 import com.example.notally.ui.theme.FormaNotally
 import com.example.notally.ui.theme.MovimientoNotally
-import com.example.notally.ui.theme.colorMateria
+import com.example.notally.ui.theme.colorCurso
 import com.example.notally.ui.util.DateFormat
 import com.example.notally.ui.util.textoAtraso
 import com.example.notally.ui.util.textoEtiquetaFecha
@@ -79,8 +79,8 @@ import com.example.notally.ui.util.textoFraseEntrega
 @Composable
 fun TaskRow(
     tarea: Tarea,
-    nombreMateria: String?,
-    colorMateriaArgb: Long?,
+    nombreCurso: String?,
+    colorCursoArgb: Long?,
     modifier: Modifier = Modifier,
     ahora: Long = System.currentTimeMillis(),
     alPulsar: () -> Unit = {},
@@ -97,7 +97,7 @@ fun TaskRow(
     val es24Horas = remember(contexto) { AndroidDateFormat.is24HourFormat(contexto) }
     val haptica = LocalHapticFeedback.current
 
-    val textoMateria = nombreMateria ?: stringResource(R.string.task_noSubject)
+    val textoCurso = nombreCurso ?: stringResource(R.string.task_noSubject)
     val separador = stringResource(R.string.task_meta_separator)
     val sinFecha = stringResource(R.string.task_noDate)
     val textoFecha = when {
@@ -107,7 +107,7 @@ fun TaskRow(
             ?: textoEtiquetaFecha(tarea.entregaEn, ahora)
     }
     val colorFecha = if (atrasada) colores.error else colores.onSurfaceVariant
-    val colorPuntoMateria = colorMateriaArgb?.let { colorMateria(it) } ?: colores.outline
+    val colorPuntoCurso = colorCursoArgb?.let { colorCurso(it) } ?: colores.outline
 
     val textoPrioridad = when (tarea.prioridad) {
         Prioridad.ALTA -> stringResource(R.string.a11y_priority_high)
@@ -118,10 +118,10 @@ fun TaskRow(
         stringResource(R.string.a11y_task_due, textoFraseEntrega(it, ahora, es24Horas))
     }
     val descripcionFila =
-        remember(tarea.titulo, textoMateria, descripcionEntrega, textoPrioridad, hecha) {
+        remember(tarea.titulo, textoCurso, descripcionEntrega, textoPrioridad, hecha) {
             buildList {
                 add(tarea.titulo)
-                add(textoMateria)
+                add(textoCurso)
                 if (descripcionEntrega != null) add(descripcionEntrega)
                 add(textoPrioridad)
             }.joinToString(". ") + "."
@@ -239,13 +239,13 @@ fun TaskRow(
                         .size(6.dp)
                         .clip(CircleShape)
                         .background(
-                            colorPuntoMateria,
+                            colorPuntoCurso,
                         ),
                 )
                 Spacer(Modifier.width(4.dp))
                 Text(
                     text = buildAnnotatedString {
-                        append(textoMateria)
+                        append(textoCurso)
                         append(separador)
                         withStyle(SpanStyle(color = colorFecha)) { append(textoFecha) }
                     },

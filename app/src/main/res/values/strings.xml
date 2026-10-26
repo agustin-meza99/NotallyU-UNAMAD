@@ -3,7 +3,7 @@
 
     <!-- Navegación -->
     <string name="nav_hoy">Hoy</string>
-    <string name="nav_materias">Materias</string>
+    <string name="nav_materias">Cursos</string>
     <string name="nav_ajustes">Ajustes</string>
 
     <!-- Hoy -->
@@ -33,7 +33,7 @@
         <item quantity="one">Atrasada · ayer</item>
         <item quantity="other">Atrasada · %d días</item>
     </plurals>
-    <string name="task_noSubject">Sin materia</string>
+    <string name="task_noSubject">Sin curso</string>
     <string name="task_noDate">Sin fecha</string>
     <string name="task_meta_separator">" · "</string>
     <string name="task_completed">Tarea completada</string>
@@ -60,10 +60,10 @@
     <string name="filter_empty_done_body">Marca una tarea como completada y aparecerá aquí.</string>
     <string name="filter_empty_done_cta">Ver pendientes</string>
 
-    <!-- Materias -->
+    <!-- Cursos -->
     <plurals name="subjects_summary">
-        <item quantity="one">%1$d materia · %2$s</item>
-        <item quantity="other">%1$d materias · %2$s</item>
+        <item quantity="one">%1$d curso · %2$s</item>
+        <item quantity="other">%1$d cursos · %2$s</item>
     </plurals>
     <plurals name="subjects_pending">
         <item quantity="one">%d pendiente</item>
@@ -90,20 +90,20 @@
         <item quantity="one">%d hecha</item>
         <item quantity="other">%d hechas</item>
     </plurals>
-    <string name="subject_name_duplicate">Ya existe una materia con ese nombre.</string>
-    <string name="subject_save_error">No se pudo guardar la materia.</string>
-    <string name="subject_delete_error">No se pudo eliminar la materia.</string>
+    <string name="subject_name_duplicate">Ya existe un curso con ese nombre.</string>
+    <string name="subject_save_error">No se pudo guardar el curso.</string>
+    <string name="subject_delete_error">No se pudo eliminar el curso.</string>
     <string name="subject_progress_ratio">%1$d/%2$d</string>
-    <string name="subjects_empty_title">Aún no tienes materias</string>
-    <string name="subjects_empty_body">Crea una materia para agrupar tus tareas y ver cuántas llevas.</string>
-    <string name="subjects_empty_cta">Nueva materia</string>
-    <string name="subjects_new">Nueva materia</string>
-    <string name="subject_edit_title">Editar materia</string>
+    <string name="subjects_empty_title">Aún no tienes cursos</string>
+    <string name="subjects_empty_body">Crea un curso para agrupar tus tareas y ver cuántas llevas.</string>
+    <string name="subjects_empty_cta">Nuevo curso</string>
+    <string name="subjects_new">Nuevo curso</string>
+    <string name="subject_edit_title">Editar curso</string>
     <string name="subject_name">Nombre</string>
     <string name="subject_color">Color</string>
-    <string name="subject_delete">Eliminar materia</string>
+    <string name="subject_delete">Eliminar curso</string>
 
-    <!-- Nombres accesibles de los swatches de materia -->
+    <!-- Nombres accesibles de los swatches de curso -->
     <string name="subject_color_indigo">Índigo</string>
     <string name="subject_color_forest">Bosque</string>
     <string name="subject_color_terracotta">Terracota</string>
@@ -115,7 +115,7 @@
     <string name="editor_title_placeholder">Título de la tarea</string>
     <string name="editor_untitled">Sin título</string>
     <string name="editor_notes_placeholder">Notas</string>
-    <string name="editor_property_subject">Materia</string>
+    <string name="editor_property_subject">Curso</string>
     <string name="editor_property_due">Entrega</string>
     <string name="editor_property_priority">Prioridad</string>
     <string name="editor_property_state">Estado</string>
@@ -146,14 +146,14 @@
 
     <!-- Errores -->
     <string name="error_load">No se pudieron cargar tus tareas.</string>
-    <string name="error_loadSubjects">No se pudieron cargar tus materias.</string>
+    <string name="error_loadSubjects">No se pudieron cargar tus cursos.</string>
     <string name="error_refresh">No se pudieron actualizar los datos.</string>
 
     <!-- Accesibilidad -->
     <string name="a11y_back">Volver</string>
     <string name="a11y_openTask">Abrir tarea</string>
     <string name="a11y_newTask">Nueva tarea</string>
-    <string name="a11y_editSubject">Editar materia</string>
+    <string name="a11y_editSubject">Editar curso</string>
     <string name="a11y_deleteSubtask">Eliminar subtarea</string>
     <string name="a11y_completeTask">Completar tarea: %s</string>
     <string name="a11y_uncompleteTask">Marcar como pendiente: %s</string>
@@ -183,10 +183,10 @@
         <item quantity="other">Se eliminará «%1$s» con sus %2$d subtareas.</item>
     </plurals>
     <string name="confirm_deleteTask_bodyNoSub">Se eliminará «%s».</string>
-    <string name="confirm_deleteSubject_title">¿Eliminar la materia?</string>
+    <string name="confirm_deleteSubject_title">¿Eliminar el curso?</string>
     <plurals name="confirm_deleteSubject_body">
-        <item quantity="one">«%1$s» tiene %2$d tarea. Quedará sin materia.</item>
-        <item quantity="other">«%1$s» tiene %2$d tareas. Quedarán sin materia.</item>
+        <item quantity="one">«%1$s» tiene %2$d tarea. Quedará sin curso.</item>
+        <item quantity="other">«%1$s» tiene %2$d tareas. Quedarán sin curso.</item>
     </plurals>
     <string name="confirm_deleteSubject_bodyNoTasks">Se eliminará «%s».</string>
 

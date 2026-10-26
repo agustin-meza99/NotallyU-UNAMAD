@@ -1,9 +1,9 @@
 package com.example.notally.data.remote.firestore
 
 /**
- * Representacion plana de `users/{uid}/subjects/{subjectId}`.
+ * Representacion plana de `users/{uid}/courses/{courseId}`.
  *
- * Contrato (ver `firestore.rules`, funcion `validSubject`):
+ * Contrato (ver `firestore.rules`, funcion `validCurso`):
  * - `name`: string, 1..120 caracteres.
  * - `colorArgb`: number (ARGB opaco).
  * - `professor`: string de hasta 120 caracteres o null.
@@ -20,7 +20,7 @@ package com.example.notally.data.remote.firestore
  * El `docId` no forma parte del documento: es el id del path. Por eso esta
  * clase no incluye `id`.
  */
-data class RemoteSubject(
+data class RemoteCurso(
     val name: String,
     val colorArgb: Long,
     val professor: String? = null,

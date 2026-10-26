@@ -41,7 +41,7 @@ import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import com.example.notally.R
 import com.example.notally.ui.editor.EditorScreen
 import com.example.notally.ui.settings.SettingsScreen
-import com.example.notally.ui.subjects.SubjectsScreen
+import com.example.notally.ui.cursos.CursosScreen
 import com.example.notally.ui.theme.MovimientoNotally
 import com.example.notally.ui.today.TodayScreen
 
@@ -53,11 +53,11 @@ sealed interface Destino {
         override val clave: String = "today"
     }
 
-    data object Materias : Destino {
-        override val clave: String = "subjects"
+    data object Cursos : Destino {
+        override val clave: String = "cursos"
     }
 
-    data object Ajustes : Destino {
+    data object Settings : Destino {
         override val clave: String = "settings"
     }
 
@@ -140,8 +140,8 @@ private fun ContenedorPestanas(
     val elementos = remember {
         listOf(
             Destino.Hoy,
-            Destino.Materias,
-            Destino.Ajustes,
+            Destino.Cursos,
+            Destino.Settings,
         )
     }
     // Día elegido en la tira de Hoy. Vive sobre el contenido de la pestaña para
@@ -217,9 +217,9 @@ private fun ContenedorPestanas(
                             alSeleccionarDia = { diaHoySeleccionado = it },
                         )
 
-                        Destino.Materias -> SubjectsScreen()
+                        Destino.Cursos -> CursosScreen()
 
-                        Destino.Ajustes -> SettingsScreen()
+                        Destino.Settings -> SettingsScreen()
 
                         is Destino.Editor -> Unit
                     }
@@ -254,22 +254,22 @@ private fun RutaEditor(
 
 private fun Destino.recursoEtiqueta(): Int = when (this) {
     Destino.Hoy -> R.string.nav_hoy
-    Destino.Materias -> R.string.nav_materias
-    Destino.Ajustes -> R.string.nav_ajustes
+    Destino.Cursos -> R.string.nav_materias
+    Destino.Settings -> R.string.nav_ajustes
     is Destino.Editor -> R.string.nav_hoy
 }
 
 private fun Destino.recursoIcono(): Int = when (this) {
     Destino.Hoy -> R.drawable.ic_checklist
-    Destino.Materias -> R.drawable.ic_book
-    Destino.Ajustes -> R.drawable.ic_settings
+    Destino.Cursos -> R.drawable.ic_book
+    Destino.Settings -> R.drawable.ic_settings
     is Destino.Editor -> R.drawable.ic_checklist
 }
 
 internal fun codificarDestino(destino: Destino): String = when (destino) {
     Destino.Hoy -> "today"
-    Destino.Materias -> "subjects"
-    Destino.Ajustes -> "settings"
+    Destino.Cursos -> "cursos"
+    Destino.Settings -> "settings"
     is Destino.Editor -> "editor:${destino.tareaId?.toString() ?: "new"}"
 }
 
@@ -283,8 +283,8 @@ internal fun decodificarPila(codificada: String): List<Destino> =
 
 internal fun decodificarDestino(codificada: String): Destino? = when {
     codificada == "today" -> Destino.Hoy
-    codificada == "subjects" -> Destino.Materias
-    codificada == "settings" -> Destino.Ajustes
+    codificada == "cursos" -> Destino.Cursos
+    codificada == "settings" -> Destino.Settings
     codificada.startsWith("editor:") -> {
         val crudo = codificada.removePrefix("editor:")
         Destino.Editor(if (crudo == "new") null else crudo.toLongOrNull())

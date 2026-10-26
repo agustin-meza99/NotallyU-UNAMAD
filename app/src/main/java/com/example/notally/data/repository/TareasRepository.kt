@@ -33,8 +33,8 @@ class TareasRepository(
     fun observarTareasFuturas(despuesDeMillis: Long): Flow<List<Tarea>> =
         tareaDao.observarTareasFuturas(despuesDeMillis)
 
-    fun observarTareasPorMateria(materiaId: Long): Flow<List<Tarea>> =
-        tareaDao.observarTareasPorMateria(materiaId)
+    fun observarTareasPorCurso(cursoId: Long): Flow<List<Tarea>> =
+        tareaDao.observarTareasPorCurso(cursoId)
 
     fun observarTareaConSubtareas(tareaId: Long): Flow<TareaConSubtareas?> =
         tareaDao.observarTareaConSubtareas(tareaId)
@@ -77,7 +77,7 @@ class TareasRepository(
     suspend fun crearTarea(
         titulo: String,
         notas: String = "",
-        materiaId: Long? = null,
+        cursoId: Long? = null,
         entregaEn: Long? = null,
         prioridad: Prioridad = Prioridad.MEDIA,
         titulosSubtareas: List<String> = emptyList(),
@@ -85,7 +85,7 @@ class TareasRepository(
         tarea = Tarea(
             titulo = titulo,
             notas = notas,
-            materiaId = materiaId,
+            cursoId = cursoId,
             entregaEn = entregaEn,
             prioridad = prioridad,
         ),

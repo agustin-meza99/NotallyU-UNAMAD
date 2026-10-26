@@ -6,7 +6,7 @@ package com.example.notally.data.remote.firestore
  * Contrato (ver `firestore.rules`, funcion `validTask`):
  * - `title`: string, 1..300 caracteres.
  * - `notes`: string, 0..20000 caracteres.
- * - `subjectId`: string de hasta 128 caracteres o null.
+ * - `courseId`: string de hasta 128 caracteres o null.
  * - `dueAt`: number (epoch ms) o null.
  * - `priority`: string, uno de `LOW`, `MEDIUM`, `HIGH`.
  * - `status`: string, uno de `PENDING`, `IN_PROGRESS`, `DONE`.
@@ -33,7 +33,7 @@ data class RemoteTask(
     val priority: String,
     val status: String,
     val notes: String = "",
-    val subjectId: String? = null,
+    val courseId: String? = null,
     val dueAt: Long? = null,
     val subtasks: List<RemoteSubtask> = emptyList(),
     val createdAt: Long? = null,

@@ -46,7 +46,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.notally.R
 import com.example.notally.data.model.Estado
-import com.example.notally.data.model.Materia
+import com.example.notally.data.model.Curso
 import com.example.notally.data.model.Prioridad
 import com.example.notally.ui.components.OptionRow
 import com.example.notally.ui.theme.FormaNotally
@@ -60,7 +60,7 @@ import java.time.ZoneOffset
 
 /** Hoja abierta desde las propiedades del editor. */
 enum class HojaEditor {
-    MATERIA,
+    CURSO,
     ENTREGA,
     PRIORIDAD,
     ESTADO,
@@ -78,13 +78,13 @@ enum class HojaEditor {
 fun AnfitrionEditorSheets(
     hoja: HojaEditor?,
     borrador: BorradorTarea,
-    materias: List<Materia>,
-    colorMateriaPorDefecto: Long,
-    errorNuevaMateria: ErrorMateriaEditor?,
+    cursos: List<Curso>,
+    colorCursoPorDefecto: Long,
+    errorNuevoCurso: ErrorCursoEditor?,
     alDescartar: () -> Unit,
-    alSeleccionarMateria: (Long?) -> Unit,
-    alCrearMateria: (String, Long) -> Unit,
-    alLimpiarErrorMateria: () -> Unit,
+    alSeleccionarCurso: (Long?) -> Unit,
+    alCrearCurso: (String, Long) -> Unit,
+    alLimpiarErrorCurso: () -> Unit,
     alCambiarEntrega: (Long?) -> Unit,
     alCambiarPrioridad: (Prioridad) -> Unit,
     alCambiarEstado: (Estado) -> Unit,
@@ -97,17 +97,17 @@ fun AnfitrionEditorSheets(
         scrimColor = MaterialTheme.colorScheme.scrim.copy(alpha = 0.32f),
     ) {
         when (actual) {
-            HojaEditor.MATERIA -> ContenidoSelectorMateria(
-                materias = materias,
-                idSeleccionado = borrador.materiaId,
-                colorPorDefecto = colorMateriaPorDefecto,
-                error = errorNuevaMateria,
+            HojaEditor.CURSO -> ContenidoSelectorCurso(
+                cursos = cursos,
+                idSeleccionado = borrador.cursoId,
+                colorPorDefecto = colorCursoPorDefecto,
+                error = errorNuevoCurso,
                 alSeleccionar = {
-                    alSeleccionarMateria(it)
+                    alSeleccionarCurso(it)
                     alDescartar()
                 },
-                alCrear = alCrearMateria,
-                alLimpiarError = alLimpiarErrorMateria,
+                alCrear = alCrearCurso,
+                alLimpiarError = alLimpiarErrorCurso,
             )
 
             HojaEditor.ENTREGA -> ContenidoEntrega(
@@ -161,11 +161,11 @@ private fun TituloHoja(texto: String) {
 }
 
 @Composable
-private fun ContenidoSelectorMateria(
-    materias: List<Materia>,
+private fun ContenidoSelectorCurso(
+    cursos: List<Curso>,
     idSeleccionado: Long?,
     colorPorDefecto: Long,
-    error: ErrorMateriaEditor?,
+    error: ErrorCursoEditor?,
     alSeleccionar: (Long?) -> Unit,
     alCrear: (String, Long) -> Unit,
     alLimpiarError: () -> Unit,
@@ -179,11 +179,11 @@ private fun ContenidoSelectorMateria(
         seleccionado = idSeleccionado == null,
         alPulsar = { alSeleccionar(null) },
     )
-    materias.forEach { materia ->
+    cursos.forEach { curso ->
         OptionRow(
-            etiqueta = materia.nombre,
-            seleccionado = idSeleccionado == materia.id,
-            alPulsar = { alSeleccionar(materia.id) },
+            etiqueta = curso.nombre,
+            seleccionado = idSeleccionado == curso.id,
+            alPulsar = { alSeleccionar(curso.id) },
         )
     }
     if (!creando) {
@@ -221,11 +221,11 @@ private fun ContenidoSelectorMateria(
                 singleLine = true,
                 isError = error != null,
                 supportingText = when (error) {
-                    ErrorMateriaEditor.DUPLICADO -> {
+                    ErrorCursoEditor.DUPLICADO -> {
                         { Text(stringResource(R.string.subject_name_duplicate)) }
                     }
 
-                    ErrorMateriaEditor.GENERICO -> {
+                    ErrorCursoEditor.GENERICO -> {
                         { Text(stringResource(R.string.subject_save_error)) }
                     }
 

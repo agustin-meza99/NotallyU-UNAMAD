@@ -14,14 +14,14 @@ import androidx.room.Relation
  * Los nombres físicos de la tabla y de las columnas se mantienen en inglés
  * mediante anotaciones de Room: el esquema no cambia.
  *
- * [materiaId] nulo representa una tarea sin materia asignada.
+ * [cursoId] nulo representa una tarea sin curso asignado.
  * [entregaEn] nulo representa una tarea sin fecha límite.
  */
 @Entity(
     tableName = "tasks",
     foreignKeys = [
         ForeignKey(
-            entity = Materia::class,
+            entity = Curso::class,
             parentColumns = ["id"],
             childColumns = ["subjectId"],
             onDelete = ForeignKey.SET_NULL,
@@ -41,7 +41,7 @@ data class Tarea(
     @ColumnInfo(name = "notes")
     val notas: String = "",
     @ColumnInfo(name = "subjectId")
-    val materiaId: Long? = null,
+    val cursoId: Long? = null,
     @ColumnInfo(name = "dueAt")
     val entregaEn: Long? = null,
     @ColumnInfo(name = "priority")

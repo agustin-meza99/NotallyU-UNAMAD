@@ -11,9 +11,9 @@ enum class ModoTema {
  * Preferencias de la aplicación, persistidas en DataStore.
  *
  * Los valores persistidos de [pestanaPorDefecto] usan las constantes
- * [PESTANA_HOY], [PESTANA_PROXIMAS], [PESTANA_TODAS] y [PESTANA_MATERIAS].
+ * [PESTANA_HOY], [PESTANA_PROXIMAS], [PESTANA_TODAS] y [PESTANA_CURSOS].
  */
-data class Ajustes(
+data class Settings(
     val modoTema: ModoTema = ModoTema.SISTEMA,
     val pestanaPorDefecto: String = PESTANA_HOY,
     val semanaEmpiezaLunes: Boolean = true,
@@ -23,9 +23,9 @@ data class Ajustes(
         const val PESTANA_HOY = "today"
         const val PESTANA_PROXIMAS = "upcoming"
         const val PESTANA_TODAS = "all"
-        const val PESTANA_MATERIAS = "subjects"
+        const val PESTANA_CURSOS = "subjects"
 
         val PESTANAS_VALIDAS =
-            setOf(PESTANA_HOY, PESTANA_PROXIMAS, PESTANA_TODAS, PESTANA_MATERIAS)
+            setOf(PESTANA_HOY, PESTANA_PROXIMAS, PESTANA_TODAS, PESTANA_CURSOS)
     }
 }

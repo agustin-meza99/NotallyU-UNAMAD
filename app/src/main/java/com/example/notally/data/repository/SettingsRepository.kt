@@ -9,7 +9,7 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.example.notally.data.aTexto
-import com.example.notally.data.model.Ajustes
+import com.example.notally.data.model.Settings
 import com.example.notally.data.model.ModoTema
 import com.example.notally.data.modoTemaDesdeTexto
 import java.io.IOException
@@ -18,42 +18,42 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
-private const val NOMBRE_ARCHIVO_AJUSTES = "notally_settings"
+private const val NOMBRE_ARCHIVO_SETTINGS = "notally_settings"
 
 /** DataStore de preferencias de Notally, ligado al contexto de la aplicación. */
-val Context.dataStoreAjustesNotally: DataStore<Preferences> by preferencesDataStore(
-    name = NOMBRE_ARCHIVO_AJUSTES,
+val Context.dataStoreSettingsNotally: DataStore<Preferences> by preferencesDataStore(
+    name = NOMBRE_ARCHIVO_SETTINGS,
 )
 
-class AjustesRepository(
+class SettingsRepository(
     private val dataStore: DataStore<Preferences>,
 ) {
 
-    val ajustes: Flow<Ajustes> = dataStore.data
+    val settings: Flow<Settings> = dataStore.data
         .catch { error ->
             if (error is IOException) emit(emptyPreferences()) else throw error
         }
         .map { preferencias ->
-            Ajustes(
+            Settings(
                 modoTema = preferencias[Claves.MODO_TEMA]
                     ?.let { guardado -> runCatching { modoTemaDesdeTexto(guardado) }.getOrNull() }
                     ?: ModoTema.SISTEMA,
                 pestanaPorDefecto = preferencias[Claves.PESTANA_POR_DEFECTO]
-                    ?.takeIf { it in Ajustes.PESTANAS_VALIDAS }
-                    ?: Ajustes.PESTANA_HOY,
+                    ?.takeIf { it in Settings.PESTANAS_VALIDAS }
+                    ?: Settings.PESTANA_HOY,
                 semanaEmpiezaLunes = preferencias[Claves.SEMANA_EMPIEZA_LUNES] ?: true,
                 notificacionesActivas = preferencias[Claves.NOTIFICACIONES_ACTIVAS] ?: true,
             )
         }
 
-    suspend fun actual(): Ajustes = ajustes.first()
+    suspend fun actual(): Settings = settings.first()
 
     suspend fun cambiarModoTema(modo: ModoTema) {
         dataStore.edit { it[Claves.MODO_TEMA] = modo.aTexto() }
     }
 
     suspend fun cambiarPestanaPorDefecto(pestana: String) {
-        require(pestana in Ajustes.PESTANAS_VALIDAS) { "Pestaña desconocida: $pestana" }
+        require(pestana in Settings.PESTANAS_VALIDAS) { "Pestaña desconocida: $pestana" }
         dataStore.edit { it[Claves.PESTANA_POR_DEFECTO] = pestana }
     }
 
@@ -65,15 +65,15 @@ class AjustesRepository(
         dataStore.edit { it[Claves.NOTIFICACIONES_ACTIVAS] = activo }
     }
 
-    suspend fun actualizar(ajustes: Ajustes) {
-        require(ajustes.pestanaPorDefecto in Ajustes.PESTANAS_VALIDAS) {
-            "Pestaña desconocida: ${ajustes.pestanaPorDefecto}"
+    suspend fun actualizar(settings: Settings) {
+        require(settings.pestanaPorDefecto in Settings.PESTANAS_VALIDAS) {
+            "Pestaña desconocida: ${settings.pestanaPorDefecto}"
         }
         dataStore.edit { preferencias ->
-            preferencias[Claves.MODO_TEMA] = ajustes.modoTema.aTexto()
-            preferencias[Claves.PESTANA_POR_DEFECTO] = ajustes.pestanaPorDefecto
-            preferencias[Claves.SEMANA_EMPIEZA_LUNES] = ajustes.semanaEmpiezaLunes
-            preferencias[Claves.NOTIFICACIONES_ACTIVAS] = ajustes.notificacionesActivas
+            preferencias[Claves.MODO_TEMA] = settings.modoTema.aTexto()
+            preferencias[Claves.PESTANA_POR_DEFECTO] = settings.pestanaPorDefecto
+            preferencias[Claves.SEMANA_EMPIEZA_LUNES] = settings.semanaEmpiezaLunes
+            preferencias[Claves.NOTIFICACIONES_ACTIVAS] = settings.notificacionesActivas
         }
     }
 

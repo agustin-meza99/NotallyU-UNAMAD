@@ -1,4 +1,4 @@
-package com.example.notally.ui.subjects
+package com.example.notally.ui.cursos
 
 import com.example.notally.data.DateRanges
 import java.time.DayOfWeek
@@ -8,7 +8,7 @@ import java.time.ZoneId
 import java.time.temporal.TemporalAdjusters
 
 /**
- * Cálculo de "N entregas esta semana" para Materias (§7.4).
+ * Cálculo de "N entregas esta semana" para Cursos (§7.4).
  *
  * Es puro (java.time, sin Android) para que el ajuste "La semana inicia en
  * lunes" sea verificable con tests JVM y para que la UI y el test compartan la

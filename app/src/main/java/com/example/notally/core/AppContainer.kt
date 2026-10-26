@@ -2,10 +2,10 @@ package com.example.notally.core
 
 import android.content.Context
 import com.example.notally.data.NotallyDatabase
-import com.example.notally.data.repository.AjustesRepository
-import com.example.notally.data.repository.MateriasRepository
+import com.example.notally.data.repository.SettingsRepository
+import com.example.notally.data.repository.CursosRepository
 import com.example.notally.data.repository.TareasRepository
-import com.example.notally.data.repository.dataStoreAjustesNotally
+import com.example.notally.data.repository.dataStoreSettingsNotally
 
 /**
  * Contenedor de dependencias manual (sin framework de inyección).
@@ -24,7 +24,7 @@ class AppContainer(context: Context) {
         subtareaDao = baseDatos.subtareaDao(),
     )
 
-    val repositorioMaterias = MateriasRepository(baseDatos.materiaDao())
+    val repositorioCursos = CursosRepository(baseDatos.cursoDao())
 
-    val repositorioAjustes = AjustesRepository(contextoApp.dataStoreAjustesNotally)
+    val repositorioSettings = SettingsRepository(contextoApp.dataStoreSettingsNotally)
 }

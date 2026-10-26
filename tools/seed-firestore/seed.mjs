@@ -2,7 +2,7 @@
 /**
  * Seed idempotente de Firestore para Notally.
  *
- * Replica `data/SeedData.kt` (4 materias y 11 tareas) usando la API REST de
+ * Replica `data/SeedData.kt` (4 cursos y 11 tareas) usando la API REST de
  * Firestore como el propio usuario autenticado, de modo que se respetan
  * `firestore.rules`. No usa Admin SDK ni service accounts.
  *
@@ -38,30 +38,30 @@ const COLORS = {
 // Datos: espejo exacto de app/src/main/java/com/example/notally/data/SeedData.kt
 // ---------------------------------------------------------------------------
 
-const SUBJECTS = [
+const CURSOS = [
   {
-    id: 'subject-calculo',
+    id: 'course-calculo',
     name: 'Cálculo III',
     colorArgb: COLORS.INDIGO,
     professor: 'Dra. Mariana Quispe',
     credits: 4,
   },
   {
-    id: 'subject-estructuras',
+    id: 'course-estructuras',
     name: 'Estructuras de Datos',
     colorArgb: COLORS.FOREST,
     professor: 'Ing. Carlos Mendoza',
     credits: 5,
   },
   {
-    id: 'subject-bases-datos',
+    id: 'course-bases-datos',
     name: 'Bases de Datos',
     colorArgb: COLORS.TERRACOTTA,
     professor: 'Mg. Lucía Fernández',
     credits: 4,
   },
   {
-    id: 'subject-etica',
+    id: 'course-etica',
     name: 'Ética Profesional',
     colorArgb: COLORS.LIME,
     professor: 'Dr. Jorge Salazar',
@@ -69,13 +69,13 @@ const SUBJECTS = [
   },
 ];
 
-// `subjectId` es el id remoto determinista de la materia, no un índice.
+// `courseId` es el id remoto determinista del curso, no un índice.
 const TASKS = [
   {
     id: 'task-proyecto-lexico',
     title: 'Proyecto 1: analizador léxico',
     notes: 'Entregar el repositorio con el lexer y el informe de pruebas.',
-    subjectId: 'subject-estructuras',
+    courseId: 'course-estructuras',
     dueInDays: 3,
     priority: 'HIGH',
     status: 'PENDING',
@@ -90,7 +90,7 @@ const TASKS = [
     id: 'task-taller-normalizacion',
     title: 'Taller de normalización de bases de datos',
     notes: 'Normalizar el esquema hasta 3FN y justificar cada decisión.',
-    subjectId: 'subject-bases-datos',
+    courseId: 'course-bases-datos',
     dueInDays: 1,
     dueHour: 10,
     dueMinute: 0,
@@ -103,7 +103,7 @@ const TASKS = [
     id: 'task-parcial-calculo',
     title: 'Parcial de Cálculo III',
     notes: 'Capítulos 4 y 5: integrales múltiples y campos vectoriales.',
-    subjectId: 'subject-calculo',
+    courseId: 'course-calculo',
     dueInDays: 5,
     dueHour: 8,
     dueMinute: 0,
@@ -116,7 +116,7 @@ const TASKS = [
     id: 'task-ensayo-consentimiento',
     title: 'Ensayo sobre consentimiento informado',
     notes: 'Mínimo 1500 palabras con al menos tres fuentes académicas.',
-    subjectId: 'subject-etica',
+    courseId: 'course-etica',
     dueInDays: 7,
     priority: 'MEDIUM',
     status: 'PENDING',
@@ -127,7 +127,7 @@ const TASKS = [
     id: 'task-lab-avl',
     title: 'Laboratorio de árboles AVL',
     notes: 'Implementar inserción, eliminación y rotaciones.',
-    subjectId: 'subject-estructuras',
+    courseId: 'course-estructuras',
     dueInDays: 0,
     dueHour: 18,
     dueMinute: 0,
@@ -140,7 +140,7 @@ const TASKS = [
     id: 'task-consultas-sql',
     title: 'Consultas SQL avanzadas',
     notes: 'Resolver los diez ejercicios del cuadernillo 3.',
-    subjectId: 'subject-bases-datos',
+    courseId: 'course-bases-datos',
     dueInDays: 2,
     priority: 'MEDIUM',
     status: 'PENDING',
@@ -151,7 +151,7 @@ const TASKS = [
     id: 'task-series-fourier',
     title: 'Ejercicios de series de Fourier',
     notes: 'Página 210, ejercicios impares.',
-    subjectId: 'subject-calculo',
+    courseId: 'course-calculo',
     dueInDays: 1,
     dueHour: 7,
     dueMinute: 0,
@@ -164,7 +164,7 @@ const TASKS = [
     id: 'task-exposicion-sesgos',
     title: 'Exposición: sesgos algorítmicos',
     notes: 'Preparar diapositivas y un caso práctico para el debate.',
-    subjectId: 'subject-etica',
+    courseId: 'course-etica',
     dueInDays: 9,
     dueHour: 14,
     dueMinute: 0,
@@ -177,7 +177,7 @@ const TASKS = [
     id: 'task-mer',
     title: 'Diseño del modelo entidad-relación',
     notes: 'Diagrama entregado y validado con el docente.',
-    subjectId: 'subject-bases-datos',
+    courseId: 'course-bases-datos',
     dueInDays: -2,
     priority: 'LOW',
     status: 'DONE',
@@ -188,7 +188,7 @@ const TASKS = [
     id: 'task-quiz-estructuras',
     title: 'Quiz de estructuras de datos',
     notes: 'Temas: pilas, colas y listas enlazadas.',
-    subjectId: 'subject-estructuras',
+    courseId: 'course-estructuras',
     dueInDays: 4,
     dueHour: 10,
     dueMinute: 0,
@@ -201,7 +201,7 @@ const TASKS = [
     id: 'task-carne',
     title: 'Renovar el carné universitario',
     notes: 'Llevar fotografía y comprobante de matrícula.',
-    subjectId: null,
+    courseId: null,
     dueInDays: 2,
     dueHour: 12,
     dueMinute: 0,
@@ -231,12 +231,12 @@ function dueAt(now, days, hour, minute) {
   return date.getTime();
 }
 
-function subjectFields(subject) {
+function cursoFields(curso) {
   return {
-    name: str(subject.name),
-    colorArgb: int(subject.colorArgb),
-    professor: str(subject.professor),
-    credits: int(subject.credits),
+    name: str(curso.name),
+    colorArgb: int(curso.colorArgb),
+    professor: str(curso.professor),
+    credits: int(curso.credits),
     deletedAt: nullValue(),
   };
 }
@@ -245,7 +245,7 @@ function taskFields(task, now) {
   const fields = {
     title: str(task.title),
     notes: str(task.notes),
-    subjectId: task.subjectId === null ? nullValue() : str(task.subjectId),
+    courseId: task.courseId === null ? nullValue() : str(task.courseId),
     priority: str(task.priority),
     status: str(task.status),
     subtasks: arrayValue(
@@ -402,7 +402,7 @@ async function deleteDocument(projectId, idToken, uid, collection, id) {
 
 async function resetSeedDocuments({ projectId, idToken, uid, docsBase }) {
   const collections = [
-    { name: 'subjects', seedIds: new Set(SUBJECTS.map((s) => s.id)) },
+    { name: 'courses', seedIds: new Set(CURSOS.map((c) => c.id)) },
     { name: 'tasks', seedIds: new Set(TASKS.map((t) => t.id)) },
   ];
 
@@ -415,7 +415,18 @@ async function resetSeedDocuments({ projectId, idToken, uid, docsBase }) {
       deleted += 1;
     }
   }
-  console.log(`Reset: ${deleted} documento(s) del seed eliminado(s); el resto no se toca.`);
+
+  // Migración de demo: la colección anterior `subjects` ya no existe en el
+  // contrato; se borran todos sus documentos residuales (eran solo del seed).
+  const legacySubjectIds = await listDocumentIds(docsBase, idToken, uid, 'subjects');
+  for (const id of legacySubjectIds) {
+    await deleteDocument(projectId, idToken, uid, 'subjects', id);
+    deleted += 1;
+  }
+
+  console.log(
+    `Reset: ${deleted} documento(s) eliminado(s) (seed actual y subjects heredados); el resto no se toca.`,
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -448,10 +459,10 @@ async function main() {
 
   const now = Date.now();
   const documents = [
-    ...SUBJECTS.map((subject) => ({
-      collection: 'subjects',
-      id: subject.id,
-      fields: subjectFields(subject),
+    ...CURSOS.map((curso) => ({
+      collection: 'courses',
+      id: curso.id,
+      fields: cursoFields(curso),
     })),
     ...TASKS.map((task) => ({
       collection: 'tasks',
@@ -510,7 +521,7 @@ async function main() {
   }
 
   console.log(
-    `Plan: ${SUBJECTS.length} subjects + ${TASKS.length} tasks = ${documents.length} documentos ` +
+    `Plan: ${CURSOS.length} courses + ${TASKS.length} tasks = ${documents.length} documentos ` +
       `(${creates} create, ${updates} update).`,
   );
 
@@ -537,15 +548,15 @@ async function main() {
 
   const commitMs = performance.now() - commitStartedAt;
 
-  const [taskIds, subjectIds] = await Promise.all([
+  const [taskIds, cursoIds] = await Promise.all([
     listDocumentIds(docsBase, idToken, uid, 'tasks'),
-    listDocumentIds(docsBase, idToken, uid, 'subjects'),
+    listDocumentIds(docsBase, idToken, uid, 'courses'),
   ]);
 
   console.log(
     `Escritos: ${documents.length} documentos (${creates} creados, ${updates} actualizados) en ${Math.round(commitMs)} ms.`,
   );
-  console.log(`Remoto ahora: ${subjectIds.length} subjects, ${taskIds.length} tasks bajo users/<uid>/.`);
+  console.log(`Remoto ahora: ${cursoIds.length} courses, ${taskIds.length} tasks bajo users/<uid>/.`);
   console.log(`Tiempo total: ${Math.round(performance.now() - startedAt)} ms.`);
 }
 

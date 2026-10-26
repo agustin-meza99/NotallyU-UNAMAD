@@ -32,14 +32,14 @@ private val VALID_STATUSES = setOf("PENDING", "IN_PROGRESS", "DONE")
  *
  * @param subtasks subtareas de la tarea. Room las guarda en otra tabla, por eso
  *   no vienen dentro de [Tarea].
- * @param subjectId id remoto de la materia. Por defecto usa `id.toString()`
+ * @param courseId id remoto del curso. Por defecto usa `id.toString()`
  *   hasta que exista la migracion a UUID descrita en `docs/ARCHITECTURE.md`.
  * @throws IllegalArgumentException si la tarea esta archivada (no hay campo
  *   remoto para `isArchived`) o si algun campo rompe los limites de las reglas.
  */
 fun Tarea.toRemote(
     subtasks: List<Subtarea> = emptyList(),
-    subjectId: String? = this.materiaId?.toString(),
+    courseId: String? = this.cursoId?.toString(),
 ): RemoteTask {
     require(!archivada) {
         "Tarea.archivada no tiene campo en firestore.rules; V1 no sincroniza " +
@@ -50,7 +50,7 @@ fun Tarea.toRemote(
         priority = prioridad.aTexto(),
         status = estado.aTexto(),
         notes = notas,
-        subjectId = subjectId,
+        courseId = courseId,
         dueAt = entregaEn,
         subtasks = subtasks
             .sortedBy { it.posicion }
@@ -77,7 +77,7 @@ fun Tarea.toRemote(
  *
  * @param localId id autogenerado de Room. `0` deja que Room lo asigne.
  * @param isArchived valor local explicito: el remoto no transporta archivadas.
- * @param localSubjectId id numerico de materia. Si el `subjectId` remoto no es
+ * @param localCursoId id numerico de curso. Si el `courseId` remoto no es
  *   numerico (p. ej. un UUID de la migracion futura) el mapper falla en vez de
  *   perder la relacion en silencio.
  * @param now reloj de respaldo cuando el documento no trae timestamps.
@@ -87,7 +87,7 @@ fun Tarea.toRemote(
 fun RemoteTask.toLocal(
     localId: Long = 0L,
     isArchived: Boolean = false,
-    localSubjectId: Long? = subjectId?.toLongOrNull(),
+    localCursoId: Long? = courseId?.toLongOrNull(),
     now: Long = System.currentTimeMillis(),
 ): Tarea {
     require(deletedAt == null) {
@@ -95,15 +95,15 @@ fun RemoteTask.toLocal(
             "aplicar el borrado local y no mapearlo como tarea viva."
     }
     validateRemoteTask(this)
-    require(subjectId == null || localSubjectId != null) {
-        "subjectId remoto '$subjectId' no es un id local numerico; falta la " +
-            "migracion a remoteId (UUID) en Tarea/Materia."
+    require(courseId == null || localCursoId != null) {
+        "courseId remoto '$courseId' no es un id local numerico; falta la " +
+            "migracion a remoteId (UUID) en Tarea/Curso."
     }
     return Tarea(
         id = localId,
         titulo = title,
         notas = notes,
-        materiaId = localSubjectId,
+        cursoId = localCursoId,
         entregaEn = dueAt,
         prioridad = prioridadDesdeTexto(priority),
         estado = estadoDesdeTexto(status),
@@ -146,8 +146,8 @@ internal fun validateRemoteTask(task: RemoteTask) {
     require(task.notes.length <= TaskLimits.MAX_NOTES) {
         "notes supera ${TaskLimits.MAX_NOTES} caracteres (tiene ${task.notes.length})."
     }
-    require(task.subjectId == null || task.subjectId.length <= TaskLimits.MAX_ID) {
-        "subjectId supera ${TaskLimits.MAX_ID} caracteres."
+    require(task.courseId == null || task.courseId.length <= TaskLimits.MAX_ID) {
+        "courseId supera ${TaskLimits.MAX_ID} caracteres."
     }
     require(task.priority in VALID_PRIORITIES) {
         "priority '${task.priority}' no es valida; usa $VALID_PRIORITIES."

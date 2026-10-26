@@ -458,7 +458,7 @@ fun TodayScreen(
                             FocalTaskCard(
                                 titulo = tarea.titulo,
                                 antetitulo = tituloSeccion(objetivo.grupo),
-                                textoMateria = objetivo.elemento.materia?.nombre
+                                textoCurso = objetivo.elemento.curso?.nombre
                                     ?: stringResource(R.string.task_noSubject),
                                 textoEntrega = tarea.entregaEn?.let {
                                     textoEtiquetaFecha(it, estado.ahora)
@@ -635,8 +635,8 @@ private fun ElementoTarea(
 ) {
     SwipeTaskRow(
         tarea = elemento.tarea,
-        nombreMateria = elemento.materia?.nombre,
-        colorMateriaArgb = elemento.materia?.color,
+        nombreCurso = elemento.curso?.nombre,
+        colorCursoArgb = elemento.curso?.color,
         ahora = ahora,
         modifier = modifier,
         alPulsar = { alAbrirTarea(elemento.tarea.id) },

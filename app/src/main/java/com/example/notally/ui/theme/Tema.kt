@@ -17,9 +17,9 @@ fun TemaNotally(
     content: @Composable () -> Unit,
 ) {
     val colorScheme = if (darkTheme) EsquemaColoresOscuro else EsquemaColoresClaro
-    val paletaMaterias = if (darkTheme) PaletaMaterias.Oscuro else PaletaMaterias.Claro
+    val paletaCursos = if (darkTheme) PaletaCursos.Oscuro else PaletaCursos.Claro
 
-    CompositionLocalProvider(LocalPaletaMaterias provides paletaMaterias) {
+    CompositionLocalProvider(LocalPaletaCursos provides paletaCursos) {
         MaterialTheme(
             colorScheme = colorScheme,
             typography = Tipografia,

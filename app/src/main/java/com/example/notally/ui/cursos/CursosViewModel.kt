@@ -1,4 +1,4 @@
-package com.example.notally.ui.subjects
+package com.example.notally.ui.cursos
 
 import android.content.Context
 import android.database.sqlite.SQLiteConstraintException
@@ -8,13 +8,13 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.notally.contenedorNotally
-import com.example.notally.data.model.Ajustes
+import com.example.notally.data.model.Settings
 import com.example.notally.data.model.Estado
-import com.example.notally.data.model.Materia
-import com.example.notally.data.model.MateriaConConteo
+import com.example.notally.data.model.Curso
+import com.example.notally.data.model.CursoConConteo
 import com.example.notally.data.model.Tarea
-import com.example.notally.data.repository.AjustesRepository
-import com.example.notally.data.repository.MateriasRepository
+import com.example.notally.data.repository.SettingsRepository
+import com.example.notally.data.repository.CursosRepository
 import com.example.notally.data.repository.TareasRepository
 import java.time.ZoneId
 import kotlinx.coroutines.CancellationException
@@ -37,63 +37,63 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/** Una materia con los conteos reales que muestra la tarjeta (§7.4). */
-data class TarjetaMateriaUi(
-    val materia: Materia,
+/** Un curso con los conteos reales que muestra la tarjeta (§7.4). */
+data class TarjetaCursoUi(
+    val curso: Curso,
     val totalTareas: Int,
     val tareasHechas: Int,
 ) {
     val tareasPendientes: Int get() = (totalTareas - tareasHechas).coerceAtLeast(0)
 }
 
-data class EstadoUiMaterias(
+data class EstadoUiCursos(
     val cargando: Boolean = true,
     val error: Boolean = false,
     val tieneDatosEnCache: Boolean = false,
-    val materias: List<TarjetaMateriaUi> = emptyList(),
+    val cursos: List<TarjetaCursoUi> = emptyList(),
     val totalPendientes: Int = 0,
     val entregasSemanales: Int = 0,
 )
 
-/** Error de la hoja de materia que se muestra dentro del formulario. */
-enum class ErrorFormularioMateria {
+/** Error de la hoja de curso que se muestra dentro del formulario. */
+enum class ErrorFormularioCurso {
     DUPLICADO,
     GENERICO,
 }
 
-/** Resultado explícito de guardar una materia desde la hoja. */
-enum class ResultadoGuardarMateria {
-    GUARDADA,
-    DUPLICADA,
-    GENERICA,
+/** Resultado explícito de guardar un curso desde la hoja. */
+enum class ResultadoGuardarCurso {
+    GUARDADO,
+    DUPLICADO,
+    GENERICO,
 }
 
-sealed interface EventoMaterias {
-    data class Fallo(val reintentar: () -> Unit) : EventoMaterias
+sealed interface EventoCursos {
+    data class Fallo(val reintentar: () -> Unit) : EventoCursos
 }
 
 /**
- * ViewModel de Materias (§7.4).
+ * ViewModel de Cursos (§7.4).
  *
  * Los conteos de cada tarjeta salen de `observarTareasActivas()` (no archivadas
  * e incluye completadas) y el total de pendientes del encabezado usa el conteo
- * de `MateriaDao`, que excluye completadas y archivadas. "Entregas esta
+ * de `CursoDao`, que excluye completadas y archivadas. "Entregas esta
  * semana" se calcula con [WeekDeliveries] y respeta el ajuste de inicio de
  * semana.
  */
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-class SubjectsViewModel(
-    private val repositorioMaterias: MateriasRepository,
+class CursosViewModel(
+    private val repositorioCursos: CursosRepository,
     private val repositorioTareas: TareasRepository,
-    private val repositorioAjustes: AjustesRepository,
+    private val repositorioSettings: SettingsRepository,
     private val reloj: () -> Long = System::currentTimeMillis,
     private val zona: ZoneId = ZoneId.systemDefault(),
 ) : ViewModel() {
 
     private data class DatosCrudos(
-        val materias: List<MateriaConConteo>,
+        val cursos: List<CursoConConteo>,
         val tareas: List<Tarea>,
-        val ajustes: Ajustes,
+        val settings: Settings,
     )
 
     private sealed interface EstadoCarga {
@@ -109,11 +109,11 @@ class SubjectsViewModel(
     )
 
     private val disparadorReintento = MutableStateFlow(0)
-    private val _errorFormulario = MutableStateFlow<ErrorFormularioMateria?>(null)
-    val errorFormulario: StateFlow<ErrorFormularioMateria?> = _errorFormulario
+    private val _errorFormulario = MutableStateFlow<ErrorFormularioCurso?>(null)
+    val errorFormulario: StateFlow<ErrorFormularioCurso?> = _errorFormulario
 
-    private val _eventos = MutableSharedFlow<EventoMaterias>(extraBufferCapacity = 4)
-    val eventos: SharedFlow<EventoMaterias> = _eventos.asSharedFlow()
+    private val _eventos = MutableSharedFlow<EventoCursos>(extraBufferCapacity = 4)
+    val eventos: SharedFlow<EventoCursos> = _eventos.asSharedFlow()
 
     private val flujoReloj: Flow<Long> = flow {
         while (true) {
@@ -125,11 +125,11 @@ class SubjectsViewModel(
 
     private val estadosCarga: Flow<EstadoCarga> = disparadorReintento.flatMapLatest {
         val listo: Flow<EstadoCarga> = combine(
-            repositorioMaterias.observarMateriasConConteo(),
+            repositorioCursos.observarCursosConConteo(),
             repositorioTareas.observarTareasActivas(),
-            repositorioAjustes.ajustes,
-        ) { materias, tareas, ajustes ->
-            EstadoCarga.Listo(DatosCrudos(materias, tareas, ajustes))
+            repositorioSettings.settings,
+        ) { cursos, tareas, settings ->
+            EstadoCarga.Listo(DatosCrudos(cursos, tareas, settings))
         }
         listo
             .onStart { emit(EstadoCarga.Cargando) }
@@ -150,7 +150,7 @@ class SubjectsViewModel(
             }
         }
 
-    val estadoUi: StateFlow<EstadoUiMaterias> = combine(
+    val estadoUi: StateFlow<EstadoUiCursos> = combine(
         agregado,
         flujoReloj,
     ) { estado, ahora ->
@@ -158,7 +158,7 @@ class SubjectsViewModel(
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = EstadoUiMaterias(),
+        initialValue = EstadoUiCursos(),
     )
 
     fun reintentar() {
@@ -170,81 +170,81 @@ class SubjectsViewModel(
     }
 
     /**
-     * Crea o renombra una materia. Devuelve el resultado para que la hoja
+     * Crea o renombra un curso. Devuelve el resultado para que la hoja
      * distinga éxito de error y pueda reactivar "Guardar" en `finally`.
      */
-    suspend fun guardarMateria(
-        existente: Materia?,
+    suspend fun guardarCurso(
+        existente: Curso?,
         nombre: String,
         color: Long,
-    ): ResultadoGuardarMateria {
+    ): ResultadoGuardarCurso {
         val recortado = nombre.trim()
         return try {
             if (existente == null) {
-                repositorioMaterias.crearMateria(nombre = recortado, color = color)
+                repositorioCursos.crearCurso(nombre = recortado, color = color)
             } else {
-                repositorioMaterias.actualizarMateria(
+                repositorioCursos.actualizarCurso(
                     existente.copy(nombre = recortado, color = color),
                 )
             }
             _errorFormulario.value = null
-            ResultadoGuardarMateria.GUARDADA
+            ResultadoGuardarCurso.GUARDADO
         } catch (cancelada: CancellationException) {
             throw cancelada
         } catch (_: SQLiteConstraintException) {
-            _errorFormulario.value = ErrorFormularioMateria.DUPLICADO
-            ResultadoGuardarMateria.DUPLICADA
+            _errorFormulario.value = ErrorFormularioCurso.DUPLICADO
+            ResultadoGuardarCurso.DUPLICADO
         } catch (_: Exception) {
-            _errorFormulario.value = ErrorFormularioMateria.GENERICO
-            ResultadoGuardarMateria.GENERICA
+            _errorFormulario.value = ErrorFormularioCurso.GENERICO
+            ResultadoGuardarCurso.GENERICO
         }
     }
 
-    fun eliminarMateria(materia: Materia, alEliminar: () -> Unit) {
+    fun eliminarCurso(curso: Curso, alEliminar: () -> Unit) {
         viewModelScope.launch {
             try {
-                repositorioMaterias.eliminarMateria(materia.id)
+                repositorioCursos.eliminarCurso(curso.id)
                 alEliminar()
             } catch (cancelada: CancellationException) {
                 throw cancelada
             } catch (_: Exception) {
-                _eventos.emit(EventoMaterias.Fallo { eliminarMateria(materia, alEliminar) })
+                _eventos.emit(EventoCursos.Fallo { eliminarCurso(curso, alEliminar) })
             }
         }
     }
 
     /** Color por defecto en alta: siguiente swatch en orden (§2.5). */
-    fun colorPorDefecto(cantidadMaterias: Int): Long {
-        val muestras = com.example.notally.ui.theme.MuestrasMaterias
-        return muestras[cantidadMaterias % muestras.size].argb
+    fun colorPorDefecto(cantidadCursos: Int): Long {
+        val muestras = com.example.notally.ui.theme.MuestrasCursos
+        return muestras[cantidadCursos % muestras.size].argb
     }
 
-    private fun construirEstado(agregado: Agregado, ahora: Long): EstadoUiMaterias {
-        val datos = agregado.datos ?: return EstadoUiMaterias(
+    private fun construirEstado(agregado: Agregado, ahora: Long): EstadoUiCursos {
+        val datos = agregado.datos ?: return EstadoUiCursos(
             cargando = agregado.cargando,
             error = agregado.error,
         )
-        val tareasPorMateria = datos.tareas.groupBy { it.materiaId }
-        val tarjetas = datos.materias
-            .sortedBy { it.materia.creadoEn }
+        val tareasPorCurso = datos.tareas.groupBy { it.cursoId }
+        val tarjetas = datos.cursos
+            .sortedBy { it.curso.creadoEn }
             .map { entrada ->
-                val tareas = tareasPorMateria[entrada.materia.id].orEmpty()
-                TarjetaMateriaUi(
-                    materia = entrada.materia,
+                val tareas = tareasPorCurso[entrada.curso.id].orEmpty()
+                TarjetaCursoUi(
+                    curso = entrada.curso,
                     totalTareas = tareas.size,
                     tareasHechas = tareas.count { it.estado == Estado.COMPLETADA },
                 )
             }
-        return EstadoUiMaterias(
+        return EstadoUiCursos(
             cargando = false,
             error = agregado.error,
             tieneDatosEnCache = true,
-            materias = tarjetas,
-            totalPendientes = datos.materias.sumOf { it.tareasPendientes },
+            cursos = tarjetas,
+            totalPendientes = datos.cursos.sumOf { it.tareasPendientes },
             entregasSemanales = WeekDeliveries.contar(
                 fechasEntrega = datos.tareas.map { it.entregaEn },
                 ahora = ahora,
-                semanaEmpiezaLunes = datos.ajustes.semanaEmpiezaLunes,
+                semanaEmpiezaLunes = datos.settings.semanaEmpiezaLunes,
                 zona = zona,
             ),
         )
@@ -254,10 +254,10 @@ class SubjectsViewModel(
         fun factory(context: Context): ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val contenedor = context.contenedorNotally
-                SubjectsViewModel(
-                    repositorioMaterias = contenedor.repositorioMaterias,
+                CursosViewModel(
+                    repositorioCursos = contenedor.repositorioCursos,
                     repositorioTareas = contenedor.repositorioTareas,
-                    repositorioAjustes = contenedor.repositorioAjustes,
+                    repositorioSettings = contenedor.repositorioSettings,
                 )
             }
         }
