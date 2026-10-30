@@ -164,6 +164,8 @@
 
     <!-- Accesibilidad -->
     <string name="a11y_back">Volver</string>
+    <string name="a11y_avatar_foto">Foto de perfil</string>
+    <string name="a11y_avatar_perfil">Perfil de %1$s</string>
     <string name="a11y_openTask">Abrir tarea</string>
     <string name="a11y_newTask">Nueva tarea</string>
     <string name="a11y_edit_course">Editar curso</string>
@@ -249,6 +251,9 @@
     <string name="settings_account_error_weak_password">La contraseña es demasiado débil.</string>
     <string name="settings_account_error_disabled">Esta cuenta está deshabilitada.</string>
     <string name="settings_account_error_provider">El acceso con email y contraseña no está habilitado.</string>
+    <string name="settings_account_continue_google">Continuar con Google</string>
+    <string name="settings_account_or">o</string>
+    <string name="settings_account_error_google">No se pudo iniciar con Google. Revisa la configuración.</string>
     <string name="settings_account_error_unknown">No se pudo completar la operación.</string>
 
     <!-- Aula Virtual -->

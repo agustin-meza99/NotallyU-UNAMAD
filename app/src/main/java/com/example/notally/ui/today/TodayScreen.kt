@@ -16,8 +16,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.lazy.LazyColumn
@@ -53,6 +55,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.notally.data.DateRanges
 import com.example.notally.R
+import com.example.notally.contenedorNotally
+import com.example.notally.data.firebase.UsuarioFirebase
+import com.example.notally.ui.components.AvatarUsuario
 import com.example.notally.ui.components.AvisoError
 import com.example.notally.ui.components.BloqueError
 import com.example.notally.ui.components.DayStrip
@@ -99,6 +104,9 @@ fun TodayScreen(
     ),
 ) {
     val estado by viewModel.estadoUi.collectAsStateWithLifecycle()
+    val contexto = LocalContext.current
+    val authRepository = remember(contexto) { contexto.contenedorNotally.authRepository }
+    val usuario by authRepository.usuario.collectAsStateWithLifecycle()
     val vacio = estado.vacio
     val estadoSnackbar = remember { SnackbarHostState() }
     val estadoLista = rememberLazyListState()
@@ -350,6 +358,7 @@ fun TodayScreen(
                     EncabezadoHoy(
                         antetitulo = estado.antetitulo,
                         resumen = estado.resumen,
+                        usuario = usuario,
                     )
                 }
 
@@ -436,29 +445,39 @@ internal fun mostrarTiraHoy(estado: EstadoUiHoy, dias: List<DiaTira>): Boolean =
 internal fun EncabezadoHoy(
     antetitulo: String,
     resumen: ResumenHoy?,
+    usuario: UsuarioFirebase?,
 ) {
     val colores = MaterialTheme.colorScheme
-    Column {
-        // Sin título visible (§7.1): la fecha orienta y el resumen informa.
-        if (antetitulo.isNotEmpty()) {
-            Text(
-                text = antetitulo,
-                style = MaterialTheme.typography.labelSmall,
-                color = colores.onSurfaceVariant,
-            )
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.Top,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            // Sin título visible (§7.1): la fecha orienta y el resumen informa.
+            if (antetitulo.isNotEmpty()) {
+                Text(
+                    text = antetitulo,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = colores.onSurfaceVariant,
+                )
+            }
+            if (resumen != null) {
+                if (antetitulo.isNotEmpty()) Spacer(Modifier.height(4.dp))
+                Text(
+                    text = pluralStringResource(
+                        R.plurals.today_summary,
+                        resumen.total,
+                        resumen.completadas,
+                        resumen.total,
+                    ),
+                    style = TipografiaNotally.numerico,
+                    color = colores.onSurface,
+                )
+            }
         }
-        if (resumen != null) {
-            if (antetitulo.isNotEmpty()) Spacer(Modifier.height(4.dp))
-            Text(
-                text = pluralStringResource(
-                    R.plurals.today_summary,
-                    resumen.total,
-                    resumen.completadas,
-                    resumen.total,
-                ),
-                style = TipografiaNotally.numerico,
-                color = colores.onSurface,
-            )
+        if (usuario != null) {
+            Spacer(Modifier.width(8.dp))
+            AvatarUsuario(usuario = usuario)
         }
     }
 }

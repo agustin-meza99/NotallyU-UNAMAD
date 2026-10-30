@@ -26,9 +26,11 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -41,6 +43,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -70,6 +73,8 @@ import com.example.notally.ui.utils.DateFormat
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
 
 /**
  * Pantalla Settings (§7.12).
@@ -90,6 +95,7 @@ fun SettingsScreen(
     val estadoCuenta by viewModel.estadoCuenta.collectAsStateWithLifecycle()
     val margen = margenHorizontalPantalla
     val contexto = LocalContext.current
+    val alcance = rememberCoroutineScope()
     val tituloPantalla = stringResource(R.string.nav_ajustes)
 
     var hojaAulaVisible by rememberSaveable { mutableStateOf(false) }
@@ -135,6 +141,27 @@ fun SettingsScreen(
         runCatching {
             contexto.packageManager.getPackageInfo(contexto.packageName, 0).versionName
         }.getOrNull() ?: "1.0"
+    }
+
+    // Credential Manager necesita la Activity: se lanza desde aquí y el
+    // ViewModel solo recibe el ID token ya obtenido.
+    val iniciarConGoogle: () -> Unit = {
+        if (!estadoCuenta.cargando) {
+            alcance.launch {
+                try {
+                    val idToken = obtenerIdTokenGoogle(contexto)
+                    if (idToken == null) {
+                        viewModel.cancelarGoogle()
+                    } else {
+                        viewModel.iniciarConGoogle(idToken)
+                    }
+                } catch (cancelada: CancellationException) {
+                    throw cancelada
+                } catch (_: Exception) {
+                    viewModel.falloGoogle()
+                }
+            }
+        }
     }
 
     Box(
@@ -291,6 +318,7 @@ fun SettingsScreen(
             estado = estadoCuenta,
             alEntrar = viewModel::iniciarSesion,
             alCrear = viewModel::crearCuenta,
+            alGoogle = iniciarConGoogle,
             alDescartar = {
                 hojaCuentaVisible = false
                 viewModel.descartarErrorCuenta()
@@ -430,6 +458,7 @@ private fun HojaCuenta(
     estado: EstadoCuenta,
     alEntrar: (email: String, password: String) -> Unit,
     alCrear: (email: String, password: String) -> Unit,
+    alGoogle: () -> Unit,
     alDescartar: () -> Unit,
 ) {
     var email by remember { mutableStateOf("") }
@@ -563,6 +592,32 @@ private fun HojaCuenta(
                     ),
                 )
             }
+
+            Spacer(Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                HorizontalDivider(modifier = Modifier.weight(1f))
+                Text(
+                    text = stringResource(R.string.settings_account_or),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 12.dp),
+                )
+                HorizontalDivider(modifier = Modifier.weight(1f))
+            }
+            Spacer(Modifier.height(8.dp))
+            OutlinedButton(
+                onClick = alGoogle,
+                enabled = !cargando,
+                shape = FormaNotally.s,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 48.dp),
+            ) {
+                Text(stringResource(R.string.settings_account_continue_google))
+            }
         }
     }
 }
@@ -577,6 +632,7 @@ private fun mensajeErrorCuenta(error: ErrorAuth): String = when (error) {
     ErrorAuth.PASSWORD_DEBIL -> stringResource(R.string.settings_account_error_weak_password)
     ErrorAuth.CUENTA_DESHABILITADA -> stringResource(R.string.settings_account_error_disabled)
     ErrorAuth.PROVEEDOR_DESHABILITADO -> stringResource(R.string.settings_account_error_provider)
+    ErrorAuth.GOOGLE -> stringResource(R.string.settings_account_error_google)
     ErrorAuth.DESCONOCIDO -> stringResource(R.string.settings_account_error_unknown)
 }
 

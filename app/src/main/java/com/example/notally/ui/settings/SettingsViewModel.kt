@@ -133,6 +133,23 @@ class SettingsViewModel(
         ejecutarAuth { authRepository.crearCuenta(email, password) }
     }
 
+    /** Canjea en Firebase el ID token obtenido por Credential Manager. */
+    fun iniciarConGoogle(idToken: String) {
+        ejecutarAuth { authRepository.iniciarConGoogle(idToken) }
+    }
+
+    /** El usuario cerró el selector de cuentas: no es un error. */
+    fun cancelarGoogle() {
+        _estadoCuenta.update { it.copy(cargando = false, error = null) }
+    }
+
+    /** Fallo al obtener el token (sin Play Services, SHA sin registrar...). */
+    fun falloGoogle() {
+        _estadoCuenta.update {
+            it.copy(cargando = false, error = ErrorAuth.GOOGLE, errorSync = false)
+        }
+    }
+
     fun descartarErrorCuenta() {
         _estadoCuenta.update { it.copy(error = null, errorSync = false) }
     }

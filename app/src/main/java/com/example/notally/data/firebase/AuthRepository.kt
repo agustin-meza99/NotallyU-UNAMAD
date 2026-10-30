@@ -4,6 +4,7 @@ import com.google.firebase.FirebaseNetworkException
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthException
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.auth.GoogleAuthProvider
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -12,6 +13,8 @@ import kotlinx.coroutines.flow.asStateFlow
 data class UsuarioFirebase(
     val uid: String,
     val email: String?,
+    val displayName: String? = null,
+    val photoUrl: String? = null,
 )
 
 /** Errores de autenticación ya traducidos a casos de dominio. */
@@ -24,6 +27,7 @@ enum class ErrorAuth {
     PASSWORD_DEBIL,
     CUENTA_DESHABILITADA,
     PROVEEDOR_DESHABILITADO,
+    GOOGLE,
     DESCONOCIDO,
 }
 
@@ -66,6 +70,18 @@ class AuthRepository(
             auth.createUserWithEmailAndPassword(email.trim(), password).esperar()
         }
 
+    /**
+     * Canjea el ID token de Google por una sesión de Firebase.
+     *
+     * El token lo obtiene la UI con Credential Manager; aquí solo se usa para
+     * construir la credencial y nunca se guarda ni se escribe en logs.
+     */
+    suspend fun iniciarConGoogle(idToken: String): ResultadoAuth =
+        ejecutarAuth {
+            val credencial = GoogleAuthProvider.getCredential(idToken, null)
+            auth.signInWithCredential(credencial).esperar()
+        }
+
     fun cerrarSesion() {
         auth.signOut()
     }
@@ -87,6 +103,8 @@ class AuthRepository(
 private fun FirebaseUser.aUsuario(): UsuarioFirebase = UsuarioFirebase(
     uid = uid,
     email = email,
+    displayName = displayName,
+    photoUrl = photoUrl?.toString(),
 )
 
 private fun String.aErrorAuth(): ErrorAuth = when (this) {
