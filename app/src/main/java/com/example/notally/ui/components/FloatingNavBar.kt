@@ -9,7 +9,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -178,9 +177,11 @@ fun FloatingNavBar(
             modifier = Modifier.align(Alignment.CenterEnd),
         ) {
             accionRecordada.value?.let { accion ->
-                BotonAccionPrincipal(
+                NotallyFab(
                     alPulsar = accion,
                     descripcion = descripcionAccionPrincipal,
+                    // El FAB sobresale 6 dp del borde superior de la píldora (§6).
+                    modifier = Modifier.offset(y = (-6).dp),
                 )
             }
         }
@@ -289,38 +290,6 @@ private fun DestinoCluster(item: FloatingNavItem) {
                     shape = formaIndicador,
                     offset = 0.dp,
                 ),
-        )
-    }
-}
-
-@Composable
-private fun BotonAccionPrincipal(
-    alPulsar: () -> Unit,
-    descripcion: String,
-) {
-    val colores = MaterialTheme.colorScheme
-    var enfocado by remember { mutableStateOf(false) }
-
-    Box(
-        modifier = Modifier
-            .size(52.dp)
-            .onFocusChanged { enfocado = it.isFocused }
-            .anilloFoco(visible = enfocado, shape = CircleShape)
-            .shadow(elevation = ElevacionCluster, shape = CircleShape)
-            .clip(CircleShape)
-            .background(colores.primary)
-            .clickable(
-                role = Role.Button,
-                onClick = alPulsar,
-            )
-            .semantics { contentDescription = descripcion },
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            painter = painterResource(R.drawable.ic_add),
-            contentDescription = null,
-            tint = colores.onPrimary,
-            modifier = Modifier.size(24.dp),
         )
     }
 }

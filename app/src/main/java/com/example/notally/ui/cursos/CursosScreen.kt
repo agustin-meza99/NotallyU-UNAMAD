@@ -18,15 +18,14 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
@@ -47,7 +46,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -64,6 +62,7 @@ import com.example.notally.ui.components.AvisoError
 import com.example.notally.ui.components.BloqueError
 import com.example.notally.ui.components.EmptyState
 import com.example.notally.ui.components.FilasCargando
+import com.example.notally.ui.components.NotallyFab
 import com.example.notally.ui.components.anilloFoco
 import com.example.notally.ui.theme.EspaciadoNotally
 import com.example.notally.ui.theme.FormaNotally
@@ -157,7 +156,9 @@ fun CursosScreen(
                     start = margen,
                     end = margen,
                     top = 24.dp,
-                    bottom = 24.dp,
+                    // Deja la última tarjeta por encima del FAB y del cluster
+                    // inferior, con el mismo criterio que Hoy (§4.1, §6).
+                    bottom = EspaciadoNotally.rellenoInferiorLista,
                 ),
             ) {
                 item(key = "header") {
@@ -167,11 +168,6 @@ fun CursosScreen(
                         entregasSemanales = estado.entregasSemanales,
                         mostrarConteos = estado.tieneDatosEnCache &&
                             estado.cursos.isNotEmpty(),
-                        mostrarAgregar = estado.cursos.isNotEmpty(),
-                        alAgregar = {
-                            viewModel.limpiarErrorFormulario()
-                            objetivoHoja = ObjetivoCursoSheet.Nueva
-                        },
                         modifier = Modifier.padding(bottom = 16.dp),
                     )
                 }
@@ -239,6 +235,26 @@ fun CursosScreen(
                     }
                 }
             }
+
+            // FAB de Cursos: mismo botón que Hoy, flotando sobre el cluster
+            // inferior. Con 0 cursos no se compone: el CTA del estado vacío es
+            // la única acción (§7.8).
+            if (estado.cursos.isNotEmpty()) {
+                NotallyFab(
+                    alPulsar = {
+                        viewModel.limpiarErrorFormulario()
+                        objetivoHoja = ObjetivoCursoSheet.Nueva
+                    },
+                    descripcion = stringResource(R.string.courses_new),
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(end = margen)
+                        // El borde inferior del contenido ya queda 24 dp por
+                        // encima de la píldora; bajar 8 dp deja el margen de
+                        // 16 dp sobre la barra flotante.
+                        .offset(y = 8.dp),
+                )
+            }
         }
     }
 
@@ -283,75 +299,39 @@ private fun EncabezadoCursos(
     totalPendientes: Int,
     entregasSemanales: Int,
     mostrarConteos: Boolean,
-    mostrarAgregar: Boolean,
-    alAgregar: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colores = MaterialTheme.colorScheme
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            // Sin título visible (§7.4): el primer dato es el conteo real.
-            if (mostrarConteos) {
-                val textoPendientes = pluralStringResource(
-                    R.plurals.courses_pending,
-                    totalPendientes,
-                    totalPendientes,
-                )
-                Text(
-                    text = pluralStringResource(
-                        R.plurals.courses_summary,
-                        cantidadCursos,
-                        cantidadCursos,
-                        textoPendientes,
-                    ),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = colores.onSurfaceVariant,
-                )
-                Spacer(Modifier.height(2.dp))
-                Text(
-                    text = pluralStringResource(
-                        R.plurals.courses_week,
-                        entregasSemanales,
-                        entregasSemanales,
-                    ),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = colores.onSurfaceVariant,
-                )
-            }
+    // Sin título visible (§7.4): el primer dato es el conteo real. El botón
+    // "+" vive ahora en el FAB inferior.
+    Column(modifier = modifier.fillMaxWidth()) {
+        if (mostrarConteos) {
+            val textoPendientes = pluralStringResource(
+                R.plurals.courses_pending,
+                totalPendientes,
+                totalPendientes,
+            )
+            Text(
+                text = pluralStringResource(
+                    R.plurals.courses_summary,
+                    cantidadCursos,
+                    cantidadCursos,
+                    textoPendientes,
+                ),
+                style = MaterialTheme.typography.bodyMedium,
+                color = colores.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text = pluralStringResource(
+                    R.plurals.courses_week,
+                    entregasSemanales,
+                    entregasSemanales,
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                color = colores.onSurfaceVariant,
+            )
         }
-        if (mostrarAgregar) {
-            Spacer(Modifier.width(16.dp))
-            BotonAgregarCurso(alPulsar = alAgregar)
-        }
-    }
-}
-
-/** "+" de Cursos: 52 dp circular, `primary`/`onPrimary`, sin sombra (§7.10). */
-@Composable
-private fun BotonAgregarCurso(alPulsar: () -> Unit) {
-    val colores = MaterialTheme.colorScheme
-    var enfocado by remember { mutableStateOf(false) }
-    val descripcion = stringResource(R.string.courses_new)
-    Box(
-        modifier = Modifier
-            .size(52.dp)
-            .onFocusChanged { enfocado = it.isFocused }
-            .anilloFoco(visible = enfocado, shape = CircleShape)
-            .clip(CircleShape)
-            .background(colores.primary)
-            .clickable(role = Role.Button, onClick = alPulsar)
-            .semantics { contentDescription = descripcion },
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            painter = painterResource(R.drawable.ic_add),
-            contentDescription = null,
-            tint = colores.onPrimary,
-            modifier = Modifier.size(24.dp),
-        )
     }
 }
 
