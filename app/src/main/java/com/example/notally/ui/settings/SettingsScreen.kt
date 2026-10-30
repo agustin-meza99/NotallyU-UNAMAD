@@ -8,17 +8,24 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -27,6 +34,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -34,6 +42,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -50,6 +59,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -59,6 +69,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.notally.R
@@ -100,11 +112,19 @@ fun SettingsScreen(
 
     var hojaAulaVisible by rememberSaveable { mutableStateOf(false) }
     var hojaCuentaVisible by rememberSaveable { mutableStateOf(false) }
+    var cuentaEmail by rememberSaveable { mutableStateOf("") }
+    var cuentaPassword by rememberSaveable { mutableStateOf("") }
+    var cuentaModoCrear by rememberSaveable { mutableStateOf(false) }
     var confirmarDesconexion by remember { mutableStateOf(false) }
     val snackbar = remember { SnackbarHostState() }
 
     LaunchedEffect(usuario) {
-        if (usuario != null) hojaCuentaVisible = false
+        if (usuario != null) {
+            hojaCuentaVisible = false
+            cuentaEmail = ""
+            cuentaPassword = ""
+            cuentaModoCrear = false
+        }
     }
 
     LaunchedEffect(viewModel) {
@@ -316,10 +336,23 @@ fun SettingsScreen(
     if (hojaCuentaVisible && usuario == null) {
         HojaCuenta(
             estado = estadoCuenta,
+            email = cuentaEmail,
+            alCambiarEmail = { cuentaEmail = it },
+            password = cuentaPassword,
+            alCambiarPassword = { cuentaPassword = it },
+            modoCrear = cuentaModoCrear,
+            alCambiarModo = { cuentaModoCrear = it },
             alEntrar = viewModel::iniciarSesion,
             alCrear = viewModel::crearCuenta,
             alGoogle = iniciarConGoogle,
-            alDescartar = {
+            alCerrar = {
+                hojaCuentaVisible = false
+                viewModel.descartarErrorCuenta()
+            },
+            alCancelar = {
+                cuentaEmail = ""
+                cuentaPassword = ""
+                cuentaModoCrear = false
                 hojaCuentaVisible = false
                 viewModel.descartarErrorCuenta()
             },
@@ -452,18 +485,21 @@ private fun FilaCuentaConSesion(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HojaCuenta(
     estado: EstadoCuenta,
+    email: String,
+    alCambiarEmail: (String) -> Unit,
+    password: String,
+    alCambiarPassword: (String) -> Unit,
+    modoCrear: Boolean,
+    alCambiarModo: (Boolean) -> Unit,
     alEntrar: (email: String, password: String) -> Unit,
     alCrear: (email: String, password: String) -> Unit,
     alGoogle: () -> Unit,
-    alDescartar: () -> Unit,
+    alCerrar: () -> Unit,
+    alCancelar: () -> Unit,
 ) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var modoCrear by remember { mutableStateOf(false) }
     val cargando = estado.cargando
     val puedeEnviar = email.isNotBlank() && password.isNotBlank() && !cargando
     val enviar = {
@@ -472,151 +508,181 @@ private fun HojaCuenta(
         }
     }
 
-    ModalBottomSheet(
-        onDismissRequest = alDescartar,
-        shape = FormaNotally.xl,
-        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-        scrimColor = MaterialTheme.colorScheme.scrim.copy(alpha = 0.32f),
+    Dialog(
+        onDismissRequest = alCerrar,
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            decorFitsSystemWindows = false,
+        ),
     ) {
-        Column(
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 20.dp, end = 20.dp, bottom = 24.dp),
-        ) {
-            Text(
-                text = stringResource(
-                    if (modoCrear) {
-                        R.string.settings_account_sheet_title_create
-                    } else {
-                        R.string.settings_account_sheet_title
-                    },
-                ),
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Spacer(Modifier.height(16.dp))
-            OutlinedTextField(
-                value = email,
-                onValueChange = { email = it },
-                label = { Text(stringResource(R.string.settings_account_email)) },
-                singleLine = true,
-                enabled = !cargando,
-                shape = FormaNotally.s,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Email,
-                    imeAction = ImeAction.Next,
-                ),
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(Modifier.height(12.dp))
-            OutlinedTextField(
-                value = password,
-                onValueChange = { password = it },
-                label = { Text(stringResource(R.string.settings_account_password)) },
-                singleLine = true,
-                enabled = !cargando,
-                shape = FormaNotally.s,
-                visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Password,
-                    imeAction = ImeAction.Done,
-                ),
-                keyboardActions = KeyboardActions(onDone = { enviar() }),
-                modifier = Modifier.fillMaxWidth(),
-            )
-
-            if (cargando) {
-                Spacer(Modifier.height(16.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.width(20.dp).height(20.dp),
-                        strokeWidth = 2.dp,
-                    )
-                    Spacer(Modifier.width(12.dp))
-                    Text(
-                        text = stringResource(R.string.settings_account_connecting),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-
-            estado.error?.let { error ->
-                Spacer(Modifier.height(12.dp))
-                Text(
-                    text = mensajeErrorCuenta(error),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error,
-                )
-            }
-
-            Spacer(Modifier.height(16.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                TextButton(
-                    onClick = alDescartar,
-                    enabled = !cargando,
-                ) {
-                    Text(stringResource(R.string.action_cancel))
-                }
-                Spacer(Modifier.width(8.dp))
-                TextButton(
-                    onClick = enviar,
-                    enabled = puedeEnviar,
-                ) {
-                    Text(
-                        stringResource(
-                            if (modoCrear) {
-                                R.string.settings_account_create
-                            } else {
-                                R.string.settings_account_enter
-                            },
-                        ),
-                    )
-                }
-            }
-            TextButton(
-                onClick = { modoCrear = !modoCrear },
-                enabled = !cargando,
-            ) {
-                Text(
-                    stringResource(
-                        if (modoCrear) {
-                            R.string.settings_account_switch_to_login
-                        } else {
-                            R.string.settings_account_switch_to_create
-                        },
+                .fillMaxSize()
+                .windowInsetsPadding(
+                    WindowInsets.safeDrawing.only(
+                        WindowInsetsSides.Top + WindowInsetsSides.Horizontal,
                     ),
                 )
-            }
-
-            Spacer(Modifier.height(8.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                HorizontalDivider(modifier = Modifier.weight(1f))
-                Text(
-                    text = stringResource(R.string.settings_account_or),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 12.dp),
-                )
-                HorizontalDivider(modifier = Modifier.weight(1f))
-            }
-            Spacer(Modifier.height(8.dp))
-            OutlinedButton(
-                onClick = alGoogle,
-                enabled = !cargando,
-                shape = FormaNotally.s,
+                .navigationBarsPadding()
+                .imePadding()
+                .padding(horizontal = 20.dp, vertical = 24.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Surface(
+                shape = FormaNotally.xl,
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                tonalElevation = 3.dp,
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 48.dp),
+                    .widthIn(max = 440.dp)
+                    .fillMaxWidth(),
             ) {
-                Text(stringResource(R.string.settings_account_continue_google))
+                Column(
+                    modifier = Modifier
+                        .verticalScroll(rememberScrollState())
+                        .padding(24.dp),
+                ) {
+                    Text(
+                        text = stringResource(
+                            if (modoCrear) {
+                                R.string.settings_account_sheet_title_create
+                            } else {
+                                R.string.settings_account_sheet_title
+                            },
+                        ),
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Spacer(Modifier.height(16.dp))
+                    OutlinedTextField(
+                        value = email,
+                        onValueChange = alCambiarEmail,
+                        label = { Text(stringResource(R.string.settings_account_email)) },
+                        singleLine = true,
+                        enabled = !cargando,
+                        shape = FormaNotally.s,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Email,
+                            imeAction = ImeAction.Next,
+                        ),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = alCambiarPassword,
+                        label = { Text(stringResource(R.string.settings_account_password)) },
+                        singleLine = true,
+                        enabled = !cargando,
+                        shape = FormaNotally.s,
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Password,
+                            imeAction = ImeAction.Done,
+                        ),
+                        keyboardActions = KeyboardActions(onDone = { enviar() }),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+
+                    if (cargando) {
+                        Spacer(Modifier.height(16.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.width(20.dp).height(20.dp),
+                                strokeWidth = 2.dp,
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            Text(
+                                text = stringResource(R.string.settings_account_connecting),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+
+                    estado.error?.let { error ->
+                        Spacer(Modifier.height(12.dp))
+                        Text(
+                            text = mensajeErrorCuenta(error),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+
+                    Spacer(Modifier.height(16.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        TextButton(
+                            onClick = alCancelar,
+                            enabled = !cargando,
+                        ) {
+                            Text(stringResource(R.string.action_cancel))
+                        }
+                        Spacer(Modifier.width(8.dp))
+                        TextButton(
+                            onClick = enviar,
+                            enabled = puedeEnviar,
+                        ) {
+                            Text(
+                                stringResource(
+                                    if (modoCrear) {
+                                        R.string.settings_account_create
+                                    } else {
+                                        R.string.settings_account_enter
+                                    },
+                                ),
+                            )
+                        }
+                    }
+                    TextButton(
+                        onClick = { alCambiarModo(!modoCrear) },
+                        enabled = !cargando,
+                    ) {
+                        Text(
+                            stringResource(
+                                if (modoCrear) {
+                                    R.string.settings_account_switch_to_login
+                                } else {
+                                    R.string.settings_account_switch_to_create
+                                },
+                            ),
+                        )
+                    }
+
+                    Spacer(Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        HorizontalDivider(modifier = Modifier.weight(1f))
+                        Text(
+                            text = stringResource(R.string.settings_account_or),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 12.dp),
+                        )
+                        HorizontalDivider(modifier = Modifier.weight(1f))
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedButton(
+                        onClick = alGoogle,
+                        enabled = !cargando,
+                        shape = FormaNotally.s,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 48.dp),
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_google),
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.settings_account_continue_google))
+                    }
+                }
             }
         }
     }
