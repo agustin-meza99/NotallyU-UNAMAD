@@ -195,7 +195,6 @@ fun Curso.toRemote(updatedAtMs: Long = creadoEn): RemoteCurso {
     val remote = RemoteCurso(
         name = nombre,
         professor = profesor,
-        credits = creditos,
         createdAt = creadoEn,
         updatedAt = updatedAtMs,
         // Room hace borrado duro; un curso local nunca es un tombstone.
@@ -229,7 +228,6 @@ fun RemoteCurso.toLocal(
         id = localId,
         nombre = name,
         profesor = professor,
-        creditos = credits,
         creadoEn = createdAt ?: now,
     )
 }
@@ -240,8 +238,5 @@ internal fun validateRemoteCurso(curso: RemoteCurso) {
     }
     require(curso.professor == null || curso.professor.length <= CursoLimits.MAX_PROFESSOR) {
         "professor supera ${CursoLimits.MAX_PROFESSOR} caracteres."
-    }
-    require(curso.credits == null || curso.credits >= 0) {
-        "credits no puede ser negativo (${curso.credits})."
     }
 }

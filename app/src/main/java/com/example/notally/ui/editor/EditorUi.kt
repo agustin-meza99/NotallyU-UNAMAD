@@ -8,6 +8,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -80,6 +81,7 @@ import java.time.ZoneId
 @Composable
 internal fun EditorContent(
     estado: BorradorTarea,
+    editandoNotas: Boolean = false,
     cursos: List<Curso>,
     nuevaSubtarea: String,
     alCambiarNuevaSubtarea: (String) -> Unit,
@@ -158,63 +160,155 @@ internal fun EditorContent(
                 },
             )
             Spacer(Modifier.height(16.dp))
-            EditorPropertyRow(
-                etiqueta = stringResource(R.string.editor_property_course),
-                valor = nombreCurso,
-                alPulsar = { alAbrirPropiedad(HojaEditor.CURSO) },
-            )
-            EditorPropertyRow(
-                etiqueta = stringResource(R.string.editor_property_due),
-                valor = textoEntrega,
-                alPulsar = { alAbrirPropiedad(HojaEditor.ENTREGA) },
-            )
-            EditorPropertyRow(
-                etiqueta = stringResource(R.string.editor_property_priority),
-                valor = textoPrioridad,
-                mostrarPuntoError = estado.prioridad == Prioridad.ALTA,
-                alPulsar = { alAbrirPropiedad(HojaEditor.PRIORIDAD) },
-            )
-            EditorPropertyRow(
-                etiqueta = stringResource(R.string.editor_property_state),
-                valor = textoEstado,
-                alPulsar = { alAbrirPropiedad(HojaEditor.ESTADO) },
-            )
-            if (estado.esGrupal) {
-                EditorReadOnlyRow(texto = stringResource(R.string.task_group_yes))
-            }
-            if (estado.entregada) {
-                EditorReadOnlyRow(texto = stringResource(R.string.task_delivered_yes))
-            } else if (estado.externalId != null &&
-                estado.entregaEn?.let { it < System.currentTimeMillis() } == true
+            androidx.compose.material3.Surface(
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                color = colores.surfaceContainerLow,
+                modifier = Modifier.fillMaxWidth(),
             ) {
-                // Solo tareas del Aula: una tarea manual vencida se atrasa.
-                EditorReadOnlyRow(texto = stringResource(R.string.task_not_delivered))
+                Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)) {
+                    EditorPropertyRow(
+                        etiqueta = stringResource(R.string.editor_property_course),
+                        valor = nombreCurso,
+                        alPulsar = { alAbrirPropiedad(HojaEditor.CURSO) },
+                    )
+                    EditorPropertyRow(
+                        etiqueta = stringResource(R.string.editor_property_due),
+                        valor = textoEntrega,
+                        alPulsar = { alAbrirPropiedad(HojaEditor.ENTREGA) },
+                    )
+                    EditorPropertyRow(
+                        etiqueta = stringResource(R.string.editor_property_priority),
+                        valor = textoPrioridad,
+                        mostrarPuntoError = estado.prioridad == Prioridad.ALTA,
+                        alPulsar = { alAbrirPropiedad(HojaEditor.PRIORIDAD) },
+                    )
+                    EditorPropertyRow(
+                        etiqueta = stringResource(R.string.editor_property_state),
+                        valor = textoEstado,
+                        alPulsar = { alAbrirPropiedad(HojaEditor.ESTADO) },
+                    )
+                }
+            }
+            val hayBadges = estado.esGrupal || estado.entregada ||
+                (estado.externalId != null && estado.entregaEn?.let { it < System.currentTimeMillis() } == true) ||
+                estado.calificacion != null
+            if (hayBadges) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (estado.esGrupal) {
+                        EditorBadge(
+                            texto = stringResource(R.string.task_group_yes),
+                            fondo = colores.surfaceContainerHigh,
+                            contenido = colores.onSurfaceVariant,
+                        )
+                    }
+                    if (estado.entregada) {
+                        EditorBadge(
+                            texto = stringResource(R.string.task_delivered_yes),
+                            fondo = colores.secondaryContainer,
+                            contenido = colores.onSecondaryContainer,
+                        )
+                    } else if (estado.externalId != null &&
+                        estado.entregaEn?.let { it < System.currentTimeMillis() } == true
+                    ) {
+                        EditorBadge(
+                            texto = stringResource(R.string.task_not_delivered),
+                            fondo = colores.errorContainer,
+                            contenido = colores.onErrorContainer,
+                        )
+                    }
+                    estado.calificacion?.let { nota ->
+                        val textoNota = if (nota % 1.0 == 0.0) nota.toInt().toString() else "%.2f".format(nota)
+                        val aprobada = nota >= 11.0
+                        EditorBadge(
+                            texto = "Nota: $textoNota / 20",
+                            fondo = if (aprobada) colores.tertiaryContainer else colores.errorContainer,
+                            contenido = if (aprobada) colores.onTertiaryContainer else colores.onErrorContainer,
+                        )
+                    }
+                }
+            }
+            estado.retroalimentacion?.let { feedback ->
+                EditorReadOnlyRow(texto = "Retroalimentación: $feedback")
             }
 
-            Spacer(Modifier.height(24.dp))
-            BasicTextField(
-                value = estado.notas,
-                onValueChange = alCambiarNotas,
-                textStyle = TipografiaNotally.cuerpoEditor.copy(color = colores.onSurface),
-                cursorBrush = SolidColor(colores.tertiary),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 120.dp)
-                    .semantics { contentDescription = etiquetaNotas },
-                decorationBox = { campoInterno ->
-                    Box(modifier = Modifier.heightIn(min = 120.dp)) {
-                        if (estado.notas.isEmpty()) {
-                            Text(
-                                text = stringResource(R.string.editor_notes_placeholder),
-                                style = TipografiaNotally.cuerpoEditor,
-                                color = colores.onSurfaceVariant,
-                            )
+            Spacer(Modifier.height(14.dp))
+            if (editandoNotas) {
+                BasicTextField(
+                    value = estado.notas,
+                    onValueChange = alCambiarNotas,
+                    textStyle = TipografiaNotally.cuerpoEditor.copy(color = colores.onSurface),
+                    cursorBrush = SolidColor(colores.tertiary),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 120.dp)
+                        .semantics { contentDescription = etiquetaNotas },
+                    decorationBox = { campoInterno ->
+                        Box(modifier = Modifier.heightIn(min = 120.dp)) {
+                            if (estado.notas.isEmpty()) {
+                                Text(
+                                    text = stringResource(R.string.editor_notes_placeholder),
+                                    style = TipografiaNotally.cuerpoEditor,
+                                    color = colores.onSurfaceVariant,
+                                )
+                            }
+                            campoInterno()
                         }
-                        campoInterno()
+                    },
+                )
+            } else {
+                val placeholderNotas = stringResource(R.string.editor_notes_placeholder)
+                val textoConLinks = remember(estado.notas, colores.primary, placeholderNotas) {
+                    val regex = Regex("""https?://[^\s<>"{}|\\^`\[\]]+""")
+                    androidx.compose.ui.text.buildAnnotatedString {
+                        if (estado.notas.isEmpty()) {
+                            append(placeholderNotas)
+                        } else {
+                            var ultimo = 0
+                            for (match in regex.findAll(estado.notas)) {
+                                val inicio = match.range.first
+                                val url = match.value.trimEnd('.', ',', ')', ';')
+                                val fin = inicio + url.length
+                                if (inicio > ultimo) {
+                                    append(estado.notas.substring(ultimo, inicio))
+                                }
+                                pushLink(
+                                    androidx.compose.ui.text.LinkAnnotation.Url(
+                                        url = url,
+                                        styles = androidx.compose.ui.text.TextLinkStyles(
+                                            style = androidx.compose.ui.text.SpanStyle(
+                                                color = colores.primary,
+                                                textDecoration = androidx.compose.ui.text.style.TextDecoration.Underline,
+                                            ),
+                                        ),
+                                    ),
+                                )
+                                append(url)
+                                pop()
+                                ultimo = fin
+                            }
+                            if (ultimo < estado.notas.length) {
+                                append(estado.notas.substring(ultimo))
+                            }
+                        }
                     }
-                },
-            )
+                }
+                Text(
+                    text = textoConLinks,
+                    style = TipografiaNotally.cuerpoEditor.copy(
+                        color = if (estado.notas.isEmpty()) colores.onSurfaceVariant else colores.onSurface,
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .semantics { contentDescription = etiquetaNotas },
+                )
+            }
 
             Spacer(Modifier.height(24.dp))
             SubtasksSection(
@@ -333,6 +427,26 @@ private fun EditorPropertyRow(
 }
 
 /** Fila informativa sin acción, para datos que vienen del Aula Virtual. */
+@Composable
+private fun EditorBadge(
+    texto: String,
+    fondo: Color,
+    contenido: Color,
+) {
+    androidx.compose.material3.Surface(
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+        color = fondo,
+        contentColor = contenido,
+    ) {
+        Text(
+            text = texto,
+            style = MaterialTheme.typography.labelMedium,
+            maxLines = 1,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+        )
+    }
+}
+
 @Composable
 private fun EditorReadOnlyRow(texto: String) {
     val colores = MaterialTheme.colorScheme

@@ -16,13 +16,12 @@ class CursoMapperTest {
         id: Long = 3L,
         nombre: String = "Historia del Peru",
         profesor: String? = "Dra. Rojas",
-        creditos: Int? = 4,
         creadoEn: Long = 1_600_000_000_000L,
     ) = Curso(
         id = id,
         nombre = nombre,
         profesor = profesor,
-        creditos = creditos,
+        creditos = null,
         creadoEn = creadoEn,
     )
 
@@ -41,16 +40,14 @@ class CursoMapperTest {
     }
 
     @Test
-    fun `profesor y creditos nulos sobreviven como nulos`() {
-        val local = curso(profesor = null, creditos = null)
+    fun `profesor nulo sobrevive como nulo`() {
+        val local = curso(profesor = null)
 
         val remoto = local.toRemote()
         val vuelta = remoto.toLocal(localId = local.id)
 
         assertNull(remoto.professor)
-        assertNull(remoto.credits)
         assertNull(vuelta.profesor)
-        assertNull(vuelta.creditos)
     }
 
     @Test
@@ -84,18 +81,6 @@ class CursoMapperTest {
         assertThrows(IllegalArgumentException::class.java) {
             curso(profesor = "p".repeat(121)).toRemote()
         }
-    }
-
-    @Test
-    fun `los creditos negativos se rechazan`() {
-        assertThrows(IllegalArgumentException::class.java) {
-            curso(creditos = -1).toRemote()
-        }
-    }
-
-    @Test
-    fun `cero creditos es valido`() {
-        assertEquals(0, curso(creditos = 0).toRemote().credits)
     }
 
     @Test
@@ -134,9 +119,6 @@ class CursoMapperTest {
                 name = "Valida",
                 professor = "p".repeat(CursoLimits.MAX_PROFESSOR + 1),
             ).toLocal()
-        }
-        assertThrows(IllegalArgumentException::class.java) {
-            RemoteCurso(name = "Valida", credits = -5).toLocal()
         }
     }
 }

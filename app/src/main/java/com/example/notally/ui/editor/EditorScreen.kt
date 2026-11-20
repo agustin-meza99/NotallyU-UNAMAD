@@ -108,6 +108,7 @@ fun EditorScreen(
     val gestorFoco = LocalFocusManager.current
 
     var hoja by remember { mutableStateOf<HojaEditor?>(null) }
+    var editandoNotas by remember { mutableStateOf(false) }
     var mostrarDialogoEliminar by remember { mutableStateOf(false) }
     var nuevaSubtarea by rememberSaveable { mutableStateOf("") }
     var subtareaEnfocada by remember { mutableStateOf(false) }
@@ -223,6 +224,8 @@ fun EditorScreen(
                     },
                     alEliminar = { mostrarDialogoEliminar = true },
                     mostrarMenu = !estado.cargando && !estado.errorCarga,
+                    editandoNotas = editandoNotas,
+                    alAlternarEditarNotas = { editandoNotas = !editandoNotas },
                 )
                 Box(
                     modifier = Modifier
@@ -254,6 +257,7 @@ fun EditorScreen(
                         else -> {
                             EditorContent(
                                 estado = estado,
+                                editandoNotas = editandoNotas,
                                 cursos = cursos,
                                 nuevaSubtarea = nuevaSubtarea,
                                 alCambiarNuevaSubtarea = { nuevaSubtarea = it },
@@ -339,6 +343,8 @@ private fun EditorTopBar(
     alVolver: () -> Unit,
     alEliminar: () -> Unit,
     mostrarMenu: Boolean,
+    editandoNotas: Boolean,
+    alAlternarEditarNotas: () -> Unit,
 ) {
     var menuAbierto by remember { mutableStateOf(false) }
     Row(
@@ -377,6 +383,15 @@ private fun EditorTopBar(
                     expanded = menuAbierto,
                     onDismissRequest = { menuAbierto = false },
                 ) {
+                    DropdownMenuItem(
+                        text = {
+                            Text(if (editandoNotas) "Terminar edición" else "Editar descripción")
+                        },
+                        onClick = {
+                            menuAbierto = false
+                            alAlternarEditarNotas()
+                        },
+                    )
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.editor_delete)) },
                         onClick = {

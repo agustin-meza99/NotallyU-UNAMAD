@@ -58,7 +58,7 @@ private object CacheAvatares {
  * encabezado no deja un hueco.
  */
 @Composable
-fun AvatarUsuario(
+fun AvatarCircle(
     usuario: UsuarioFirebase?,
     modifier: Modifier = Modifier,
 ) {

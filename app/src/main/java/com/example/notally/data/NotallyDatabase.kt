@@ -22,7 +22,7 @@ import com.example.notally.data.model.Tarea
  */
 @Database(
     entities = [Curso::class, Tarea::class, Subtarea::class],
-    version = 5,
+    version = 6,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -126,13 +126,21 @@ abstract class NotallyDatabase : RoomDatabase() {
             }
         }
 
+        /** Migración 5 → 6: añade `calificacion` y `retroalimentacion` a `tasks`. */
+        val MIGRACION_5_6: Migration = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `tasks` ADD COLUMN `calificacion` REAL")
+                db.execSQL("ALTER TABLE `tasks` ADD COLUMN `retroalimentacion` TEXT")
+            }
+        }
+
         fun construir(context: Context): NotallyDatabase =
             Room.databaseBuilder(
                 context.applicationContext,
                 NotallyDatabase::class.java,
                 NOMBRE,
             )
-                .addMigrations(MIGRACION_1_2, MIGRACION_2_3, MIGRACION_3_4, MIGRACION_4_5)
+                .addMigrations(MIGRACION_1_2, MIGRACION_2_3, MIGRACION_3_4, MIGRACION_4_5, MIGRACION_5_6)
                 .build()
     }
 }

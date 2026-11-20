@@ -28,9 +28,9 @@ import com.example.notally.R
  * FAB principal de la app (§6, §7.10): 52 dp circular, `primary`/`onPrimary`,
  * sombra de 3 dp e icono "+" de 24 dp, con anillo de foco.
  *
- * Es el mismo botón que Hoy incrusta en el cluster inferior y el que Cursos
- * coloca flotando sobre la barra. El llamador decide posición y descripción;
- * el estilo no se duplica.
+ * Es una sola instancia, propiedad de `NotallyRoot`, que cambia de posición y
+ * de acción según la pestaña. El llamador decide posición y descripción; el
+ * estilo no se duplica.
  */
 @Composable
 fun NotallyFab(

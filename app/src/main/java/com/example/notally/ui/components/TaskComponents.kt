@@ -275,6 +275,13 @@ fun TaskRow(
                             append(textoNoEntregada)
                         }
                     }
+                    tarea.calificacion?.let { nota ->
+                        val textoNota = if (nota % 1.0 == 0.0) nota.toInt().toString() else "%.2f".format(nota)
+                        append(separador)
+                        withStyle(SpanStyle(color = if (nota >= 11.0) colores.tertiary else colores.error)) {
+                            append("Nota: $textoNota/20")
+                        }
+                    }
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = colores.onSurfaceVariant,

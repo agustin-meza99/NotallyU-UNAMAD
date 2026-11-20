@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.safeDrawing
@@ -57,7 +58,7 @@ import com.example.notally.data.DateRanges
 import com.example.notally.R
 import com.example.notally.contenedorNotally
 import com.example.notally.data.firebase.UsuarioFirebase
-import com.example.notally.ui.components.AvatarUsuario
+import com.example.notally.ui.components.AvatarCircle
 import com.example.notally.ui.components.AvisoError
 import com.example.notally.ui.components.BloqueError
 import com.example.notally.ui.components.DayStrip
@@ -475,9 +476,20 @@ internal fun EncabezadoHoy(
                 )
             }
         }
+        if (resumen != null && resumen.total > 0) {
+            Spacer(Modifier.width(8.dp))
+            val fraccion = (resumen.completadas.toFloat() / resumen.total).coerceIn(0f, 1f)
+            androidx.compose.material3.CircularProgressIndicator(
+                progress = { fraccion },
+                modifier = Modifier.size(36.dp),
+                color = colores.primary,
+                trackColor = colores.surfaceContainerHighest,
+                strokeWidth = 3.5.dp,
+            )
+        }
         if (usuario != null) {
             Spacer(Modifier.width(8.dp))
-            AvatarUsuario(usuario = usuario)
+            AvatarCircle(usuario = usuario)
         }
     }
 }

@@ -18,8 +18,8 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
@@ -62,7 +62,6 @@ import com.example.notally.ui.components.AvisoError
 import com.example.notally.ui.components.BloqueError
 import com.example.notally.ui.components.EmptyState
 import com.example.notally.ui.components.FilasCargando
-import com.example.notally.ui.components.NotallyFab
 import com.example.notally.ui.components.anilloFoco
 import com.example.notally.ui.theme.EspaciadoNotally
 import com.example.notally.ui.theme.FormaNotally
@@ -84,6 +83,8 @@ import kotlinx.coroutines.withTimeoutOrNull
 fun CursosScreen(
     modifier: Modifier = Modifier,
     alAbrirTareasCurso: (Long) -> Unit = {},
+    solicitudNuevoCursoPendiente: Boolean = false,
+    alConsumirSolicitudNuevoCurso: () -> Unit = {},
     viewModel: CursosViewModel = viewModel(
         factory = CursosViewModel.factory(LocalContext.current),
     ),
@@ -94,6 +95,16 @@ fun CursosScreen(
     val margen = margenHorizontalPantalla
 
     var objetivoHoja by remember { mutableStateOf<ObjetivoCursoSheet?>(null) }
+
+    // El FAB vive en el cluster del root. La señal es de un solo uso: se abre
+    // la hoja y se consume; sin pendiente, volver a la pestaña no la reabre.
+    LaunchedEffect(solicitudNuevoCursoPendiente) {
+        if (solicitudNuevoCursoPendiente) {
+            viewModel.limpiarErrorFormulario()
+            objetivoHoja = ObjetivoCursoSheet.Nueva
+            alConsumirSolicitudNuevoCurso()
+        }
+    }
 
     val errorEliminar = stringResource(R.string.course_delete_error)
     val etiquetaReintentar = stringResource(R.string.action_retry)
@@ -235,26 +246,6 @@ fun CursosScreen(
                     }
                 }
             }
-
-            // FAB de Cursos: mismo botón que Hoy, flotando sobre el cluster
-            // inferior. Con 0 cursos no se compone: el CTA del estado vacío es
-            // la única acción (§7.8).
-            if (estado.cursos.isNotEmpty()) {
-                NotallyFab(
-                    alPulsar = {
-                        viewModel.limpiarErrorFormulario()
-                        objetivoHoja = ObjetivoCursoSheet.Nueva
-                    },
-                    descripcion = stringResource(R.string.courses_new),
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(end = margen)
-                        // El borde inferior del contenido ya queda 24 dp por
-                        // encima de la píldora; bajar 8 dp deja el margen de
-                        // 16 dp sobre la barra flotante.
-                        .offset(y = 8.dp),
-                )
-            }
         }
     }
 
@@ -347,14 +338,9 @@ private fun TarjetaCurso(
     var enfocada by remember { mutableStateOf(false) }
 
     val contenedor by animateColorAsState(
-        targetValue = if (pulsada) colores.surfaceContainerLow else colores.surface,
+        targetValue = if (pulsada) colores.surfaceContainerHigh else colores.surfaceContainerLow,
         animationSpec = tween(MovimientoNotally.colorMs),
         label = "cursoCardContainer",
-    )
-    val colorBorde by animateColorAsState(
-        targetValue = if (pulsada) colores.outline else colores.outlineVariant,
-        animationSpec = tween(MovimientoNotally.colorMs),
-        label = "cursoCardBorder",
     )
 
     val completa = tarjeta.totalTareas > 0 &&
@@ -415,9 +401,9 @@ private fun TarjetaCurso(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .anilloFoco(visible = enfocada, shape = FormaNotally.l)
+            .anilloFoco(visible = enfocada, shape = FormaNotally.xl)
             .onFocusChanged { enfocada = it.isFocused }
-            .clip(FormaNotally.l)
+            .clip(FormaNotally.xl)
             .clickable(
                 interactionSource = fuenteInteraccion,
                 indication = LocalIndication.current,
@@ -428,36 +414,44 @@ private fun TarjetaCurso(
             .semantics(mergeDescendants = true) {
                 contentDescription = descripcion
             },
-        shape = FormaNotally.l,
+        shape = FormaNotally.xl,
         color = contenedor,
-        border = BorderStroke(1.dp, colorBorde),
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = tarjeta.curso.nombre,
-                style = MaterialTheme.typography.titleMedium,
-                color = colores.onSurface,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = estadisticas,
-                style = MaterialTheme.typography.bodySmall,
-                color = colores.onSurfaceVariant,
-            )
-            Spacer(Modifier.height(8.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                BarraProgreso(
-                    fraccion = if (tarjeta.totalTareas == 0) {
-                        0f
-                    } else {
-                        tarjeta.tareasAvanzadas.toFloat() / tarjeta.totalTareas
-                    },
-                    modifier = Modifier.weight(1f),
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 18.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = tarjeta.curso.nombre,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = colores.onSurface,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
                 )
-                if (tarjeta.totalTareas > 0) {
-                    Spacer(Modifier.width(8.dp))
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = estadisticas,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colores.onSurfaceVariant,
+                )
+            }
+            if (tarjeta.totalTareas > 0) {
+                Spacer(Modifier.width(12.dp))
+                val fraccion = (tarjeta.tareasAvanzadas.toFloat() / tarjeta.totalTareas).coerceIn(0f, 1f)
+                Box(
+                    modifier = Modifier.size(48.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    androidx.compose.material3.CircularProgressIndicator(
+                        progress = { fraccion },
+                        modifier = Modifier.fillMaxSize(),
+                        color = colores.primary,
+                        trackColor = colores.surfaceContainerHighest,
+                        strokeWidth = 4.dp,
+                    )
                     Text(
                         text = stringResource(
                             R.string.course_progress_ratio,

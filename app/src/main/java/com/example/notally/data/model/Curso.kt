@@ -6,11 +6,6 @@ import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
-/**
- * Curso o asignatura universitaria.
- *
- * La tabla y las columnas físicas conservan sus nombres en inglés.
- */
 @Entity(
     tableName = "subjects",
     indices = [
@@ -18,6 +13,7 @@ import androidx.room.PrimaryKey
         Index(value = ["externalId"], unique = true),
     ],
 )
+
 data class Curso(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0L,

@@ -114,8 +114,20 @@ class AulaClient(
     }
 
     override suspend fun tareas(sectionId: String): List<AulaTarea> {
-        val ruta = "$RUTA_TAREAS?s=" + codificar(sectionId)
-        return obtener(ruta) { json -> AulaParser.parsearTareas(json) }
+        val sectionCodificada = codificar(sectionId)
+        val lista = obtener("$RUTA_TAREAS?s=$sectionCodificada") { json ->
+            AulaParser.parsearTareas(json)
+        }
+        val calificaciones = runCatching {
+            obtener("$RUTA_CALIFICACIONES?s=$sectionCodificada") { json ->
+                AulaParser.parsearCalificaciones(json)
+            }
+        }.getOrDefault(emptyMap())
+        if (calificaciones.isEmpty()) return lista
+        return lista.map { tarea ->
+            val (nota, feedback) = calificaciones[tarea.id] ?: return@map tarea
+            tarea.copy(calificacion = nota, retroalimentacion = feedback)
+        }
     }
 
     override suspend fun periodoAcademico(): String? =
@@ -282,6 +294,7 @@ class AulaClient(
         const val RUTA_LOGIN = "/account/login"
         const val RUTA_CURSOS = "/web/user/info/courseinrole"
         const val RUTA_TAREAS = "/web/homework/list"
+        const val RUTA_CALIFICACIONES = "/web/Qualification/ListHomeworkQualification"
         const val RUTA_PERIODOS = "/periodos-academicos/disponibles/get"
         const val TIMEOUT_MS = 15_000
     }

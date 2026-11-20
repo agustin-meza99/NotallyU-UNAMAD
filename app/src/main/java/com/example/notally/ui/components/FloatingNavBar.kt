@@ -1,27 +1,19 @@
 package com.example.notally.ui.components
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -93,46 +85,37 @@ data class FloatingNavItem(
 )
 
 /**
- * Cluster inferior flotante: píldora de navegación + FAB opcional (§6, §7.10).
+ * Cluster inferior flotante: solo la píldora de navegación (§6).
  *
  * **Contrato estable:** es la navegación activa de la app; `NotallyRoot` lo
- * compone y le pasa [items], [accionPrincipal], [modifier] y
- * [descripcionAccionPrincipal]. El componente no conoce `Destino` ni el grafo
- * de navegación.
+ * compone y le pasa [items] y [modifier]. El componente no conoce `Destino` ni
+ * el grafo de navegación, y no compone el FAB: la acción principal vive en el
+ * overlay del root para que sea una sola instancia y pueda desplazarse entre
+ * destinos sin que la píldora cambie de tamaño ni de centro.
  *
  * No lee `WindowInsets`: los márgenes laterales (20/24 dp), el margen inferior
  * (16 dp + inset de navegación) y el ancho máximo de composición (720 dp en
  * ventanas ≥ 600 dp) los aplica el root por [modifier], que es lo que mantiene
  * el componente independiente de su contenedor.
  *
- * Si [accionPrincipal] es `null` no se compone el FAB; la píldora queda centrada
- * y el cluster conserva sus 56 dp de alto, así que aparecer o desaparecer el FAB
- * **no mueve la píldora ni cambia la altura**.
- *
  * El indicador de selección es **uno solo** y viaja entre slots con la aritmética
- * de §6, relativa a la fila de slots: no depende de dónde esté la píldora ni de
- * si hay FAB.
+ * de §6, relativa a la fila de slots.
  */
 @Composable
 fun FloatingNavBar(
     items: List<FloatingNavItem>,
-    accionPrincipal: (() -> Unit)?,
     modifier: Modifier = Modifier,
-    descripcionAccionPrincipal: String = stringResource(R.string.a11y_newTask),
 ) {
     if (items.isEmpty()) return
 
-    // Una sola capa de layout: la píldora está en el flujo (centrada) y el FAB se
-    // ancla al borde final sin compartir fila con ella. Si compartieran `Row`, el
-    // FAB empujaría el centro de la píldora en cada cambio de pantalla.
     Box(
         modifier = modifier
             .fillMaxWidth()
             .height(AltoPildora),
+        contentAlignment = Alignment.Center,
     ) {
         Box(
             modifier = Modifier
-                .align(Alignment.Center)
                 .shadow(elevation = ElevacionCluster, shape = CircleShape)
                 .clip(CircleShape)
                 .background(MaterialTheme.colorScheme.surfaceContainerHigh)
@@ -154,35 +137,6 @@ fun FloatingNavBar(
                 items.forEach { item ->
                     DestinoCluster(item = item)
                 }
-            }
-        }
-
-        // Durante los 150 ms de salida `accionPrincipal` ya es null; se conserva
-        // la última acción para que el botón no se vacíe mientras se desvanece.
-        val accionRecordada = remember { mutableStateOf<(() -> Unit)?>(null) }
-        accionPrincipal?.let { accionRecordada.value = it }
-
-        AnimatedVisibility(
-            visible = accionPrincipal != null,
-            enter = fadeIn(tween(MovimientoNotally.fabMs)) +
-                scaleIn(
-                    animationSpec = tween(MovimientoNotally.fabMs),
-                    initialScale = 0.9f,
-                ),
-            exit = fadeOut(tween(MovimientoNotally.fabMs)) +
-                scaleOut(
-                    animationSpec = tween(MovimientoNotally.fabMs),
-                    targetScale = 0.9f,
-                ),
-            modifier = Modifier.align(Alignment.CenterEnd),
-        ) {
-            accionRecordada.value?.let { accion ->
-                NotallyFab(
-                    alPulsar = accion,
-                    descripcion = descripcionAccionPrincipal,
-                    // El FAB sobresale 6 dp del borde superior de la píldora (§6).
-                    modifier = Modifier.offset(y = (-6).dp),
-                )
             }
         }
     }
@@ -294,16 +248,10 @@ private fun DestinoCluster(item: FloatingNavItem) {
     }
 }
 
-@Preview(name = "Cluster con FAB", showBackground = true)
+@Preview(name = "Cluster", showBackground = true)
 @Composable
-private fun VistaPreviaClusterConFab() {
-    VistaPreviaCluster(conAccionPrincipal = true)
-}
-
-@Preview(name = "Cluster sin FAB", showBackground = true)
-@Composable
-private fun VistaPreviaClusterSinFab() {
-    VistaPreviaCluster(conAccionPrincipal = false)
+private fun VistaPreviaCluster() {
+    VistaPreviaCluster(indiceSeleccionado = 0)
 }
 
 /**
@@ -313,57 +261,11 @@ private fun VistaPreviaClusterSinFab() {
 @Preview(name = "Cluster con Ajustes activo", showBackground = true)
 @Composable
 private fun VistaPreviaClusterTercera() {
-    VistaPreviaCluster(conAccionPrincipal = true, indiceSeleccionado = 2)
-}
-
-/**
- * Los dos estados lado a lado a 320 dp, el ancho más estrecho de V1: la píldora
- * debe caer en la misma caja en ambos paneles y el cluster medir 56 dp de alto,
- * aunque el FAB desaparezca y el hueco hasta él se cierre a 0 dp.
- */
-@Preview(
-    name = "Cluster 320 dp: con y sin FAB",
-    widthDp = 656,
-    heightDp = 200,
-    showBackground = true,
-)
-@Composable
-private fun VistaPreviaClusterComparativa() {
-    TemaNotally {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.surface),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            PanelCluster320(conAccionPrincipal = true)
-            PanelCluster320(conAccionPrincipal = false)
-        }
-    }
+    VistaPreviaCluster(indiceSeleccionado = 2)
 }
 
 @Composable
-private fun PanelCluster320(conAccionPrincipal: Boolean) {
-    Box(
-        modifier = Modifier
-            .width(320.dp)
-            .fillMaxHeight(),
-        contentAlignment = Alignment.Center,
-    ) {
-        FloatingNavBar(
-            items = elementosCluster(indiceSeleccionado = 0),
-            accionPrincipal = if (conAccionPrincipal) ({}) else null,
-            modifier = Modifier.padding(horizontal = 20.dp),
-        )
-    }
-}
-
-@Composable
-private fun VistaPreviaCluster(
-    conAccionPrincipal: Boolean,
-    indiceSeleccionado: Int = 0,
-) {
+private fun VistaPreviaCluster(indiceSeleccionado: Int) {
     TemaNotally {
         Box(
             modifier = Modifier
@@ -373,7 +275,6 @@ private fun VistaPreviaCluster(
         ) {
             FloatingNavBar(
                 items = elementosCluster(indiceSeleccionado = indiceSeleccionado),
-                accionPrincipal = if (conAccionPrincipal) ({}) else null,
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
             )
         }

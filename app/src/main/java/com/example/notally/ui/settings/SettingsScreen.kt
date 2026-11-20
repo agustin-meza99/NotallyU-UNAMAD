@@ -1,5 +1,6 @@
 package com.example.notally.ui.settings
 
+import android.util.Patterns
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -35,6 +36,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -68,6 +70,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -337,11 +340,17 @@ fun SettingsScreen(
         HojaCuenta(
             estado = estadoCuenta,
             email = cuentaEmail,
-            alCambiarEmail = { cuentaEmail = it },
+            alCambiarEmail = { nuevo ->
+                cuentaEmail = nuevo
+                if (estadoCuenta.error == ErrorAuth.EMAIL_INVALIDO) {
+                    viewModel.descartarErrorCuenta()
+                }
+            },
             password = cuentaPassword,
             alCambiarPassword = { cuentaPassword = it },
             modoCrear = cuentaModoCrear,
             alCambiarModo = { cuentaModoCrear = it },
+            alDescartarError = viewModel::descartarErrorCuenta,
             alEntrar = viewModel::iniciarSesion,
             alCrear = viewModel::crearCuenta,
             alGoogle = iniciarConGoogle,
@@ -494,6 +503,7 @@ private fun HojaCuenta(
     alCambiarPassword: (String) -> Unit,
     modoCrear: Boolean,
     alCambiarModo: (Boolean) -> Unit,
+    alDescartarError: () -> Unit,
     alEntrar: (email: String, password: String) -> Unit,
     alCrear: (email: String, password: String) -> Unit,
     alGoogle: () -> Unit,
@@ -507,6 +517,11 @@ private fun HojaCuenta(
             if (modoCrear) alCrear(email, password) else alEntrar(email, password)
         }
     }
+    var emailErrorLocal by remember { mutableStateOf(false) }
+    var emailConFoco by remember { mutableStateOf(false) }
+    var mostrarPassword by remember { mutableStateOf(false) }
+    val mostrarErrorEmail = emailErrorLocal || estado.error == ErrorAuth.EMAIL_INVALIDO
+    val errorGeneral = estado.error?.takeIf { it != ErrorAuth.EMAIL_INVALIDO }
 
     Dialog(
         onDismissRequest = alCerrar,
@@ -555,16 +570,34 @@ private fun HojaCuenta(
                     Spacer(Modifier.height(16.dp))
                     OutlinedTextField(
                         value = email,
-                        onValueChange = alCambiarEmail,
+                        onValueChange = { nuevo ->
+                            emailErrorLocal = false
+                            alCambiarEmail(nuevo)
+                        },
                         label = { Text(stringResource(R.string.settings_account_email)) },
                         singleLine = true,
                         enabled = !cargando,
+                        isError = mostrarErrorEmail,
+                        supportingText = if (mostrarErrorEmail) {
+                            {
+                                Text(stringResource(R.string.settings_account_error_email))
+                            }
+                        } else {
+                            null
+                        },
                         shape = FormaNotally.s,
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Email,
                             imeAction = ImeAction.Next,
                         ),
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .onFocusChanged { foco ->
+                                if (emailConFoco && !foco.isFocused) {
+                                    emailErrorLocal = email.isNotBlank() && !esEmailValido(email)
+                                }
+                                emailConFoco = foco.isFocused
+                            },
                     )
                     Spacer(Modifier.height(12.dp))
                     OutlinedTextField(
@@ -574,7 +607,35 @@ private fun HojaCuenta(
                         singleLine = true,
                         enabled = !cargando,
                         shape = FormaNotally.s,
-                        visualTransformation = PasswordVisualTransformation(),
+                        visualTransformation = if (mostrarPassword) {
+                            VisualTransformation.None
+                        } else {
+                            PasswordVisualTransformation()
+                        },
+                        trailingIcon = {
+                            IconButton(
+                                onClick = { mostrarPassword = !mostrarPassword },
+                                enabled = !cargando,
+                                modifier = Modifier.size(48.dp),
+                            ) {
+                                Icon(
+                                    painter = painterResource(
+                                        if (mostrarPassword) {
+                                            R.drawable.ic_visibility_off
+                                        } else {
+                                            R.drawable.ic_visibility
+                                        },
+                                    ),
+                                    contentDescription = stringResource(
+                                        if (mostrarPassword) {
+                                            R.string.a11y_hide_password
+                                        } else {
+                                            R.string.a11y_show_password
+                                        },
+                                    ),
+                                )
+                            }
+                        },
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Password,
                             imeAction = ImeAction.Done,
@@ -599,13 +660,27 @@ private fun HojaCuenta(
                         }
                     }
 
-                    estado.error?.let { error ->
+                    errorGeneral?.let { error ->
                         Spacer(Modifier.height(12.dp))
-                        Text(
-                            text = mensajeErrorCuenta(error),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error,
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = mensajeErrorCuenta(error),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.weight(1f),
+                            )
+                            if (error == ErrorAuth.EMAIL_EN_USO && modoCrear) {
+                                TextButton(
+                                    onClick = {
+                                        alDescartarError()
+                                        alCambiarModo(false)
+                                    },
+                                    enabled = !cargando,
+                                ) {
+                                    Text(stringResource(R.string.settings_account_sign_in))
+                                }
+                            }
+                        }
                     }
 
                     Spacer(Modifier.height(16.dp))
@@ -906,6 +981,7 @@ private fun HojaConectarAula(
 ) {
     var usuario by remember { mutableStateOf("") }
     var clave by remember { mutableStateOf("") }
+    var mostrarClave by remember { mutableStateOf(false) }
     val importando = estado.importando
     val puedeConectar = usuario.isNotBlank() && clave.isNotBlank() && !importando
 
@@ -947,7 +1023,35 @@ private fun HojaConectarAula(
                 singleLine = true,
                 enabled = !importando,
                 shape = FormaNotally.s,
-                visualTransformation = PasswordVisualTransformation(),
+                visualTransformation = if (mostrarClave) {
+                    VisualTransformation.None
+                } else {
+                    PasswordVisualTransformation()
+                },
+                trailingIcon = {
+                    IconButton(
+                        onClick = { mostrarClave = !mostrarClave },
+                        enabled = !importando,
+                        modifier = Modifier.size(48.dp),
+                    ) {
+                        Icon(
+                            painter = painterResource(
+                                if (mostrarClave) {
+                                    R.drawable.ic_visibility_off
+                                } else {
+                                    R.drawable.ic_visibility
+                                },
+                            ),
+                            contentDescription = stringResource(
+                                if (mostrarClave) {
+                                    R.string.a11y_hide_password
+                                } else {
+                                    R.string.a11y_show_password
+                                },
+                            ),
+                        )
+                    }
+                },
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Password,
                     imeAction = ImeAction.Done,
@@ -1098,6 +1202,9 @@ private fun FilaInterruptorSettings(
 
 private val formatoUltimaImportacion: DateTimeFormatter =
     DateTimeFormatter.ofPattern("d MMM yyyy, HH:mm", DateFormat.LocaleEspanol)
+
+private fun esEmailValido(email: String): Boolean =
+    Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches()
 
 private fun formatearUltimaImportacion(millis: Long): String =
     formatoUltimaImportacion.format(

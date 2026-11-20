@@ -81,6 +81,10 @@ data class Tarea(
      */
     @ColumnInfo(name = "entregada")
     val entregada: Boolean = false,
+    @ColumnInfo(name = "calificacion")
+    val calificacion: Double? = null,
+    @ColumnInfo(name = "retroalimentacion")
+    val retroalimentacion: String? = null,
 )
 
 enum class Prioridad {

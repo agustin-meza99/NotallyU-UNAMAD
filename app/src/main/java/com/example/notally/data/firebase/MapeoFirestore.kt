@@ -54,7 +54,6 @@ fun construirDocumentoCurso(
         campos = mapOf(
             "name" to remoto.name,
             "professor" to remoto.professor,
-            "credits" to remoto.credits,
             "createdAt" to marcaCreadoEn(creadoEnRemoto),
             "updatedAt" to MarcaTiempo.Servidor,
             "deletedAt" to null,

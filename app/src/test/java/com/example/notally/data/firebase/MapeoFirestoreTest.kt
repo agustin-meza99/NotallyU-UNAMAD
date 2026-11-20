@@ -6,6 +6,7 @@ import com.example.notally.data.model.Prioridad
 import com.example.notally.data.model.Subtarea
 import com.example.notally.data.model.Tarea
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Test
@@ -75,7 +76,7 @@ class MapeoFirestoreTest {
 
         assertEquals("Historia del Perú", campos["name"])
         assertEquals("Dra. Rojas", campos["professor"])
-        assertEquals(4, campos["credits"])
+        assertFalse(campos.containsKey("credits"))
         assertEquals(MarcaTiempo.Servidor, campos["createdAt"])
         assertEquals(MarcaTiempo.Servidor, campos["updatedAt"])
         assertNull(campos["deletedAt"])
@@ -92,14 +93,14 @@ class MapeoFirestoreTest {
     }
 
     @Test
-    fun `profesor y creditos nulos se envían como nulos`() {
+    fun `profesor nulo se envía como nulo`() {
         val campos = construirDocumentoCurso(
-            curso(profesor = null, creditos = null),
+            curso(profesor = null),
             null,
         )!!.campos
 
         assertNull(campos["professor"])
-        assertNull(campos["credits"])
+        assertFalse(campos.containsKey("credits"))
     }
 
     @Test

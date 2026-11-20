@@ -1,7 +1,11 @@
 package com.example.notally.ui.components
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -31,6 +35,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -379,15 +384,16 @@ fun FilterChipRow(
     modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = modifier
-            .horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = modifier.horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        opciones.forEach { opcion ->
-            FilterChip(
+        opciones.forEachIndexed { indice, opcion ->
+            ConnectedFilterButton(
                 opcion = opcion,
                 seleccionado = opcion.id == idSeleccionado,
+                esPrimero = indice == 0,
+                esUltimo = indice == opciones.lastIndex,
                 alPulsar = { alSeleccionar(opcion.id) },
             )
         }
@@ -395,107 +401,78 @@ fun FilterChipRow(
 }
 
 @Composable
-private fun FilterChip(
+private fun ConnectedFilterButton(
     opcion: OpcionFiltro,
     seleccionado: Boolean,
+    esPrimero: Boolean,
+    esUltimo: Boolean,
     alPulsar: () -> Unit,
 ) {
     val colores = MaterialTheme.colorScheme
-    var enfocado by remember { mutableStateOf(false) }
-    val fuenteInteraccion = remember { MutableInteractionSource() }
-    val pulsado by fuenteInteraccion.collectIsPressedAsState()
-
-    val contenedor by animateColorAsState(
-        targetValue = when {
-            seleccionado -> colores.tertiaryContainer
-            pulsado -> colores.surfaceContainerLow
-            else -> Color.Transparent
-        },
-        animationSpec = tween(MovimientoNotally.colorMs),
-        label = "filterChipContainer",
-    )
-    val colorEtiqueta by animateColorAsState(
-        targetValue = if (seleccionado) colores.onTertiaryContainer else colores.onSurfaceVariant,
-        animationSpec = tween(MovimientoNotally.colorMs),
-        label = "filterChipLabel",
-    )
-    val colorCantidad by animateColorAsState(
-        targetValue = if (seleccionado) colores.onTertiaryContainer else colores.onSurfaceVariant,
-        animationSpec = tween(MovimientoNotally.colorMs),
-        label = "filterChipCount",
-    )
-    val modificadorBorde = when {
-        seleccionado -> Modifier
-        else -> Modifier.border(1.dp, colores.outlineVariant, CircleShape)
-    }
-    // El contador se anuncia dentro del mismo nodo del chip (§7.7).
     val descripcionCantidad = opcion.cantidad?.let { cantidad ->
         pluralStringResource(R.plurals.a11y_filter_count, cantidad, opcion.etiqueta, cantidad)
     }
 
-    // El target de 48×48 y el gesto viven aquí, no en el dibujo de 32 dp.
-    Box(
+    val radioInterno by animateDpAsState(
+        targetValue = if (seleccionado) 24.dp else 8.dp,
+        animationSpec = tween(durationMillis = 180),
+        label = "radioInternoFiltro",
+    )
+    val forma = RoundedCornerShape(
+        topStart = if (esPrimero || seleccionado) 24.dp else radioInterno,
+        bottomStart = if (esPrimero || seleccionado) 24.dp else radioInterno,
+        topEnd = if (esUltimo || seleccionado) 24.dp else radioInterno,
+        bottomEnd = if (esUltimo || seleccionado) 24.dp else radioInterno,
+    )
+    val fondo by animateColorAsState(
+        targetValue = if (seleccionado) colores.tertiaryContainer else colores.surfaceContainerHigh,
+        animationSpec = tween(durationMillis = 180),
+        label = "fondoFiltro",
+    )
+    val contenido by animateColorAsState(
+        targetValue = if (seleccionado) colores.onTertiaryContainer else colores.onSurfaceVariant,
+        animationSpec = tween(durationMillis = 180),
+        label = "contenidoFiltro",
+    )
+
+    Surface(
+        onClick = alPulsar,
+        shape = forma,
+        color = fondo,
+        contentColor = contenido,
         modifier = Modifier
-            .heightIn(min = 48.dp)
-            .onFocusChanged { enfocado = it.isFocused }
-            .selectable(
-                selected = seleccionado,
-                interactionSource = fuenteInteraccion,
-                role = Role.RadioButton,
-                onClick = alPulsar,
-            )
+            .heightIn(min = 40.dp)
             .semantics(mergeDescendants = true) {
                 if (descripcionCantidad != null) {
                     contentDescription = descripcionCantidad
                 }
             },
-        contentAlignment = Alignment.Center,
     ) {
         Row(
             modifier = Modifier
-                .heightIn(min = 32.dp)
-                .anilloFoco(visible = enfocado, shape = CircleShape)
-                .clip(CircleShape)
-                .background(contenedor)
-                .then(modificadorBorde)
-                .padding(horizontal = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(
-                modifier = Modifier.size(16.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                if (seleccionado) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_check),
-                        contentDescription = null,
-                        tint = colores.onTertiaryContainer,
-                        modifier = Modifier.size(16.dp),
-                    )
-                }
-            }
-            Spacer(Modifier.width(8.dp))
-            Row {
-                Text(
-                    text = opcion.etiqueta,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = colorEtiqueta,
-                    maxLines = 1,
-                    modifier = Modifier.alignByBaseline(),
+                .animateContentSize(
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessMediumLow,
+                    ),
                 )
-                if (opcion.cantidad != null) {
-                    Spacer(Modifier.width(4.dp))
-                    Text(
-                        text = opcion.cantidad.toString(),
-                        style = TipografiaNotally.numerico,
-                        color = colorCantidad,
-                        maxLines = 1,
-                        textAlign = TextAlign.End,
-                        modifier = Modifier
-                            .widthIn(min = 24.dp)
-                            .alignByBaseline(),
-                    )
-                }
+                .padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Text(
+                text = opcion.etiqueta,
+                style = MaterialTheme.typography.labelLarge,
+                maxLines = 1,
+            )
+            if (seleccionado && opcion.cantidad != null) {
+                Text(
+                    text = opcion.cantidad.toString(),
+                    style = TipografiaNotally.numerico,
+                    maxLines = 1,
+                    textAlign = TextAlign.End,
+                    modifier = Modifier.widthIn(min = 18.dp),
+                )
             }
         }
     }

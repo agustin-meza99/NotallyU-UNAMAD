@@ -304,8 +304,8 @@ fun FocalTaskCard(
             .fillMaxWidth()
             .heightIn(min = 96.dp)
             .onFocusChanged { enfocada = it.isFocused }
-            .anilloFoco(visible = enfocada, shape = FormaNotally.l)
-            .clip(FormaNotally.l)
+            .anilloFoco(visible = enfocada, shape = FormaNotally.xl)
+            .clip(FormaNotally.xl)
             .background(colores.inverseSurface)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
@@ -315,7 +315,7 @@ fun FocalTaskCard(
                 onClick = alPulsar,
             )
             .semantics { contentDescription = descripcion }
-            .padding(16.dp),
+            .padding(horizontal = 20.dp, vertical = 18.dp),
     ) {
         Text(
             text = antetitulo.uppercase(DateFormat.LocaleEspanol),

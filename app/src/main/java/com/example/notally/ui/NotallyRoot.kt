@@ -3,6 +3,7 @@ package com.example.notally.ui
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -16,7 +17,9 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.MaterialTheme
@@ -45,6 +48,7 @@ import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import com.example.notally.R
 import com.example.notally.ui.components.FloatingNavBar
 import com.example.notally.ui.components.FloatingNavItem
+import com.example.notally.ui.components.NotallyFab
 import com.example.notally.ui.editor.EditorScreen
 import com.example.notally.ui.settings.SettingsScreen
 import com.example.notally.ui.cursos.CursosScreen
@@ -57,6 +61,16 @@ import com.example.notally.ui.today.TodayScreen
 private const val PREFIJO_EDITOR = "editor:"
 private const val PREFIJO_CURSO_TAREAS = "cursoTareas:"
 private const val ID_EDITOR_NUEVO = "new"
+
+/** Alto de la píldora y del FAB (§6, §7.10). */
+private val AltoCluster = 56.dp
+private val AltoFab = 52.dp
+
+/** Aire entre el FAB y el borde superior del cluster cuando el destino es Cursos. */
+private val SeparacionFabCluster = 16.dp
+
+/** Destinos en los que existe FAB; Ajustes no tiene acción principal. */
+private enum class DestinoFab { Hoy, Cursos }
 
 /** Destinos de la V1. El editor no lleva barra inferior. */
 sealed interface Destino {
@@ -211,6 +225,11 @@ private fun ContenedorPestanas(
     // de la pestaña lo restauraría también al volver de otra pestaña, que es lo
     // que §7.1.1 prohíbe. Por eso se limpia al cambiar de pestaña.
     var diaHoySeleccionado by rememberSaveable { mutableStateOf<Long?>(null) }
+    // Solicitud efímera del FAB de Cursos: el botón vive en este root, la
+    // pantalla la consume, abre la hoja "Nuevo curso" y la vuelve a `false`.
+    // Es un evento de un solo uso: al no quedar pendiente, volver a la pestaña
+    // no la reabre. No se guarda; una recreación tampoco debe reabrirla.
+    var solicitudNuevoCursoPendiente by remember { mutableStateOf(false) }
     // El cluster se oculta al bajar en Hoy (§7.10). El estado vive aquí, en la
     // raíz, y TodayScreen solo reporta la dirección del scroll.
     var clusterVisible by remember { mutableStateOf(true) }
@@ -306,6 +325,10 @@ private fun ContenedorPestanas(
                                     bottom = EspaciadoNotally.rellenoInferiorLista,
                                 ),
                                 alAbrirTareasCurso = onAbrirTareasCurso,
+                                solicitudNuevoCursoPendiente = solicitudNuevoCursoPendiente,
+                                alConsumirSolicitudNuevoCurso = {
+                                    solicitudNuevoCursoPendiente = false
+                                },
                             )
 
                             Destino.Settings -> SettingsScreen(
@@ -340,29 +363,77 @@ private fun ContenedorPestanas(
                     .navigationBarsPadding()
                     .padding(start = margen, end = margen, bottom = 16.dp),
             ) {
-                FloatingNavBar(
-                    items = elementos.map { destino ->
-                        val seleccionado = actual == destino
-                        FloatingNavItem(
-                            etiqueta = stringResource(destino.recursoEtiqueta()),
-                            icono = painterResource(destino.recursoIcono()),
-                            seleccionado = seleccionado,
-                            alPulsar = {
-                                if (!seleccionado) {
-                                    diaHoySeleccionado = null
-                                    clusterVisible = true
-                                    onSeleccionar(destino)
-                                }
-                            },
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(AltoCluster),
+                ) {
+                    FloatingNavBar(
+                        items = elementos.map { destino ->
+                            val seleccionado = actual == destino
+                            FloatingNavItem(
+                                etiqueta = stringResource(destino.recursoEtiqueta()),
+                                icono = painterResource(destino.recursoIcono()),
+                                seleccionado = seleccionado,
+                                alPulsar = {
+                                    if (!seleccionado) {
+                                        diaHoySeleccionado = null
+                                        clusterVisible = true
+                                        onSeleccionar(destino)
+                                    }
+                                },
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+
+                    val destinoFab = when (actual) {
+                        Destino.Hoy -> if (accionDisponible) DestinoFab.Hoy else null
+                        Destino.Cursos -> DestinoFab.Cursos
+                        else -> null
+                    }
+                    // Al entrar en Ajustes el FAB se desvanece sin desplazarse:
+                    // se conserva el último destino con FAB mientras dura el fade.
+                    var ultimoDestinoFab by remember { mutableStateOf(DestinoFab.Hoy) }
+                    LaunchedEffect(destinoFab) {
+                        if (destinoFab != null) ultimoDestinoFab = destinoFab
+                    }
+                    val destinoFabEfectivo = destinoFab ?: ultimoDestinoFab
+                    val desplazamientoYObjetivo = when (destinoFabEfectivo) {
+                        // Misma fila que la píldora: (56 − 52) / 2.
+                        DestinoFab.Hoy -> 2.dp
+                        // 16 dp por encima del borde superior del cluster.
+                        DestinoFab.Cursos -> -(AltoFab + SeparacionFabCluster)
+                    }
+
+                    AnimatedVisibility(
+                        visible = destinoFab != null,
+                        enter = fadeIn(tween(MovimientoNotally.fabMs)),
+                        exit = fadeOut(tween(MovimientoNotally.fabMs)),
+                        modifier = Modifier.align(Alignment.TopEnd),
+                    ) {
+                        val desplazamientoY by animateDpAsState(
+                            targetValue = desplazamientoYObjetivo,
+                            animationSpec = MovimientoNotally.espacialNormal(),
+                            label = "fabDestino",
                         )
-                    },
-                    accionPrincipal = if (actual == Destino.Hoy && accionDisponible) {
-                        abrirNuevaTarea
-                    } else {
-                        null
-                    },
-                    descripcionAccionPrincipal = stringResource(R.string.a11y_newTask),
-                )
+                        val accionFab: () -> Unit = when (destinoFabEfectivo) {
+                            DestinoFab.Hoy -> abrirNuevaTarea
+                            DestinoFab.Cursos -> {
+                                { solicitudNuevoCursoPendiente = true }
+                            }
+                        }
+                        val descripcionFab = when (destinoFabEfectivo) {
+                            DestinoFab.Hoy -> stringResource(R.string.a11y_newTask)
+                            DestinoFab.Cursos -> stringResource(R.string.courses_new)
+                        }
+                        NotallyFab(
+                            alPulsar = accionFab,
+                            descripcion = descripcionFab,
+                            modifier = Modifier.offset(y = desplazamientoY),
+                        )
+                    }
+                }
             }
         }
     }

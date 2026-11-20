@@ -163,7 +163,7 @@ class AulaImporter(
                         notas = nota,
                         cursoId = cursoId,
                         entregaEn = tareaAula.entregaEn,
-                        estado = Estado.PENDIENTE,
+                        estado = if (tareaAula.entregada) Estado.COMPLETADA else Estado.PENDIENTE,
                         creadoEn = existente?.creadoEn ?: ahora,
                         actualizadoEn = ahora,
                         externalId = tareaAula.id,
@@ -172,13 +172,19 @@ class AulaImporter(
                         intentos = tareaAula.intentos,
                         esGrupal = tareaAula.grupal,
                         entregada = tareaAula.entregada,
+                        calificacion = tareaAula.calificacion,
+                        retroalimentacion = tareaAula.retroalimentacion,
                     )
                     val aGuardar = if (existente == null) {
                         base
                     } else {
                         base.copy(
                             prioridad = existente.prioridad,
-                            estado = existente.estado,
+                            estado = if (tareaAula.entregada && existente.estado == Estado.PENDIENTE) {
+                                Estado.COMPLETADA
+                            } else {
+                                existente.estado
+                            },
                             completadoEn = existente.completadoEn,
                             archivada = existente.archivada,
                         )

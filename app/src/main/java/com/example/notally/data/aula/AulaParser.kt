@@ -131,6 +131,29 @@ object AulaParser {
     }
 
     /**
+     * Calificaciones de `/web/Qualification/ListHomeworkQualification?s=<sectionId>`.
+     * Devuelve un mapa `taskId -> (score, feedback)` tomando la última entrega
+     * registrada en `homeworkstds`.
+     */
+    fun parsearCalificaciones(json: String): Map<String, Pair<Double?, String?>> {
+        val arreglo = arregloRaiz(json)
+        return buildMap(arreglo.length()) {
+            for (indice in 0 until arreglo.length()) {
+                val objeto = arreglo.optJSONObject(indice) ?: continue
+                val id = objeto.texto("id") ?: continue
+                val entregas = objeto.optJSONArray("homeworkstds") ?: continue
+                if (entregas.length() == 0) continue
+                val entrega = entregas.optJSONObject(entregas.length() - 1) ?: continue
+                val nota = if (entrega.has("score") && !entrega.isNull("score")) {
+                    entrega.optDouble("score").takeUnless { it.isNaN() }
+                } else null
+                val feedback = entrega.texto("feedback")?.trim()?.takeUnless { it.isEmpty() }
+                put(id, nota to feedback)
+            }
+        }
+    }
+
+    /**
      * Periodo académico seleccionado de `/periodos-academicos/disponibles/get`.
      *
      * Devuelve el `text` del primer elemento con `selected: true`, o `null` si
