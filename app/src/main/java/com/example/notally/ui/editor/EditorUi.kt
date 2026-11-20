@@ -82,6 +82,7 @@ import java.time.ZoneId
 internal fun EditorContent(
     estado: BorradorTarea,
     editandoNotas: Boolean = false,
+    alActivarEdicionNotas: () -> Unit = {},
     cursos: List<Curso>,
     nuevaSubtarea: String,
     alCambiarNuevaSubtarea: (String) -> Unit,
@@ -306,6 +307,8 @@ internal fun EditorContent(
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
+                        .heightIn(min = 48.dp)
+                        .clickable(onClick = alActivarEdicionNotas)
                         .semantics { contentDescription = etiquetaNotas },
                 )
             }

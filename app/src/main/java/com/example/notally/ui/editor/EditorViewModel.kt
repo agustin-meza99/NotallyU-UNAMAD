@@ -119,9 +119,6 @@ class EditorViewModel(
         if (tareaId != null) cargar(tareaId) else _estado.update { it.copy(cargando = false) }
     }
 
-    // ---------------------------------------------------------------------
-    // Carga
-    // ---------------------------------------------------------------------
 
     private fun cargar(id: Long) {
         viewModelScope.launch {
@@ -173,9 +170,6 @@ class EditorViewModel(
         }
     }
 
-    // ---------------------------------------------------------------------
-    // Cambios y autosave
-    // ---------------------------------------------------------------------
 
     fun cambiarTitulo(valor: String) = actualizarBorrador { it.copy(titulo = valor) }
 
@@ -218,7 +212,7 @@ class EditorViewModel(
      * Drena la escritura pendiente y espera a que termine, con un máximo de
      * [timeoutMillis]. Se usa desde el back confirmado: el `ViewModelStore` se
      * destruye al volver, así que este es el último punto donde se puede
-     * garantizar que el borrador llegue a Room. No bloquea el hilo de UI.
+     * garantizar que el borrador llegue a Firestore. No bloquea el hilo de UI.
      */
     suspend fun volcarYEsperar(timeoutMillis: Long = MS_TIMEOUT_VOLCADO) {
         trabajoDebounce?.cancel()
@@ -325,9 +319,6 @@ class EditorViewModel(
         }
     }
 
-    // ---------------------------------------------------------------------
-    // Subtareas
-    // ---------------------------------------------------------------------
 
     /**
      * Agrega una subtarea y solo entonces confirma con [alAgregar]. Si la
@@ -415,9 +406,6 @@ class EditorViewModel(
         _estado.update { it.copy(subtareas = filas) }
     }
 
-    // ---------------------------------------------------------------------
-    // Cursos y eliminación
-    // ---------------------------------------------------------------------
 
     fun limpiarErrorNuevoCurso() {
         _errorNuevoCurso.value = null

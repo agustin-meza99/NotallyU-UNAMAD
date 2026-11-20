@@ -35,7 +35,7 @@ sealed interface ResultadoImportacion {
 }
 
 /**
- * Importa cursos y tareas del Aula Virtual a Room.
+ * Importa cursos y tareas del Aula Virtual a Firestore.
  *
  * Es idempotente: cada curso se identifica por `sectionId` y cada tarea por su
  * `id`, así que reimportar actualiza las filas existentes en vez de duplicar.

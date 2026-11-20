@@ -138,8 +138,13 @@ private fun DayCell(
     val colores = MaterialTheme.colorScheme
     var enfocado by remember { mutableStateOf(false) }
 
+    val esClickeable = dia.recursoEtiquetaSeccion != null
     val contenedor by animateColorAsState(
-        targetValue = if (seleccionado) colores.primaryContainer else Color.Transparent,
+        targetValue = when {
+            seleccionado -> colores.primaryContainer
+            esClickeable -> colores.surfaceVariant.copy(alpha = 0.5f)
+            else -> Color.Transparent
+        },
         animationSpec = tween(MovimientoNotally.colorMs),
         label = "dayCellContainer",
     )

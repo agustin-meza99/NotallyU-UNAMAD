@@ -1,4 +1,4 @@
-package com.example.notally.ui.today
+﻿package com.example.notally.ui.today
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.AnimatedContent
@@ -122,7 +122,6 @@ fun TodayScreen(
     val errorRefrescar = stringResource(R.string.error_refresh)
     val tituloPantalla = stringResource(R.string.nav_hoy)
 
-    // Snackbars de 5 s exactos: Indefinite + timeout, con acción real.
     LaunchedEffect(
         viewModel,
         mensajeCompletada,
@@ -173,7 +172,6 @@ fun TodayScreen(
         }
     }
 
-    // Carga: solo si Room tarda más de 150 ms; antes no se pinta nada.
     var mostrarCarga by remember { mutableStateOf(false) }
     LaunchedEffect(estado.cargando, estado.tieneDatosEnCache) {
         if (estado.cargando && !estado.tieneDatosEnCache) {
@@ -192,9 +190,6 @@ fun TodayScreen(
     }
     val mostrarTira = mostrarTiraHoy(estado, diasTira)
 
-    // La selección de la tira vive en la raíz de pestañas con
-    // `rememberSaveable`: sobrevive a la recreación de la Activity y se limpia
-    // al cambiar de pestaña (§7.1.1). Nunca altera secciones, conteos ni resumen.
     val fechaSeleccionada = diaSeleccionadoEpoch?.let(LocalDate::ofEpochDay)
 
     val focalElegible = estado.filtro != FiltroHoy.COMPLETADAS && !mostrarCarga &&
@@ -207,8 +202,6 @@ fun TodayScreen(
         (if (!estado.estaVacioTotal) 1 else 0) +
         (if (mostrarFocal) 1 else 0)
 
-    // Destino de la tira: se guarda la intención y el efecto hace el salto
-    // inmediato cuando la sección destino ya está compuesta.
     var saltoPendiente by remember { mutableStateOf<SaltoDia?>(null) }
     var topeViewport by remember { mutableStateOf(0f) }
     val coordenadasFila = remember { mutableMapOf<Long, LayoutCoordinates>() }
@@ -238,13 +231,10 @@ fun TodayScreen(
         var seccionDestino: TipoSeccionHoy? = salto.seccion
         var idTareaDestino = idElementoSeccion(salto.seccion)
         if (salto.seccion == TipoSeccionHoy.ATRASADAS && idTareaDestino == null) {
-            // Una fecha pasada puede pertenecer a una tarea del Aula, que vive
-            // en "No entregadas" y no en "Atrasadas".
             seccionDestino = TipoSeccionHoy.NO_ENTREGADAS
             idTareaDestino = idElementoSeccion(TipoSeccionHoy.NO_ENTREGADAS)
         }
         if (salto.seccion == TipoSeccionHoy.HOY && idTareaDestino == null) {
-            // "Hoy" sin filas propias baja a la primera de "Sin hora" (§7.1.1).
             seccionDestino = TipoSeccionHoy.SIN_HORA
             idTareaDestino = estado.secciones
                 .firstOrNull { it.tipo == TipoSeccionHoy.SIN_HORA }
@@ -270,7 +260,6 @@ fun TodayScreen(
         val indice = when {
             seccionDestino == null -> if (mostrarFocal) indiceBaseSecciones - 1 else 0
             indiceSeccion != null -> indiceSeccion
-            // Sin sección ni fila destino: el encabezado (§7.1.1).
             else -> 0
         }
 
@@ -285,8 +274,6 @@ fun TodayScreen(
         saltoPendiente = null
     }
 
-    // Visibilidad del cluster (§7.10): se oculta al bajar y reaparece al subir.
-    // El estado vive en la raíz de pestañas; aquí solo se reportan los cambios.
     val reportarVisibilidadCluster by rememberUpdatedState(alCambiarVisibilidadCluster)
     LaunchedEffect(estadoLista) {
         var indicePrevio = 0
@@ -319,8 +306,6 @@ fun TodayScreen(
         }
     }
 
-    // En el vacío total el CTA del estado vacío es la única acción (§7.8):
-    // el root oculta el FAB mientras este predicado sea cierto.
     val accionDisponible = vacio != VacioHoy.Total
     val reportarDisponibilidadAccion by rememberUpdatedState(alCambiarDisponibilidadAccion)
     LaunchedEffect(accionDisponible) {
@@ -454,7 +439,6 @@ internal fun EncabezadoHoy(
         verticalAlignment = Alignment.Top,
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            // Sin título visible (§7.1): la fecha orienta y el resumen informa.
             if (antetitulo.isNotEmpty()) {
                 Text(
                     text = antetitulo,

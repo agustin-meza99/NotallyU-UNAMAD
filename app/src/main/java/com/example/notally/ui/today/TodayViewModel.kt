@@ -83,7 +83,7 @@ sealed interface EventoHoy {
 /**
  * ViewModel de Hoy (§7.1–7.3, §7.13).
  *
- * Combina las consultas de Room con un reloj de un minuto: el rango de fechas
+ * Combina las consultas de Firestore con un reloj de un minuto: el rango de fechas
  * solo se recalcula cuando cambia el día, mientras que las etiquetas "Hoy" /
  * "Atrasada" se refrescan cada minuto. No usa Hilt.
  */

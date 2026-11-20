@@ -1,7 +1,7 @@
 package com.example.notally.ui.editor
 
 /**
- * Reglas puras del editor (§7.5), separadas de Compose y de Room para poder
+ * Reglas puras del editor (§7.5), separadas de Compose y de Firestore para poder
  * probarlas en la JVM.
  *
  * Contrato de guardado:

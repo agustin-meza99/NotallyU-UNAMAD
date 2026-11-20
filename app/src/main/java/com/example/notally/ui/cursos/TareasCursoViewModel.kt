@@ -47,7 +47,7 @@ sealed interface EventoTareasCurso {
  *
  * No hay consulta por curso en `TareaDao`: se reutiliza
  * `observarTareasActivas()` (no archivadas, incluye completadas) y se filtra
- * por `cursoId` en memoria. Así no se toca Room ni el esquema.
+ * por `cursoId` en memoria. Así no se toca Firestore ni el esquema.
  */
 class TareasCursoViewModel(
     private val cursoId: Long,

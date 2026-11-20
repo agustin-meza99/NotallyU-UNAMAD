@@ -1,4 +1,4 @@
-package com.example.notally.ui
+﻿package com.example.notally.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
@@ -132,19 +132,9 @@ fun NotallyRoot(modifier: Modifier = Modifier) {
         else -> NivelRaiz.Pestanas
     }
 
-    // Back del editor: lo gestiona `PredictiveBackHandler` dentro de
-    // EditorScreen, que hace flush y permite el gesto predictivo. No se
-    // intercepta aquí para no cancelarlo (§6, §10.5).
-    //
-    // Back en la lista de tareas del curso: vuelve a Cursos conservando la
-    // pestaña y su estado guardado.
     BackHandler(enabled = cursoTareas != null) {
         pilaCodificada = codificarPila(pila.dropLast(1))
     }
-    //
-    // Back en tabs: volver a Hoy es una navegación interna; se conserva un
-    // BackHandler solo para pestañas secundarias. En Hoy el sistema sale de la
-    // app sin nada pendiente que guardar.
     BackHandler(
         enabled = editor == null && cursoTareas == null && pestanaActual != Destino.Hoy,
     ) {
@@ -220,21 +210,9 @@ private fun ContenedorPestanas(
             Destino.Settings,
         )
     }
-    // Día elegido en la tira de Hoy. Vive sobre el contenido de la pestaña para
-    // sobrevivir a la recreación de la Activity; el `rememberSaveable` de dentro
-    // de la pestaña lo restauraría también al volver de otra pestaña, que es lo
-    // que §7.1.1 prohíbe. Por eso se limpia al cambiar de pestaña.
     var diaHoySeleccionado by rememberSaveable { mutableStateOf<Long?>(null) }
-    // Solicitud efímera del FAB de Cursos: el botón vive en este root, la
-    // pantalla la consume, abre la hoja "Nuevo curso" y la vuelve a `false`.
-    // Es un evento de un solo uso: al no quedar pendiente, volver a la pestaña
-    // no la reabre. No se guarda; una recreación tampoco debe reabrirla.
     var solicitudNuevoCursoPendiente by remember { mutableStateOf(false) }
-    // El cluster se oculta al bajar en Hoy (§7.10). El estado vive aquí, en la
-    // raíz, y TodayScreen solo reporta la dirección del scroll.
     var clusterVisible by remember { mutableStateOf(true) }
-    // El FAB de Hoy se oculta en el vacío total, donde el CTA es la única
-    // acción (§7.8). No se arrastra a otras pestañas.
     var accionDisponible by remember { mutableStateOf(true) }
     LaunchedEffect(actual) {
         clusterVisible = true
@@ -258,14 +236,6 @@ private fun ContenedorPestanas(
             AnimatedContent(
                 targetState = actual,
                 transitionSpec = {
-                    // Orden de navegación: Hoy(0) → Cursos(1) → Ajustes(2).
-                    // Avanzar (índice mayor) entra desde la derecha y la
-                    // anterior sale hacia la izquierda; retroceder es lo
-                    // inverso. Ambas pantallas se mueven en paralelo y, al
-                    // recorrer el ancho completo, se reparten el ancho sin
-                    // dejar hueco de fondo. El saliente no se desvanece: si lo
-                    // hiciera, descubriría el papel antes de terminar el
-                    // recorrido.
                     val desde = initialState.indicePestana() ?: 0
                     val hasta = targetState.indicePestana() ?: 0
                     val avanza = hasta > desde
@@ -290,11 +260,6 @@ private fun ContenedorPestanas(
                 label = "tabSlide",
                 modifier = Modifier.fillMaxSize(),
             ) { destino ->
-                // Al cambiar de pestaña, el contenido saliente sigue en el
-                // árbol durante la transición. Se le quitan las semánticas para
-                // que TalkBack no lea dos pantallas a la vez (§9.2). Se lee un
-                // State actualizado, no el parámetro capturado, para que el
-                // subárbol saliente se recomponga al cambiar el destino.
                 val saliente = destino != objetivoPestana.value
                 Box(
                     modifier = Modifier
@@ -318,8 +283,6 @@ private fun ContenedorPestanas(
                                 alCambiarDisponibilidadAccion = { accionDisponible = it },
                             )
 
-                            // El cluster se superpone al scroll: estas listas
-                            // reservan su banda inferior (§4.1, §6).
                             Destino.Cursos -> CursosScreen(
                                 modifier = Modifier.padding(
                                     bottom = EspaciadoNotally.rellenoInferiorLista,
@@ -392,17 +355,13 @@ private fun ContenedorPestanas(
                         Destino.Cursos -> DestinoFab.Cursos
                         else -> null
                     }
-                    // Al entrar en Ajustes el FAB se desvanece sin desplazarse:
-                    // se conserva el último destino con FAB mientras dura el fade.
                     var ultimoDestinoFab by remember { mutableStateOf(DestinoFab.Hoy) }
                     LaunchedEffect(destinoFab) {
                         if (destinoFab != null) ultimoDestinoFab = destinoFab
                     }
                     val destinoFabEfectivo = destinoFab ?: ultimoDestinoFab
                     val desplazamientoYObjetivo = when (destinoFabEfectivo) {
-                        // Misma fila que la píldora: (56 − 52) / 2.
                         DestinoFab.Hoy -> 2.dp
-                        // 16 dp por encima del borde superior del cluster.
                         DestinoFab.Cursos -> -(AltoFab + SeparacionFabCluster)
                     }
 

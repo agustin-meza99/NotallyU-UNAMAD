@@ -41,7 +41,7 @@ sealed interface ResultadoAuth {
  * Sesión de Firebase Authentication con email y contraseña.
  *
  * No guarda contraseñas ni escribe credenciales en logs. El estado de sesión lo
- * mantiene Firebase Auth y se refleja en [usuario]; cerrar sesión no toca Room
+ * mantiene Firebase Auth y se refleja en [usuario]; cerrar sesión no toca Firestore
  * ni Firestore.
  */
 class AuthRepository(

@@ -76,7 +76,7 @@ import kotlinx.coroutines.withTimeoutOrNull
  * Pantalla Cursos (§7.4, §7.8, §7.13).
  *
  * La tarjeta es la única acción: abre la hoja "Editar curso". No hay ruta de
- * detalle de curso en V1 (§0.5). Los conteos salen de Room; "entregas esta
+ * detalle de curso en V1 (§0.5). Los conteos salen de Firestore; "entregas esta
  * semana" se recalcula con el ajuste de inicio de semana.
  */
 @Composable
@@ -129,7 +129,7 @@ fun CursosScreen(
         }
     }
 
-    // Carga: solo si Room tarda más de 150 ms (§7.13). Antes de ese umbral no
+    // Carga: solo si Firestore tarda más de 150 ms (§7.13). Antes de ese umbral no
     // se pinta nada, así el estado vacío no parpadea.
     val mostrarCarga by produceState(
         initialValue = false,

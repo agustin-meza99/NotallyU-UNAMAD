@@ -135,25 +135,11 @@ fun SettingsScreen(
             when (evento) {
                 is EventoAula.Importado -> {
                     hojaAulaVisible = false
-                    val sync = evento.sync
-                    val mensaje = when {
-                        sync == null -> contexto.getString(
-                            R.string.settings_aula_summary_device,
-                        )
-
-                        sync.errores > 0 -> contexto.getString(
-                            R.string.settings_aula_summary_firestore_errors,
-                            sync.cursosSubidos,
-                            sync.tareasSubidas,
-                            sync.errores,
-                        )
-
-                        else -> contexto.getString(
-                            R.string.settings_aula_summary_firestore,
-                            sync.cursosSubidos,
-                            sync.tareasSubidas,
-                        )
-                    }
+                    val mensaje = contexto.getString(
+                        R.string.settings_aula_summary_firestore,
+                        evento.cursos,
+                        evento.tareas,
+                    )
                     snackbar.showSnackbar(mensaje)
                 }
             }

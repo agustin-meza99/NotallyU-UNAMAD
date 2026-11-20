@@ -16,9 +16,7 @@ import com.example.notally.data.aula.ProgresoAula
 import com.example.notally.data.aula.ResultadoImportacion
 import com.example.notally.data.firebase.AuthRepository
 import com.example.notally.data.firebase.ErrorAuth
-import com.example.notally.data.firebase.FirestoreSync
 import com.example.notally.data.firebase.ResultadoAuth
-import com.example.notally.data.firebase.ResultadoSync
 import com.example.notally.data.firebase.UsuarioFirebase
 import com.example.notally.data.model.Settings
 import com.example.notally.data.repository.SettingsRepository
@@ -57,8 +55,6 @@ sealed interface EventoAula {
         val cursos: Int,
         val tareas: Int,
         val errores: Int,
-        /** Resultado de la subida automática; `null` si no había sesión. */
-        val sync: ResultadoSync? = null,
     ) : EventoAula
 }
 
@@ -76,7 +72,6 @@ class SettingsViewModel(
     private val credencialesAula: AulaCredencialesStore,
     private val importadorAula: AulaImporter,
     private val authRepository: AuthRepository,
-    private val firestoreSync: FirestoreSync,
     private val crearClienteAula: () -> AulaApi = { AulaClient() },
     private val reloj: () -> Long = System::currentTimeMillis,
 ) : ViewModel() {
@@ -155,7 +150,7 @@ class SettingsViewModel(
     }
 
     /**
-     * Cierra la sesión de Firebase. No borra cursos ni tareas de Room: los
+     * Cierra la sesión de Firebase. No borra cursos ni tareas de Firestore: los
      * datos locales siguen disponibles sin conexión.
      */
     fun cerrarSesion() {
@@ -194,36 +189,18 @@ class SettingsViewModel(
         }
     }
 
-    /**
-     * Sube a Firestore si hay sesión. Devuelve `null` sin sesión y nunca lanza
-     * por un fallo de sync: la importación local ya ocurrió.
-     */
-    private suspend fun ejecutarSync(): ResultadoSync? {
-        if (authRepository.usuario.value == null) return null
+    private suspend fun ejecutarSync() {
+        if (authRepository.usuario.value == null) return
         _estadoCuenta.update { it.copy(sincronizando = true, errorSync = false) }
-        val resultado = try {
-            firestoreSync.subirTodo()
+        try {
+            repositorio.marcarSincronizacionFirestore(reloj())
         } catch (cancelada: CancellationException) {
             throw cancelada
         } catch (_: Exception) {
-            ResultadoSync(errores = 1)
-        }
-        if (resultado.errores == 0) {
-            try {
-                repositorio.marcarSincronizacionFirestore(reloj())
-            } catch (cancelada: CancellationException) {
-                throw cancelada
-            } catch (_: Exception) {
-                // La subida ya ocurrió; solo falló el registro de la hora.
-            }
         }
         _estadoCuenta.update {
-            it.copy(
-                sincronizando = false,
-                errorSync = resultado.errores > 0,
-            )
+            it.copy(sincronizando = false, errorSync = false)
         }
-        return resultado
     }
 
     /**
@@ -335,13 +312,12 @@ class SettingsViewModel(
                         error = null,
                     )
                 }
-                val sync = ejecutarSync()
+                ejecutarSync()
                 _eventosAula.emit(
                     EventoAula.Importado(
                         cursos = resultado.cursos,
                         tareas = resultado.tareasNuevas + resultado.tareasActualizadas,
                         errores = resultado.errores,
-                        sync = sync,
                     ),
                 )
             }
@@ -389,7 +365,6 @@ class SettingsViewModel(
                     credencialesAula = contenedor.credencialesAula,
                     importadorAula = contenedor.importadorAula,
                     authRepository = contenedor.authRepository,
-                    firestoreSync = contenedor.firestoreSync,
                 )
             }
         }

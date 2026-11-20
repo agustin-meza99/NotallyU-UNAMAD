@@ -1,4 +1,4 @@
-package com.example.notally.ui.components
+﻿package com.example.notally.ui.components
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
@@ -123,8 +123,6 @@ fun FloatingNavBar(
                 .padding(horizontal = 8.dp),
             contentAlignment = Alignment.CenterStart,
         ) {
-            // Un solo indicador compartido, dibujado debajo de la fila para que los
-            // iconos queden por encima durante el recorrido (§6).
             val indiceSeleccionado = items.indexOfFirst { it.seleccionado }
             if (indiceSeleccionado >= 0) {
                 IndicadorSeleccion(indice = indiceSeleccionado)
@@ -183,17 +181,12 @@ private fun DestinoCluster(item: FloatingNavItem) {
         ripple(color = colores.onSurfaceVariant)
     }
 
-    // El relleno vive en el indicador compartido; aquí solo cambia el tinte. Se
-    // usa el mismo spring espacial que el desplazamiento para que el color del
-    // icono no llegue antes que la cápsula (§5, §6).
     val tinteIcono by animateColorAsState(
         targetValue = if (item.seleccionado) colores.onPrimary else colores.onSurfaceVariant,
         animationSpec = MovimientoNotally.espacialNormal(),
         label = "clusterIcono",
     )
 
-    // El gesto y el target viven en el contenedor de 48 dp; el dibujo no cambia de
-    // tamaño al pulsar ni al cambiar de selección.
     Box(
         modifier = Modifier
             .size(TargetDestino)
@@ -201,8 +194,6 @@ private fun DestinoCluster(item: FloatingNavItem) {
             .selectable(
                 selected = item.seleccionado,
                 interactionSource = interaccion,
-                // Sin indication en el slot de 48 dp: si el ripple se dibuja aquí
-                // sale un cuadrado de esquinas rectas sobre la píldora.
                 indication = null,
                 role = Role.Tab,
                 onClick = item.alPulsar,
@@ -217,8 +208,6 @@ private fun DestinoCluster(item: FloatingNavItem) {
             },
         contentAlignment = Alignment.Center,
     ) {
-        // Única indication del destino: la cápsula de 44 × 40 recortada a radio 20.
-        // El target de 48 dp conserva el gesto; solo cambia dónde se pinta el ripple.
         Box(
             modifier = Modifier
                 .size(width = AnchoIndicador, height = AltoIndicador)
@@ -234,8 +223,6 @@ private fun DestinoCluster(item: FloatingNavItem) {
             )
         }
 
-        // Anillo pegado a la cápsula: con el offset de 2 dp del token, el trazo
-        // exterior se recorta contra el clip de la píldora en los destinos extremos.
         Box(
             modifier = Modifier
                 .size(width = AnchoIndicador, height = AltoIndicador)

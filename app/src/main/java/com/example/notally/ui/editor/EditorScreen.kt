@@ -85,7 +85,7 @@ import kotlinx.coroutines.withTimeoutOrNull
  * Sin botón "Guardar": el título y las notas se guardan con debounce y hay
  * flush al volver y al ir a segundo plano. La pantalla sí intercepta el gesto
  * de back con `PredictiveBackHandler`: consume su progreso y solo guarda y
- * navega cuando el gesto se confirma; un gesto cancelado no toca Room ni sale.
+ * navega cuando el gesto se confirma; un gesto cancelado no toca Firestore ni sale.
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -120,10 +120,6 @@ fun EditorScreen(
     val etiquetaDeshacer = stringResource(R.string.action_undo)
     val sinTitulo = stringResource(R.string.editor_untitled)
 
-    // El progreso del gesto se consume hasta el final (la animación la dibuja
-    // el sistema). `collect` solo retorna normalmente cuando el gesto se
-    // confirma; si se cancela, el job se cancela y `completado` queda en false.
-    // Solo entonces se guarda, se espera la escritura y se navega.
     PredictiveBackHandler { progreso ->
         var completado = false
         try {
@@ -132,8 +128,6 @@ fun EditorScreen(
         } finally {
             if (completado) {
                 gestorFoco.clearFocus()
-                // El ViewModelStore se destruye al volver: drena la escritura
-                // pendiente (con timeout) antes de navegar, sin bloquear la UI.
                 withContext(NonCancellable) {
                     viewModel.volcarYEsperar()
                     alVolver()
@@ -142,7 +136,6 @@ fun EditorScreen(
         }
     }
 
-    // Flush al ir a segundo plano y al salir de la pantalla.
     val propietarioCiclo = LocalLifecycleOwner.current
     DisposableEffect(propietarioCiclo, viewModel) {
         val observador = LifecycleEventObserver { _, evento ->
@@ -186,8 +179,6 @@ fun EditorScreen(
         if (resultado == SnackbarResult.ActionPerformed) viewModel.reintentarGuardado()
     }
 
-    // §7.13: antes de 150 ms no se pinta nada (el fondo es `surface`), así no
-    // parpadea el bloque de carga cuando Room responde al instante.
     val mostrarCarga by produceState(initialValue = false, key1 = estado.cargando) {
         value = if (estado.cargando) {
             delay(150)
@@ -257,7 +248,8 @@ fun EditorScreen(
                         else -> {
                             EditorContent(
                                 estado = estado,
-                                editandoNotas = editandoNotas,
+                                editandoNotas = editandoNotas || estado.notas.isEmpty(),
+                                alActivarEdicionNotas = { editandoNotas = true },
                                 cursos = cursos,
                                 nuevaSubtarea = nuevaSubtarea,
                                 alCambiarNuevaSubtarea = { nuevaSubtarea = it },
@@ -266,8 +258,6 @@ fun EditorScreen(
                                 alCambiarFocoSubtarea = { subtareaEnfocada = it },
                                 alAgregarSubtarea = {
                                     val pendiente = nuevaSubtarea
-                                    // Solo se limpia cuando el alta se confirma;
-                                    // si falla, el texto permanece para reintentar.
                                     viewModel.agregarSubtarea(pendiente) {
                                         if (nuevaSubtarea == pendiente) nuevaSubtarea = ""
                                     }
