@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Fondo de `surface` en modo oscuro UNAMAD (selva profunda). -->
-    <color name="notally_surface">#FF0E1511</color>
+    <!-- Fondo de `surface` en modo oscuro UNAMAD (marino/guinda profundo). -->
+    <color name="notally_surface">#FF131014</color>
 </resources>

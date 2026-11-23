@@ -29,98 +29,98 @@ import com.example.notally.R
 import com.example.notally.data.model.TemaApp
 
 // ===========================================================================
-// Paleta Institucional UNAMAD (Universidad Nacional Amazónica de Madre de Dios)
-// Derivada del escudo institucional (Res. N.° 485-2018-UNAMAD-CU):
-//  - Primary: Verde Amazónico (#146B3A) — laurel amazónico y lema institucional
-//  - Secondary: Dorado Sol (#8A5E00 / #F5BE48) — sol radiante y bordes áureos
-//  - Tertiary: Azul Río Madre de Dios (#0E5A8A) — río y cielo amazónico
-//  - Error: Carmesí (#BA1A1A) — prioridad alta, vencimientos y acciones destructivas
+// Paleta Institucional Oficial UNAMAD (portal unamad.edu.pe):
+//  - Primary: Guinda / Magenta UNAMAD (#C1034B · gradiente #D60654 -> #A80443)
+//  - Secondary: Azul Marino UNAMAD (#1E2A3A · barra institucional)
+//  - Tertiary: Dorado / Ámbar institucional (#9A6700 / #F5BE48)
+//  - Error: Rojo Carmesí (#BA1A1A) — prioridad alta, vencimientos, borrado
+//  - Éxito semántico: Verde Esmeralda (#16794A) — entregas completadas
 // Contraste verificado >= 4.5:1 (WCAG 2.2 AA / ISO/IEC 25010 Usabilidad).
 // ===========================================================================
 
-internal val UnamadLightPrimary = Color(0xFF146B3A)
+internal val UnamadLightPrimary = Color(0xFFC1034B)
 internal val UnamadLightOnPrimary = Color(0xFFFFFFFF)
-internal val UnamadLightPrimaryContainer = Color(0xFFC3F0D2)
-internal val UnamadLightOnPrimaryContainer = Color(0xFF00210E)
-internal val UnamadLightInversePrimary = Color(0xFF76DC9B)
+internal val UnamadLightPrimaryContainer = Color(0xFFFFD9E2)
+internal val UnamadLightOnPrimaryContainer = Color(0xFF3E0018)
+internal val UnamadLightInversePrimary = Color(0xFFFFB0C8)
 
-internal val UnamadLightSecondary = Color(0xFF8A5E00)
+internal val UnamadLightSecondary = Color(0xFF1E2A3A)
 internal val UnamadLightOnSecondary = Color(0xFFFFFFFF)
-internal val UnamadLightSecondaryContainer = Color(0xFFFFE09E)
-internal val UnamadLightOnSecondaryContainer = Color(0xFF2B1B00)
+internal val UnamadLightSecondaryContainer = Color(0xFFD6E3F4)
+internal val UnamadLightOnSecondaryContainer = Color(0xFF101C2B)
 
-internal val UnamadLightTertiary = Color(0xFF0E5A8A)
+internal val UnamadLightTertiary = Color(0xFF8A5E00)
 internal val UnamadLightOnTertiary = Color(0xFFFFFFFF)
-internal val UnamadLightTertiaryContainer = Color(0xFFCEE5FF)
-internal val UnamadLightOnTertiaryContainer = Color(0xFF001D33)
+internal val UnamadLightTertiaryContainer = Color(0xFFFFE09E)
+internal val UnamadLightOnTertiaryContainer = Color(0xFF2B1B00)
 
 internal val UnamadLightError = Color(0xFFBA1A1A)
 internal val UnamadLightOnError = Color(0xFFFFFFFF)
 internal val UnamadLightErrorContainer = Color(0xFFFFDAD6)
 internal val UnamadLightOnErrorContainer = Color(0xFF410002)
 
-internal val UnamadLightSurface = Color(0xFFF4F8F5)
-internal val UnamadLightOnSurface = Color(0xFF151D18)
-internal val UnamadLightSurfaceDim = Color(0xFFD5DDD7)
-internal val UnamadLightSurfaceBright = Color(0xFFF9FCF9)
+internal val UnamadLightSurface = Color(0xFFFBF6F8)
+internal val UnamadLightOnSurface = Color(0xFF1D1619)
+internal val UnamadLightSurfaceDim = Color(0xFFE1D8DC)
+internal val UnamadLightSurfaceBright = Color(0xFFFFFBFC)
 internal val UnamadLightSurfaceContainerLowest = Color(0xFFFFFFFF)
-internal val UnamadLightSurfaceContainerLow = Color(0xFFEEF4F0)
-internal val UnamadLightSurfaceContainer = Color(0xFFE7EFEA)
-internal val UnamadLightSurfaceContainerHigh = Color(0xFFE0E9E3)
-internal val UnamadLightSurfaceContainerHighest = Color(0xFFD9E3DC)
-internal val UnamadLightSurfaceVariant = Color(0xFFDAE5DD)
-internal val UnamadLightOnSurfaceVariant = Color(0xFF3E4A42)
-internal val UnamadLightOutline = Color(0xFF6E7B72)
-internal val UnamadLightOutlineVariant = Color(0xFFBFCBC3)
-internal val UnamadLightInverseSurface = Color(0xFF15291E)
-internal val UnamadLightInverseOnSurface = Color(0xFFEBF5EE)
+internal val UnamadLightSurfaceContainerLow = Color(0xFFF6EEF1)
+internal val UnamadLightSurfaceContainer = Color(0xFFF0E7EB)
+internal val UnamadLightSurfaceContainerHigh = Color(0xFFEAE0E4)
+internal val UnamadLightSurfaceContainerHighest = Color(0xFFE4D9DE)
+internal val UnamadLightSurfaceVariant = Color(0xFFEEDDE3)
+internal val UnamadLightOnSurfaceVariant = Color(0xFF514348)
+internal val UnamadLightOutline = Color(0xFF837378)
+internal val UnamadLightOutlineVariant = Color(0xFFD5C2C8)
+internal val UnamadLightInverseSurface = Color(0xFF1E2A3A)
+internal val UnamadLightInverseOnSurface = Color(0xFFF5F7FA)
 
 // ---------------------------------------------------------------------------
-// Paleta Oscura UNAMAD (Selva Profunda + Verde Esmeralda + Oro Suave)
+// Paleta Oscura UNAMAD (Marino/Guinda Profundo + Magenta Luminoso)
 // ---------------------------------------------------------------------------
 
-internal val UnamadDarkPrimary = Color(0xFF76DC9B)
-internal val UnamadDarkOnPrimary = Color(0xFF00391A)
-internal val UnamadDarkPrimaryContainer = Color(0xFF005228)
-internal val UnamadDarkOnPrimaryContainer = Color(0xFFC3F0D2)
-internal val UnamadDarkInversePrimary = Color(0xFF146B3A)
+internal val UnamadDarkPrimary = Color(0xFFFF7AA2)
+internal val UnamadDarkOnPrimary = Color(0xFF5E0023)
+internal val UnamadDarkPrimaryContainer = Color(0xFF8C0036)
+internal val UnamadDarkOnPrimaryContainer = Color(0xFFFFD9E2)
+internal val UnamadDarkInversePrimary = Color(0xFFC1034B)
 
-internal val UnamadDarkSecondary = Color(0xFFF5BE48)
-internal val UnamadDarkOnSecondary = Color(0xFF442C00)
-internal val UnamadDarkSecondaryContainer = Color(0xFF624100)
-internal val UnamadDarkOnSecondaryContainer = Color(0xFFFFE09E)
+internal val UnamadDarkSecondary = Color(0xFFB3C7E0)
+internal val UnamadDarkOnSecondary = Color(0xFF1B2B3F)
+internal val UnamadDarkSecondaryContainer = Color(0xFF28384D)
+internal val UnamadDarkOnSecondaryContainer = Color(0xFFD6E3F4)
 
-internal val UnamadDarkTertiary = Color(0xFF8CCBFF)
-internal val UnamadDarkOnTertiary = Color(0xFF003353)
-internal val UnamadDarkTertiaryContainer = Color(0xFF004A75)
-internal val UnamadDarkOnTertiaryContainer = Color(0xFFCEE5FF)
+internal val UnamadDarkTertiary = Color(0xFFF5BE48)
+internal val UnamadDarkOnTertiary = Color(0xFF442C00)
+internal val UnamadDarkTertiaryContainer = Color(0xFF624100)
+internal val UnamadDarkOnTertiaryContainer = Color(0xFFFFE09E)
 
 internal val UnamadDarkError = Color(0xFFFFB4AB)
 internal val UnamadDarkOnError = Color(0xFF690005)
 internal val UnamadDarkErrorContainer = Color(0xFF93000A)
 internal val UnamadDarkOnErrorContainer = Color(0xFFFFDAD6)
 
-internal val UnamadDarkSurface = Color(0xFF0E1511)
-internal val UnamadDarkOnSurface = Color(0xFFE0E8E2)
-internal val UnamadDarkSurfaceDim = Color(0xFF0A100C)
-internal val UnamadDarkSurfaceBright = Color(0xFF333B36)
-internal val UnamadDarkSurfaceContainerLowest = Color(0xFF090F0B)
-internal val UnamadDarkSurfaceContainerLow = Color(0xFF151D18)
-internal val UnamadDarkSurfaceContainer = Color(0xFF19221C)
-internal val UnamadDarkSurfaceContainerHigh = Color(0xFF232C26)
-internal val UnamadDarkSurfaceContainerHighest = Color(0xFF2D3731)
-internal val UnamadDarkSurfaceVariant = Color(0xFF3D4A42)
-internal val UnamadDarkOnSurfaceVariant = Color(0xFFBFCBC3)
-internal val UnamadDarkOutline = Color(0xFF89958D)
-internal val UnamadDarkOutlineVariant = Color(0xFF3E4A42)
-internal val UnamadDarkInverseSurface = Color(0xFF1B3A29)
-internal val UnamadDarkInverseOnSurface = Color(0xFFEBF5EE)
+internal val UnamadDarkSurface = Color(0xFF131014)
+internal val UnamadDarkOnSurface = Color(0xFFEDE0E4)
+internal val UnamadDarkSurfaceDim = Color(0xFF0E0B0F)
+internal val UnamadDarkSurfaceBright = Color(0xFF393237)
+internal val UnamadDarkSurfaceContainerLowest = Color(0xFF0D0A0E)
+internal val UnamadDarkSurfaceContainerLow = Color(0xFF1B161B)
+internal val UnamadDarkSurfaceContainer = Color(0xFF211B21)
+internal val UnamadDarkSurfaceContainerHigh = Color(0xFF2B242B)
+internal val UnamadDarkSurfaceContainerHighest = Color(0xFF362E36)
+internal val UnamadDarkSurfaceVariant = Color(0xFF514348)
+internal val UnamadDarkOnSurfaceVariant = Color(0xFFD5C2C8)
+internal val UnamadDarkOutline = Color(0xFF9E8C92)
+internal val UnamadDarkOutlineVariant = Color(0xFF514348)
+internal val UnamadDarkInverseSurface = Color(0xFF223042)
+internal val UnamadDarkInverseOnSurface = Color(0xFFF5F7FA)
 
 internal val Scrim = Color(0xFF000000)
 
 /**
- * Tokens extendidos de identidad UNAMAD para gradientes, acentos de prioridad
- * e insignias académicas sin hardcodear hexadecimales en pantallas.
+ * Tokens extendidos de identidad UNAMAD (Guinda/Magenta + Azul Marino) para
+ * gradientes, acentos de prioridad e insignias académicas.
  */
 @Immutable
 data class UnamadExtendedColors(
@@ -141,36 +141,36 @@ data class UnamadExtendedColors(
 )
 
 private val UnamadExtendedLight = UnamadExtendedColors(
-    heroStart = Color(0xFF146B3A),
-    heroEnd = Color(0xFF0B4526),
+    heroStart = Color(0xFFD60654),
+    heroEnd = Color(0xFF98023B),
     heroOnContent = Color(0xFFFFFFFF),
-    heroBadgeBg = Color(0x33F5BE48),
-    heroBadgeContent = Color(0xFFFFE6A3),
-    goldAccent = Color(0xFFD99B00),
+    heroBadgeBg = Color(0x38FFFFFF),
+    heroBadgeContent = Color(0xFFFFF2F6),
+    goldAccent = Color(0xFFF5BE48),
     goldContainer = Color(0xFFFFF0C4),
     onGoldContainer = Color(0xFF3D2800),
-    successAccent = Color(0xFF146B3A),
+    successAccent = Color(0xFF16794A),
     successContainer = Color(0xFFD4F4DF),
     onSuccessContainer = Color(0xFF06371C),
-    focalStart = Color(0xFF123624),
-    focalEnd = Color(0xFF0A2418),
+    focalStart = Color(0xFF1E2A3A),
+    focalEnd = Color(0xFF121B28),
     isDark = false,
 )
 
 private val UnamadExtendedDark = UnamadExtendedColors(
-    heroStart = Color(0xFF0F4C2A),
-    heroEnd = Color(0xFF092A18),
-    heroOnContent = Color(0xFFECF7F0),
-    heroBadgeBg = Color(0x3DF5BE48),
-    heroBadgeContent = Color(0xFFFFDF8E),
+    heroStart = Color(0xFFA80443),
+    heroEnd = Color(0xFF6B012A),
+    heroOnContent = Color(0xFFFFF5F8),
+    heroBadgeBg = Color(0x38FFFFFF),
+    heroBadgeContent = Color(0xFFFFD9E2),
     goldAccent = Color(0xFFF5BE48),
     goldContainer = Color(0xFF3E2B00),
     onGoldContainer = Color(0xFFFFE09E),
-    successAccent = Color(0xFF76DC9B),
+    successAccent = Color(0xFF6AD996),
     successContainer = Color(0xFF0F3D22),
     onSuccessContainer = Color(0xFFC3F0D2),
-    focalStart = Color(0xFF173D29),
-    focalEnd = Color(0xFF0E261A),
+    focalStart = Color(0xFF233246),
+    focalEnd = Color(0xFF16202E),
     isDark = true,
 )
 

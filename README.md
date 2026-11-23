@@ -12,7 +12,7 @@ Aplicación móvil nativa para **Android** desarrollada en **Kotlin + Jetpack Co
 ## Mejoras implementadas sobre la base original
 
 1. **Identidad visual UNAMAD (Claro + Oscuro + Sistema):**
-   - Paleta institucional derivada del escudo UNAMAD (Res. N.° 485-2018-UNAMAD-CU): **Verde Amazónico (`#146B3A`)**, **Dorado Sol (`#D99B00`)**, **Azul Río (`#0E5A8A`)** y **Carmesí (`#BA1A1A`)** con contrastes WCAG 2.2 AA.
+   - Paleta institucional oficial del portal **UNAMAD** (`unamad.edu.pe`): **Guinda / Magenta UNAMAD (`#C1034B` · gradiente `#D60654` → `#A80443`)**, **Azul Marino (`#1E2A3A`)**, **Dorado Institucional (`#F5BE48`)** y **Verde Éxito (`#16794A`)** con contrastes WCAG 2.2 AA.
    - Soporte completo para **Modo Claro**, **Modo Oscuro** y **Sistema**, persistido en DataStore con barras Edge-to-Edge adaptativas.
 2. **Interfaz dinámica e interactiva:**
    - **Banner Hero UNAMAD** en *Hoy* con saludo contextual por hora del día, anillo de progreso animado, métricas rápidas y promedio vigesimal del Aula Virtual.

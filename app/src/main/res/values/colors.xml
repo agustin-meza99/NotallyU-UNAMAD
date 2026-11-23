@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Fondo de `surface` en modo claro UNAMAD (verde hoja suave). -->
-    <color name="notally_surface">#FFF4F8F5</color>
+    <!-- Fondo de `surface` en modo claro UNAMAD (marfil cálido limpio). -->
+    <color name="notally_surface">#FFFBF6F8</color>
 </resources>
