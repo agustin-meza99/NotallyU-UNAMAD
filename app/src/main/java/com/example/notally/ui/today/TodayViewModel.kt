@@ -48,6 +48,7 @@ sealed interface VacioHoy {
     data object Total : VacioHoy
     data object FiltroPendientes : VacioHoy
     data object FiltroCompletadas : VacioHoy
+    data class SinResultadosBusqueda(val consulta: String) : VacioHoy
 }
 
 data class EstadoUiHoy(
@@ -55,6 +56,7 @@ data class EstadoUiHoy(
     val error: Boolean = false,
     val tieneDatosEnCache: Boolean = false,
     val filtro: FiltroHoy = FiltroHoy.TODAS,
+    val consultaBusqueda: String = "",
     val antetitulo: String = "",
     val ahora: Long = System.currentTimeMillis(),
     val secciones: List<SeccionHoyUi> = emptyList(),
@@ -63,6 +65,7 @@ data class EstadoUiHoy(
     val focal: TareaFocalHoy? = null,
     val conteosFiltro: ConteosFiltroHoy = ConteosFiltroHoy(),
     val resumen: ResumenHoy? = null,
+    val promedioNotas: Double? = null,
     val vacio: VacioHoy? = null,
     val estaVacioTotal: Boolean = true,
 )
@@ -118,6 +121,7 @@ class TodayViewModel(
 
     private val disparadorRefresco = MutableStateFlow(0)
     private val estadoFiltro = MutableStateFlow(FiltroHoy.TODAS)
+    private val estadoBusqueda = MutableStateFlow("")
     private val expansionManual =
         MutableStateFlow<Map<TipoSeccionHoy, Boolean>>(emptyMap())
 
@@ -178,14 +182,12 @@ class TodayViewModel(
         agregado,
         relojMinuto,
         estadoFiltro,
+        estadoBusqueda,
         expansionManual,
-    ) { agregado, ahora, filtro, expansion ->
-        buildState(agregado, ahora, filtro, expansion)
+    ) { agregado, ahora, filtro, consulta, expansion ->
+        buildState(agregado, ahora, filtro, consulta, expansion)
     }
         .onEach { estado ->
-            // Con cero tareas no tiene sentido conservar "Pendientes" o
-            // "Completadas"; se vuelve a "Todas" sin tocar el estado durante
-            // la carga inicial (donde el vacío es solo transitorio).
             if (estado.tieneDatosEnCache && estado.estaVacioTotal &&
                 estadoFiltro.value != FiltroHoy.TODAS
             ) {
@@ -200,6 +202,10 @@ class TodayViewModel(
 
     fun cambiarFiltro(filtro: FiltroHoy) {
         estadoFiltro.value = filtro
+    }
+
+    fun cambiarConsultaBusqueda(consulta: String) {
+        estadoBusqueda.value = consulta
     }
 
     fun alternarSeccion(tipo: TipoSeccionHoy) {
@@ -297,6 +303,7 @@ class TodayViewModel(
         agregado: Agregado,
         ahora: Long,
         filtro: FiltroHoy,
+        consulta: String,
         expansion: Map<TipoSeccionHoy, Boolean>,
     ): EstadoUiHoy {
         val antetitulo = DateFormat.antetitulo(ahora, zona)
@@ -305,6 +312,7 @@ class TodayViewModel(
             return EstadoUiHoy(
                 cargando = agregado.cargando,
                 error = agregado.error,
+                consultaBusqueda = consulta,
                 antetitulo = antetitulo,
                 ahora = ahora,
                 estaVacioTotal = true,
@@ -322,18 +330,37 @@ class TodayViewModel(
             semanaEmpiezaLunes = datos.semanaEmpiezaLunes,
         )
 
-        val secciones = if (filtro == FiltroHoy.COMPLETADAS) {
+        val consultaLimpia = consulta.trim()
+        val hayBusqueda = consultaLimpia.isNotEmpty()
+        val seccionesBase = if (filtro == FiltroHoy.COMPLETADAS) {
             emptyList()
         } else {
             construirSeccionesHoy(grupos, filtro, expansion)
+        }
+        val secciones = if (hayBusqueda) {
+            filtrarSeccionesPorConsulta(seccionesBase, consultaLimpia)
+        } else {
+            seccionesBase
+        }
+        val completadasPlanas = if (filtro == FiltroHoy.COMPLETADAS) {
+            if (hayBusqueda) {
+                filtrarElementosPorConsulta(grupos.historialCompletadas, consultaLimpia)
+            } else {
+                grupos.historialCompletadas
+            }
+        } else {
+            emptyList()
         }
 
         val vacio = when {
             agregado.cargando -> null
             grupos.estaVacio -> VacioHoy.Total
-            // Con historial pero sin secciones de hoy, "Todas" no tiene filas:
-            // se ofrece el vacío total; los chips siguen visibles para llegar
-            // a "Completadas" (§7.7).
+            hayBusqueda && filtro == FiltroHoy.COMPLETADAS && completadasPlanas.isEmpty() ->
+                VacioHoy.SinResultadosBusqueda(consultaLimpia)
+
+            hayBusqueda && filtro != FiltroHoy.COMPLETADAS && secciones.isEmpty() ->
+                VacioHoy.SinResultadosBusqueda(consultaLimpia)
+
             filtro == FiltroHoy.COMPLETADAS ->
                 if (grupos.historialCompletadas.isEmpty()) VacioHoy.FiltroCompletadas else null
 
@@ -349,16 +376,13 @@ class TodayViewModel(
             error = agregado.error,
             tieneDatosEnCache = true,
             filtro = filtro,
+            consultaBusqueda = consulta,
             antetitulo = antetitulo,
             ahora = ahora,
             secciones = secciones,
-            completadasPlanas = if (filtro == FiltroHoy.COMPLETADAS) {
-                grupos.historialCompletadas
-            } else {
-                emptyList()
-            },
+            completadasPlanas = completadasPlanas,
             diasSemana = grupos.diasSemana,
-            focal = if (filtro == FiltroHoy.COMPLETADAS) null else grupos.focal,
+            focal = if (filtro == FiltroHoy.COMPLETADAS || hayBusqueda) null else grupos.focal,
             conteosFiltro = grupos.conteosFiltro,
             resumen = if (grupos.resumenTotal > 0) {
                 ResumenHoy(
@@ -368,6 +392,7 @@ class TodayViewModel(
             } else {
                 null
             },
+            promedioNotas = calcularPromedioNotas(datos.activas),
             vacio = vacio,
             estaVacioTotal = grupos.estaVacio,
         )

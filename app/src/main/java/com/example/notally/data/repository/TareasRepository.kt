@@ -46,7 +46,7 @@ internal fun <T> AuthRepository.observarColeccion(
                 .collection(coleccion)
             val registro = ref.addSnapshotListener { snapshot, error ->
                 if (error != null) {
-                    trySend(emptyList())
+                    close(error)
                     return@addSnapshotListener
                 }
                 trySend(snapshot?.documents?.mapNotNull(mapear).orEmpty())

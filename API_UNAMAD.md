@@ -1,4 +1,4 @@
-tyo# Documentación de la API — Aula Virtual UNAMAD
+# Documentación de la API — Aula Virtual UNAMAD
 
 Base URL: `https://aula-virtual.unamad.edu.pe`
 

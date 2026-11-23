@@ -4,8 +4,8 @@ import android.content.Context
 import com.example.notally.data.aula.AulaCredencialesStore
 import com.example.notally.data.aula.AulaImporter
 import com.example.notally.data.firebase.AuthRepository
-import com.example.notally.data.repository.SettingsRepository
 import com.example.notally.data.repository.CursosRepository
+import com.example.notally.data.repository.SettingsRepository
 import com.example.notally.data.repository.TareasRepository
 import com.example.notally.data.repository.dataStoreSettingsNotally
 
@@ -18,6 +18,8 @@ import com.example.notally.data.repository.dataStoreSettingsNotally
 class AppContainer(context: Context) {
 
     private val contextoApp = context.applicationContext
+
+    val monitorRed = NetworkMonitor(contextoApp)
 
     val authRepository = AuthRepository()
 

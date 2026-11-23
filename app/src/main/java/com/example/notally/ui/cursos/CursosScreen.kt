@@ -1,13 +1,16 @@
 package com.example.notally.ui.cursos
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -19,13 +22,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
@@ -40,12 +45,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -62,22 +72,21 @@ import com.example.notally.ui.components.AvisoError
 import com.example.notally.ui.components.BloqueError
 import com.example.notally.ui.components.EmptyState
 import com.example.notally.ui.components.FilasCargando
+import com.example.notally.ui.components.NotallySearchBar
 import com.example.notally.ui.components.anilloFoco
 import com.example.notally.ui.theme.EspaciadoNotally
 import com.example.notally.ui.theme.FormaNotally
 import com.example.notally.ui.theme.MovimientoNotally
 import com.example.notally.ui.theme.TipografiaNotally
 import com.example.notally.ui.theme.margenHorizontalPantalla
+import com.example.notally.ui.theme.unamad
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.withTimeoutOrNull
 
 /**
- * Pantalla Cursos (§7.4, §7.8, §7.13).
- *
- * La tarjeta es la única acción: abre la hoja "Editar curso". No hay ruta de
- * detalle de curso en V1 (§0.5). Los conteos salen de Firestore; "entregas esta
- * semana" se recalcula con el ajuste de inicio de semana.
+ * Pantalla Cursos renovada con identidad UNAMAD, panel de estadísticas
+ * académicas, búsqueda instantánea y tarjetas interactivas con progreso animado.
  */
 @Composable
 fun CursosScreen(
@@ -95,9 +104,8 @@ fun CursosScreen(
     val margen = margenHorizontalPantalla
 
     var objetivoHoja by remember { mutableStateOf<ObjetivoCursoSheet?>(null) }
+    var consulta by rememberSaveable { mutableStateOf("") }
 
-    // El FAB vive en el cluster del root. La señal es de un solo uso: se abre
-    // la hoja y se consume; sin pendiente, volver a la pestaña no la reabre.
     LaunchedEffect(solicitudNuevoCursoPendiente) {
         if (solicitudNuevoCursoPendiente) {
             viewModel.limpiarErrorFormulario()
@@ -129,8 +137,6 @@ fun CursosScreen(
         }
     }
 
-    // Carga: solo si Firestore tarda más de 150 ms (§7.13). Antes de ese umbral no
-    // se pinta nada, así el estado vacío no parpadea.
     val mostrarCarga by produceState(
         initialValue = false,
         key1 = estado.cargando,
@@ -141,6 +147,19 @@ fun CursosScreen(
             true
         } else {
             false
+        }
+    }
+
+    val cursosFiltrados = remember(estado.cursos, consulta) {
+        val q = consulta.trim().lowercase()
+        if (q.isEmpty()) {
+            estado.cursos
+        } else {
+            estado.cursos.filter { item ->
+                item.curso.nombre.lowercase().contains(q) ||
+                    (item.curso.codigo?.lowercase()?.contains(q) == true) ||
+                    (item.curso.periodo?.lowercase()?.contains(q) == true)
+            }
         }
     }
 
@@ -166,21 +185,29 @@ fun CursosScreen(
                 contentPadding = PaddingValues(
                     start = margen,
                     end = margen,
-                    top = 24.dp,
-                    // Deja la última tarjeta por encima del FAB y del cluster
-                    // inferior, con el mismo criterio que Hoy (§4.1, §6).
+                    top = 16.dp,
                     bottom = EspaciadoNotally.rellenoInferiorLista,
                 ),
             ) {
                 item(key = "header") {
-                    EncabezadoCursos(
+                    EncabezadoCursosUnamad(
                         cantidadCursos = estado.cursos.size,
                         totalPendientes = estado.totalPendientes,
                         entregasSemanales = estado.entregasSemanales,
-                        mostrarConteos = estado.tieneDatosEnCache &&
-                            estado.cursos.isNotEmpty(),
-                        modifier = Modifier.padding(bottom = 16.dp),
+                        mostrarConteos = estado.tieneDatosEnCache,
+                        modifier = Modifier.padding(bottom = 14.dp),
                     )
+                }
+
+                if (estado.cursos.isNotEmpty()) {
+                    item(key = "search_courses") {
+                        NotallySearchBar(
+                            consulta = consulta,
+                            placeholder = stringResource(R.string.courses_search_placeholder),
+                            alCambiarConsulta = { consulta = it },
+                            modifier = Modifier.padding(bottom = 16.dp),
+                        )
+                    }
                 }
 
                 if (estado.error && estado.tieneDatosEnCache) {
@@ -189,7 +216,7 @@ fun CursosScreen(
                             mensaje = errorRefrescar,
                             etiquetaReintentar = etiquetaReintentar,
                             alReintentar = viewModel::reintentar,
-                            modifier = Modifier.padding(top = 16.dp),
+                            modifier = Modifier.padding(bottom = 14.dp),
                         )
                     }
                 }
@@ -198,7 +225,7 @@ fun CursosScreen(
                     estado.cargando && !estado.tieneDatosEnCache -> {
                         if (mostrarCarga) {
                             item(key = "loading") {
-                                FilasCargando(modifier = Modifier.padding(top = 24.dp))
+                                FilasCargando(modifier = Modifier.padding(top = 12.dp))
                             }
                         }
                     }
@@ -209,7 +236,7 @@ fun CursosScreen(
                                 titulo = errorCargar,
                                 etiquetaReintentar = etiquetaReintentar,
                                 alReintentar = viewModel::reintentar,
-                                modifier = Modifier.padding(top = 48.dp),
+                                modifier = Modifier.padding(top = 36.dp),
                             )
                         }
                     }
@@ -224,14 +251,26 @@ fun CursosScreen(
                                     viewModel.limpiarErrorFormulario()
                                     objetivoHoja = ObjetivoCursoSheet.Nueva
                                 },
-                                modifier = Modifier.padding(top = 48.dp),
+                                modifier = Modifier.padding(top = 36.dp),
+                            )
+                        }
+                    }
+
+                    cursosFiltrados.isEmpty() -> {
+                        item(key = "search_empty") {
+                            EmptyState(
+                                titulo = stringResource(R.string.today_search_empty_title),
+                                cuerpo = stringResource(R.string.today_search_empty_body, consulta.trim()),
+                                etiquetaAccion = stringResource(R.string.today_search_empty_cta),
+                                alAccionar = { consulta = "" },
+                                modifier = Modifier.padding(top = 24.dp),
                             )
                         }
                     }
 
                     else -> {
                         items(
-                            items = estado.cursos,
+                            items = cursosFiltrados,
                             key = { it.curso.id },
                         ) { tarjeta ->
                             TarjetaCurso(
@@ -240,7 +279,11 @@ fun CursosScreen(
                                     viewModel.limpiarErrorFormulario()
                                     objetivoHoja = ObjetivoCursoSheet.Editar(tarjeta)
                                 },
-                                modifier = Modifier.padding(bottom = 12.dp),
+                                modifier = Modifier
+                                    .animateItem(
+                                        placementSpec = tween(MovimientoNotally.movimientoElementoMs),
+                                    )
+                                    .padding(bottom = 12.dp),
                             )
                         }
                     }
@@ -285,44 +328,109 @@ fun CursosScreen(
 }
 
 @Composable
-private fun EncabezadoCursos(
+private fun EncabezadoCursosUnamad(
     cantidadCursos: Int,
     totalPendientes: Int,
     entregasSemanales: Int,
     mostrarConteos: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    val colores = MaterialTheme.colorScheme
-    // Sin título visible (§7.4): el primer dato es el conteo real. El botón
-    // "+" vive ahora en el FAB inferior.
-    Column(modifier = modifier.fillMaxWidth()) {
-        if (mostrarConteos) {
-            val textoPendientes = pluralStringResource(
-                R.plurals.courses_pending,
-                totalPendientes,
-                totalPendientes,
-            )
-            Text(
-                text = pluralStringResource(
-                    R.plurals.courses_summary,
-                    cantidadCursos,
-                    cantidadCursos,
-                    textoPendientes,
+    val unamadColors = MaterialTheme.unamad
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(FormaNotally.xl)
+            .background(
+                Brush.linearGradient(
+                    colors = listOf(unamadColors.heroStart, unamadColors.heroEnd),
                 ),
-                style = MaterialTheme.typography.bodyMedium,
-                color = colores.onSurfaceVariant,
             )
-            Spacer(Modifier.height(2.dp))
-            Text(
-                text = pluralStringResource(
-                    R.plurals.courses_week,
-                    entregasSemanales,
-                    entregasSemanales,
-                ),
-                style = MaterialTheme.typography.bodySmall,
-                color = colores.onSurfaceVariant,
+            .border(
+                width = 1.dp,
+                color = unamadColors.goldAccent.copy(alpha = 0.35f),
+                shape = FormaNotally.xl,
             )
+            .padding(20.dp),
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_book),
+                    contentDescription = null,
+                    tint = unamadColors.goldAccent,
+                    modifier = Modifier.size(20.dp),
+                )
+                Text(
+                    text = stringResource(R.string.courses_header_title),
+                    style = MaterialTheme.typography.titleLarge,
+                    color = unamadColors.heroOnContent,
+                )
+            }
+
+            if (mostrarConteos) {
+                Spacer(Modifier.height(14.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    CursoStatTile(
+                        valor = cantidadCursos.toString(),
+                        etiqueta = stringResource(R.string.courses_stat_courses),
+                        modifier = Modifier.weight(1f),
+                    )
+                    CursoStatTile(
+                        valor = totalPendientes.toString(),
+                        etiqueta = stringResource(R.string.courses_stat_pending),
+                        modifier = Modifier.weight(1f),
+                    )
+                    CursoStatTile(
+                        valor = entregasSemanales.toString(),
+                        etiqueta = stringResource(R.string.courses_stat_week),
+                        destacado = entregasSemanales > 0,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
         }
+    }
+}
+
+@Composable
+private fun CursoStatTile(
+    valor: String,
+    etiqueta: String,
+    modifier: Modifier = Modifier,
+    destacado: Boolean = false,
+) {
+    val unamadColors = MaterialTheme.unamad
+    Column(
+        modifier = modifier
+            .clip(FormaNotally.m)
+            .background(
+                if (destacado) {
+                    unamadColors.goldAccent.copy(alpha = 0.22f)
+                } else {
+                    unamadColors.heroOnContent.copy(alpha = 0.12f)
+                },
+            )
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+    ) {
+        Text(
+            text = valor,
+            style = MaterialTheme.typography.titleMedium,
+            color = if (destacado) unamadColors.heroBadgeContent else unamadColors.heroOnContent,
+            maxLines = 1,
+        )
+        Text(
+            text = etiqueta,
+            style = MaterialTheme.typography.bodySmall,
+            color = unamadColors.heroOnContent.copy(alpha = 0.80f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
@@ -333,14 +441,20 @@ private fun TarjetaCurso(
     modifier: Modifier = Modifier,
 ) {
     val colores = MaterialTheme.colorScheme
+    val unamadColors = MaterialTheme.unamad
     val fuenteInteraccion = remember { MutableInteractionSource() }
     val pulsada by fuenteInteraccion.collectIsPressedAsState()
     var enfocada by remember { mutableStateOf(false) }
 
     val contenedor by animateColorAsState(
-        targetValue = if (pulsada) colores.surfaceContainerHigh else colores.surfaceContainerLow,
+        targetValue = if (pulsada) colores.surfaceContainerHigh else colores.surfaceContainerLowest,
         animationSpec = tween(MovimientoNotally.colorMs),
         label = "cursoCardContainer",
+    )
+    val escala by animateFloatAsState(
+        targetValue = if (pulsada) 0.985f else 1f,
+        animationSpec = MovimientoNotally.espacialRapida(),
+        label = "cursoCardScale",
     )
 
     val completa = tarjeta.totalTareas > 0 &&
@@ -370,6 +484,7 @@ private fun TarjetaCurso(
             )
             "$tareas${stringResource(R.string.task_meta_separator)}$entregadas"
         }
+
         textoCompleta != null -> textoCompleta
         else -> {
             val tareas = pluralStringResource(
@@ -397,10 +512,30 @@ private fun TarjetaCurso(
     }
     val etiquetaAbrir = stringResource(R.string.a11y_edit_course)
     val descripcion = "${tarjeta.curso.nombre}. $descripcionProgreso."
+    val separador = stringResource(R.string.task_meta_separator)
+    val metaAcademica = remember(tarjeta.curso) {
+        listOfNotNull(
+            tarjeta.curso.codigo?.takeIf { it.isNotBlank() },
+            tarjeta.curso.seccion?.takeIf { it.isNotBlank() }?.let { "Sec. $it" },
+            tarjeta.curso.periodo?.takeIf { it.isNotBlank() },
+        ).joinToString(separador)
+    }
+
+    val fraccionObjetivo = if (tarjeta.totalTareas > 0) {
+        (tarjeta.tareasAvanzadas.toFloat() / tarjeta.totalTareas).coerceIn(0f, 1f)
+    } else {
+        0f
+    }
+    val fraccionAnimada by animateFloatAsState(
+        targetValue = fraccionObjetivo,
+        animationSpec = MovimientoNotally.espacialNormal(),
+        label = "cursoProgress",
+    )
 
     Surface(
         modifier = modifier
             .fillMaxWidth()
+            .scale(escala)
             .anilloFoco(visible = enfocada, shape = FormaNotally.xl)
             .onFocusChanged { enfocada = it.isFocused }
             .clip(FormaNotally.xl)
@@ -416,14 +551,67 @@ private fun TarjetaCurso(
             },
         shape = FormaNotally.xl,
         color = contenedor,
+        border = BorderStroke(1.dp, colores.outlineVariant.copy(alpha = 0.50f)),
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 18.dp),
+                .padding(start = 12.dp, end = 18.dp, top = 16.dp, bottom = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            // Acento lateral: verde UNAMAD para Aula Virtual, azul río para cursos manuales
+            Box(
+                modifier = Modifier
+                    .width(4.dp)
+                    .height(48.dp)
+                    .clip(CircleShape)
+                    .background(if (tarjeta.esAula) colores.primary else colores.tertiary),
+            )
+            Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .clip(FormaNotally.s)
+                            .background(
+                                if (tarjeta.esAula) {
+                                    unamadColors.successContainer
+                                } else {
+                                    colores.tertiaryContainer
+                                },
+                            )
+                            .padding(horizontal = 8.dp, vertical = 2.dp),
+                    ) {
+                        Text(
+                            text = stringResource(
+                                if (tarjeta.esAula) {
+                                    R.string.courses_badge_aula
+                                } else {
+                                    R.string.courses_badge_manual
+                                },
+                            ),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (tarjeta.esAula) {
+                                unamadColors.onSuccessContainer
+                            } else {
+                                colores.onTertiaryContainer
+                            },
+                        )
+                    }
+                    if (metaAcademica.isNotEmpty()) {
+                        Text(
+                            text = metaAcademica,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = colores.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+                Spacer(Modifier.height(6.dp))
                 Text(
                     text = tarjeta.curso.nombre,
                     style = MaterialTheme.typography.titleMedium,
@@ -440,17 +628,17 @@ private fun TarjetaCurso(
             }
             if (tarjeta.totalTareas > 0) {
                 Spacer(Modifier.width(12.dp))
-                val fraccion = (tarjeta.tareasAvanzadas.toFloat() / tarjeta.totalTareas).coerceIn(0f, 1f)
                 Box(
-                    modifier = Modifier.size(48.dp),
+                    modifier = Modifier.size(52.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    androidx.compose.material3.CircularProgressIndicator(
-                        progress = { fraccion },
+                    CircularProgressIndicator(
+                        progress = { fraccionAnimada },
                         modifier = Modifier.fillMaxSize(),
-                        color = colores.primary,
+                        color = if (completa) unamadColors.goldAccent else colores.primary,
                         trackColor = colores.surfaceContainerHighest,
-                        strokeWidth = 4.dp,
+                        strokeWidth = 4.5.dp,
+                        strokeCap = StrokeCap.Round,
                     )
                     Text(
                         text = stringResource(
@@ -459,33 +647,10 @@ private fun TarjetaCurso(
                             tarjeta.totalTareas,
                         ),
                         style = TipografiaNotally.numerico,
-                        color = colores.onSurfaceVariant,
+                        color = colores.onSurface,
                     )
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun BarraProgreso(
-    fraccion: Float,
-    modifier: Modifier = Modifier,
-) {
-    Box(
-        modifier = modifier
-            .height(2.dp)
-            .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.outlineVariant),
-    ) {
-        if (fraccion > 0f) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(fraccion.coerceIn(0f, 1f))
-                    .height(2.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary),
-            )
         }
     }
 }

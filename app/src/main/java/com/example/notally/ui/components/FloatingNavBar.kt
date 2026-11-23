@@ -116,9 +116,9 @@ fun FloatingNavBar(
     ) {
         Box(
             modifier = Modifier
-                .shadow(elevation = ElevacionCluster, shape = CircleShape)
+                .shadow(elevation = 6.dp, shape = CircleShape)
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                .background(MaterialTheme.colorScheme.surfaceContainerLowest)
                 .height(AltoPildora)
                 .padding(horizontal = 8.dp),
             contentAlignment = Alignment.CenterStart,

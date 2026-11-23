@@ -1,89 +1,89 @@
 package com.example.notally.ui.components
 
 import android.text.format.DateFormat as AndroidDateFormat
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxState
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.CustomAccessibilityAction
-import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import com.example.notally.R
 import com.example.notally.data.model.Estado
 import com.example.notally.data.model.Prioridad
 import com.example.notally.data.model.Tarea
-import com.example.notally.R
 import com.example.notally.ui.theme.FormaNotally
 import com.example.notally.ui.theme.MovimientoNotally
+import com.example.notally.ui.theme.unamad
 import com.example.notally.ui.utils.DateFormat
 import com.example.notally.ui.utils.textoAtraso
 import com.example.notally.ui.utils.textoEtiquetaFecha
 import com.example.notally.ui.utils.textoFraseEntrega
 
 /**
- * Fila de tarea (§7.2).
- *
- * El checkbox es un nodo de accesibilidad separado (nunca se fusiona con la
- * fila). La fila entera abre el editor y expone las acciones de accesibilidad
- * Completar / Posponer a mañana / Eliminar.
- *
- * @param ahora instante de referencia para las etiquetas de fecha; la pantalla
- *   lo actualiza periódicamente para que "Hoy"/"Atrasada" no se queden obsoletos.
+ * Fila de tarea mejorada con tarjeta tonal UNAMAD, barra lateral semántica de
+ * prioridad/estado, insignias compactas y respuesta táctil animada.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun TaskRow(
     tarea: Tarea,
@@ -96,12 +96,11 @@ fun TaskRow(
     alEliminar: () -> Unit = {},
 ) {
     val colores = MaterialTheme.colorScheme
+    val unamadColors = MaterialTheme.unamad
     val hecha = tarea.estado == Estado.COMPLETADA
     val esExterna = tarea.externalId != null
     val vencida = tarea.entregaEn != null &&
         DateFormat.diasAtraso(tarea.entregaEn, ahora) > 0
-    // En el Aula Virtual no existe "atrasada": una tarea importada sin entregar
-    // se muestra como "No entregada". Solo las tareas manuales se atrasan.
     val atrasada = !hecha && !tarea.entregada && !esExterna && vencida
     val noEntregada = !tarea.entregada && esExterna && vencida
 
@@ -118,44 +117,35 @@ fun TaskRow(
         else -> textoAtraso(DateFormat.diasAtraso(tarea.entregaEn, ahora))
             ?: textoEtiquetaFecha(tarea.entregaEn, ahora)
     }
-    val colorFecha = if (atrasada) colores.error else colores.onSurfaceVariant
+    val colorFecha = if (atrasada || noEntregada) colores.error else colores.onSurfaceVariant
 
     val textoPrioridad = priorityLabelForA11y(tarea.prioridad)
     val textoGrupal = if (tarea.esGrupal) stringResource(R.string.task_group) else null
-    val textoEntregada = if (tarea.entregada) {
-        stringResource(R.string.task_delivered)
-    } else {
-        null
-    }
-    val textoNoEntregada = if (noEntregada) {
-        stringResource(R.string.task_not_delivered)
-    } else {
-        null
-    }
+    val textoEntregada = if (tarea.entregada) stringResource(R.string.task_delivered) else null
+    val textoNoEntregada = if (noEntregada) stringResource(R.string.task_not_delivered) else null
     val descripcionEntrega = tarea.entregaEn?.let {
         stringResource(R.string.a11y_task_due, textoFraseEntrega(it, ahora, es24Horas))
     }
-    val descripcionFila =
-        remember(
-            tarea.titulo,
-            textoCurso,
-            descripcionEntrega,
-            textoPrioridad,
-            textoGrupal,
-            textoEntregada,
-            textoNoEntregada,
-            hecha,
-        ) {
-            buildList {
-                add(tarea.titulo)
-                add(textoCurso)
-                if (descripcionEntrega != null) add(descripcionEntrega)
-                add(textoPrioridad)
-                if (textoGrupal != null) add(textoGrupal)
-                if (textoEntregada != null) add(textoEntregada)
-                if (textoNoEntregada != null) add(textoNoEntregada)
-            }.joinToString(". ") + "."
-        }
+    val descripcionFila = remember(
+        tarea.titulo,
+        textoCurso,
+        descripcionEntrega,
+        textoPrioridad,
+        textoGrupal,
+        textoEntregada,
+        textoNoEntregada,
+        hecha,
+    ) {
+        buildList {
+            add(tarea.titulo)
+            add(textoCurso)
+            if (descripcionEntrega != null) add(descripcionEntrega)
+            add(textoPrioridad)
+            if (textoGrupal != null) add(textoGrupal)
+            if (textoEntregada != null) add(textoEntregada)
+            if (textoNoEntregada != null) add(textoNoEntregada)
+        }.joinToString(". ") + "."
+    }
 
     val etiquetaAbrir = stringResource(R.string.a11y_openTask)
     val etiquetaCompletar = stringResource(R.string.swipe_complete)
@@ -172,127 +162,219 @@ fun TaskRow(
     val fuenteInteraccion = remember { MutableInteractionSource() }
     val pulsada by fuenteInteraccion.collectIsPressedAsState()
     val fondo by animateColorAsState(
-        targetValue = if (pulsada) colores.surfaceContainerLow else Color.Transparent,
+        targetValue = when {
+            pulsada -> colores.surfaceContainerHigh
+            hecha -> colores.surfaceContainerLow.copy(alpha = 0.7f)
+            else -> colores.surfaceContainerLowest
+        },
         animationSpec = tween(MovimientoNotally.colorMs),
         label = "taskRowBackground",
     )
+    val escala by animateFloatAsState(
+        targetValue = if (pulsada) 0.99f else 1f,
+        animationSpec = MovimientoNotally.espacialRapida(),
+        label = "taskRowScale",
+    )
+    val colorIndicador by animateColorAsState(
+        targetValue = when {
+            hecha || tarea.entregada -> unamadColors.successAccent
+            atrasada || noEntregada || tarea.prioridad == Prioridad.ALTA -> colores.error
+            tarea.prioridad == Prioridad.MEDIA -> unamadColors.goldAccent
+            else -> colores.tertiary
+        },
+        animationSpec = tween(MovimientoNotally.colorMs),
+        label = "taskAccentBar",
+    )
     var enfocada by remember { mutableStateOf(false) }
 
-    Row(
+    Surface(
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = 56.dp)
-            .anilloFoco(visible = enfocada, shape = FormaNotally.m)
-            .clip(FormaNotally.m)
-            .background(fondo)
-            .onFocusChanged { enfocada = it.isFocused }
-            .clickable(
-                interactionSource = fuenteInteraccion,
-                indication = LocalIndication.current,
-                role = Role.Button,
-                onClickLabel = etiquetaAbrir,
-                onClick = alPulsar,
-            )
-            .semantics {
-                contentDescription = descripcionFila
-                customActions = listOf(
-                    CustomAccessibilityAction(etiquetaCompletar) {
-                        if (!hecha) alAlternarCompletada()
-                        true
-                    },
-                    CustomAccessibilityAction(etiquetaPosponer) {
-                        alPosponer()
-                        true
-                    },
-                    CustomAccessibilityAction(etiquetaEliminar) {
-                        alEliminar()
-                        true
-                    },
-                )
+            .scale(escala)
+            .anilloFoco(visible = enfocada, shape = FormaNotally.l)
+            .onFocusChanged { enfocada = it.isFocused },
+        shape = FormaNotally.l,
+        color = fondo,
+        border = BorderStroke(
+            width = 1.dp,
+            color = if (atrasada || noEntregada) {
+                colores.error.copy(alpha = 0.28f)
+            } else {
+                colores.outlineVariant.copy(alpha = 0.45f)
             },
-        verticalAlignment = Alignment.CenterVertically,
+        ),
     ) {
-        // Target 48×48; dibujo 20 dp.
-        Box(
+        Row(
             modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
+                .fillMaxWidth()
+                .heightIn(min = 64.dp)
                 .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
+                    interactionSource = fuenteInteraccion,
                     indication = LocalIndication.current,
-                    role = Role.Checkbox,
-                    onClickLabel = etiquetaCasilla,
-                    onClick = {
-                        if (!hecha) {
-                            haptica.performHapticFeedback(HapticFeedbackType.LongPress)
-                        }
-                        alAlternarCompletada()
-                    },
+                    role = Role.Button,
+                    onClickLabel = etiquetaAbrir,
+                    onClick = alPulsar,
                 )
                 .semantics {
-                    contentDescription = etiquetaCasilla
-                    stateDescription = estadoCasilla
-                },
-            contentAlignment = Alignment.Center,
+                    contentDescription = descripcionFila
+                    customActions = listOf(
+                        CustomAccessibilityAction(etiquetaCompletar) {
+                            if (!hecha) alAlternarCompletada()
+                            true
+                        },
+                        CustomAccessibilityAction(etiquetaPosponer) {
+                            alPosponer()
+                            true
+                        },
+                        CustomAccessibilityAction(etiquetaEliminar) {
+                            alEliminar()
+                            true
+                        },
+                    )
+                }
+                .padding(end = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            TaskCheckbox(hecha = hecha)
-        }
-
-        Spacer(Modifier.width(8.dp))
-
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .padding(vertical = 12.dp),
-        ) {
-            Text(
-                text = tarea.titulo,
-                style = MaterialTheme.typography.titleMedium,
-                color = if (hecha) colores.onSurfaceVariant else colores.onSurface,
-                textDecoration = if (hecha) TextDecoration.LineThrough else null,
-                maxLines = 3,
-                overflow = TextOverflow.Ellipsis,
+            // Barra lateral semántica (prioridad / estado UNAMAD)
+            Box(
+                modifier = Modifier
+                    .padding(start = 8.dp, top = 12.dp, bottom = 12.dp)
+                    .width(4.dp)
+                    .height(36.dp)
+                    .clip(CircleShape)
+                    .background(colorIndicador),
             )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = buildAnnotatedString {
-                    append(textoCurso)
-                    append(separador)
-                    withStyle(SpanStyle(color = colorFecha)) { append(textoFecha) }
-                    if (textoGrupal != null) {
-                        append(separador)
-                        append(textoGrupal)
-                    }
-                    if (textoEntregada != null) {
-                        append(separador)
-                        withStyle(SpanStyle(color = colores.primary)) {
-                            append(textoEntregada)
+
+            // Target 48×48; dibujo 22 dp.
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = LocalIndication.current,
+                        role = Role.Checkbox,
+                        onClickLabel = etiquetaCasilla,
+                        onClick = {
+                            if (!hecha) {
+                                haptica.performHapticFeedback(HapticFeedbackType.LongPress)
+                            }
+                            alAlternarCompletada()
+                        },
+                    )
+                    .semantics {
+                        contentDescription = etiquetaCasilla
+                        stateDescription = estadoCasilla
+                    },
+                contentAlignment = Alignment.Center,
+            ) {
+                TaskCheckbox(hecha = hecha)
+            }
+
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(vertical = 12.dp),
+            ) {
+                Text(
+                    text = tarea.titulo,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = if (hecha) colores.onSurfaceVariant else colores.onSurface,
+                    textDecoration = if (hecha) TextDecoration.LineThrough else null,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = "$textoCurso$separador$textoFecha",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colorFecha,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+
+                val tieneBadges = textoEntregada != null ||
+                    textoNoEntregada != null ||
+                    textoGrupal != null ||
+                    tarea.calificacion != null ||
+                    (!hecha && tarea.prioridad == Prioridad.ALTA)
+
+                if (tieneBadges) {
+                    Spacer(Modifier.height(6.dp))
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        if (!hecha && tarea.prioridad == Prioridad.ALTA) {
+                            TaskStatusBadge(
+                                texto = priorityLabel(Prioridad.ALTA),
+                                fondo = colores.errorContainer,
+                                textoColor = colores.onErrorContainer,
+                            )
+                        }
+                        if (textoEntregada != null) {
+                            TaskStatusBadge(
+                                texto = textoEntregada,
+                                fondo = unamadColors.successContainer,
+                                textoColor = unamadColors.onSuccessContainer,
+                            )
+                        }
+                        if (textoNoEntregada != null) {
+                            TaskStatusBadge(
+                                texto = textoNoEntregada,
+                                fondo = colores.errorContainer,
+                                textoColor = colores.onErrorContainer,
+                            )
+                        }
+                        if (textoGrupal != null) {
+                            TaskStatusBadge(
+                                texto = textoGrupal,
+                                fondo = colores.tertiaryContainer,
+                                textoColor = colores.onTertiaryContainer,
+                            )
+                        }
+                        tarea.calificacion?.let { nota ->
+                            val textoNota = if (nota % 1.0 == 0.0) {
+                                nota.toInt().toString()
+                            } else {
+                                "%.2f".format(nota)
+                            }
+                            val aprobada = nota >= 11.0
+                            TaskStatusBadge(
+                                texto = "Nota: $textoNota/20",
+                                fondo = if (aprobada) unamadColors.goldContainer else colores.errorContainer,
+                                textoColor = if (aprobada) unamadColors.onGoldContainer else colores.onErrorContainer,
+                            )
                         }
                     }
-                    if (textoNoEntregada != null) {
-                        append(separador)
-                        withStyle(SpanStyle(color = colores.error)) {
-                            append(textoNoEntregada)
-                        }
-                    }
-                    tarea.calificacion?.let { nota ->
-                        val textoNota = if (nota % 1.0 == 0.0) nota.toInt().toString() else "%.2f".format(nota)
-                        append(separador)
-                        withStyle(SpanStyle(color = if (nota >= 11.0) colores.tertiary else colores.error)) {
-                            append("Nota: $textoNota/20")
-                        }
-                    }
-                },
-                style = MaterialTheme.typography.bodySmall,
-                color = colores.onSurfaceVariant,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
+                }
+            }
         }
     }
 }
 
-/** Checkbox circular de 20 dp con confirmación de estado (§5, patrón 3). */
+@Composable
+private fun TaskStatusBadge(
+    texto: String,
+    fondo: Color,
+    textoColor: Color,
+) {
+    Box(
+        modifier = Modifier
+            .clip(FormaNotally.s)
+            .background(fondo)
+            .padding(horizontal = 8.dp, vertical = 2.dp),
+    ) {
+        Text(
+            text = texto,
+            style = MaterialTheme.typography.labelSmall,
+            color = textoColor,
+            maxLines = 1,
+        )
+    }
+}
+
+/** Checkbox circular de 22 dp con confirmación animada. */
 @Composable
 private fun TaskCheckbox(hecha: Boolean) {
     val colores = MaterialTheme.colorScheme
@@ -308,7 +390,7 @@ private fun TaskCheckbox(hecha: Boolean) {
     )
     Box(
         modifier = Modifier
-            .size(20.dp)
+            .size(22.dp)
             .clip(CircleShape)
             .background(relleno)
             .border(2.dp, colorBorde, CircleShape),
@@ -319,7 +401,7 @@ private fun TaskCheckbox(hecha: Boolean) {
             enter = fadeIn(tween(MovimientoNotally.colorMs)) +
                 scaleIn(
                     animationSpec = MovimientoNotally.espacialRapida(),
-                    initialScale = 0.9f,
+                    initialScale = 0.75f,
                 ),
             exit = fadeOut(tween(80)),
         ) {
@@ -333,19 +415,7 @@ private fun TaskCheckbox(hecha: Boolean) {
     }
 }
 
-/**
- * Fila de tarea con gestos de swipe (§7.2).
- *
- * End→start ejecuta "Completar" (`tertiaryContainer`); start→end ejecuta
- * "Mañana" (`secondaryContainer`). Umbral 45 % del ancho y haptic al cruzarlo.
- *
- * Nota de API: material3 1.4.0 eliminó `confirmValueChange` del constructor
- * principal de `SwipeToDismissBoxState` y añadió `onDismiss` + `reset()`. Se usa
- * el constructor (deprecado pero público en 1.4.0) con `confirmValueChange`
- * devolviendo `false`, que es exactamente el comportamiento pedido: ejecutar y
- * volver a reposo sin expulsar la fila. Con `onDismiss` la fila llegaba al
- * ancho completo antes de volver, un salto visible.
- */
+/** Fila de tarea con gestos de swipe: completar (izquierda) y posponer a mañana (derecha). */
 @Suppress("DEPRECATION")
 @Composable
 fun SwipeTaskRow(
@@ -376,7 +446,6 @@ fun SwipeTaskRow(
                     SwipeToDismissBoxValue.StartToEnd -> posponerActual()
                     SwipeToDismissBoxValue.Settled -> Unit
                 }
-                // Siempre vuelve a reposo: la fila no se expulsa.
                 false
             },
             positionalThreshold = { distanciaTotal -> distanciaTotal * 0.45f },
@@ -404,17 +473,15 @@ fun SwipeTaskRow(
             val direccion = estado.dismissDirection
             val esCompletar = direccion == SwipeToDismissBoxValue.EndToStart
             val contenedor = if (esCompletar) {
-                colores.tertiaryContainer
+                colores.primaryContainer
             } else {
                 colores.secondaryContainer
             }
             val contenido = if (esCompletar) {
-                colores.onTertiaryContainer
+                colores.onPrimaryContainer
             } else {
                 colores.onSecondaryContainer
             }
-            // El fondo ocupa solo el área revelada (ancho de la etiqueta), no
-            // toda la fila: así el color de acción no sangra bajo el texto.
             if (direccion != SwipeToDismissBoxValue.Settled) {
                 Box(modifier = Modifier.fillMaxSize()) {
                     Row(
@@ -424,7 +491,7 @@ fun SwipeTaskRow(
                                 else Alignment.CenterStart,
                             )
                             .fillMaxHeight()
-                            .clip(FormaNotally.m)
+                            .clip(FormaNotally.l)
                             .background(contenedor)
                             .padding(horizontal = 20.dp),
                         verticalAlignment = Alignment.CenterVertically,
@@ -464,7 +531,6 @@ fun SwipeTaskRow(
     }
 }
 
-/** "Prioridad alta/media/baja" para lectores de pantalla. */
 @Composable
 fun priorityLabelForA11y(prioridad: Prioridad): String = stringResource(
     when (prioridad) {
@@ -474,7 +540,6 @@ fun priorityLabelForA11y(prioridad: Prioridad): String = stringResource(
     },
 )
 
-/** "Alta/Media/Baja" para la UI visible. */
 @Composable
 fun priorityLabel(prioridad: Prioridad): String = stringResource(
     when (prioridad) {
@@ -484,7 +549,6 @@ fun priorityLabel(prioridad: Prioridad): String = stringResource(
     },
 )
 
-/** "Pendiente/En curso/Completada". */
 @Composable
 fun statusLabel(estado: Estado): String = stringResource(
     when (estado) {
@@ -493,4 +557,3 @@ fun statusLabel(estado: Estado): String = stringResource(
         Estado.COMPLETADA -> R.string.state_done
     },
 )
-

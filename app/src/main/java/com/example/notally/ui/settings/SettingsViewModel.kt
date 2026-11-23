@@ -19,6 +19,7 @@ import com.example.notally.data.firebase.ErrorAuth
 import com.example.notally.data.firebase.ResultadoAuth
 import com.example.notally.data.firebase.UsuarioFirebase
 import com.example.notally.data.model.Settings
+import com.example.notally.data.model.TemaApp
 import com.example.notally.data.repository.SettingsRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -116,6 +117,10 @@ class SettingsViewModel(
 
     fun cambiarSemanaEmpiezaLunes(activo: Boolean) {
         viewModelScope.launch { repositorio.cambiarSemanaEmpiezaLunes(activo) }
+    }
+
+    fun cambiarTema(tema: TemaApp) {
+        viewModelScope.launch { repositorio.cambiarTema(tema) }
     }
 
     /** Inicia sesión con email/contraseña y, si funciona, sube lo pendiente. */

@@ -35,6 +35,7 @@ internal fun EmptyStateHoy(
     alCrearTarea: () -> Unit,
     alMostrarTodas: () -> Unit,
     alMostrarPendientes: () -> Unit,
+    alLimpiarBusqueda: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     when (vacio) {
@@ -59,6 +60,14 @@ internal fun EmptyStateHoy(
             cuerpo = stringResource(R.string.filter_empty_done_body),
             etiquetaAccion = stringResource(R.string.filter_empty_done_cta),
             alAccionar = alMostrarPendientes,
+            modifier = modifier,
+        )
+
+        is VacioHoy.SinResultadosBusqueda -> EmptyState(
+            titulo = stringResource(R.string.today_search_empty_title),
+            cuerpo = stringResource(R.string.today_search_empty_body, vacio.consulta),
+            etiquetaAccion = stringResource(R.string.today_search_empty_cta),
+            alAccionar = alLimpiarBusqueda,
             modifier = modifier,
         )
     }
@@ -201,7 +210,10 @@ internal fun LazyListScope.elementosHoy(
                     alMostrarPendientes = {
                         viewModel.cambiarFiltro(FiltroHoy.PENDIENTES)
                     },
-                    modifier = Modifier.padding(top = 48.dp),
+                    alLimpiarBusqueda = {
+                        viewModel.cambiarConsultaBusqueda("")
+                    },
+                    modifier = Modifier.padding(top = 36.dp),
                 )
             }
         }
@@ -218,8 +230,8 @@ internal fun LazyListScope.elementosHoy(
                         .animateContentSize(
                             MovimientoNotally.espacialNormal(),
                         )
-                        .padding(top = 24.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                        .padding(top = 20.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     estado.completadasPlanas.forEach { elemento ->
                         ElementoTarea(
@@ -268,7 +280,7 @@ internal fun LazyListScope.elementosHoy(
                         )
                         if (seccion.expandida) {
                             Column(
-                                verticalArrangement = Arrangement.spacedBy(4.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
                                 seccion.elementos.forEach { elemento ->
                                     ElementoTarea(

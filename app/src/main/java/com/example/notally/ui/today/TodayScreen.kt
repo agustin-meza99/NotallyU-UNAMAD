@@ -66,9 +66,13 @@ import com.example.notally.ui.components.DiaTira
 import com.example.notally.ui.components.FilasCargando
 import com.example.notally.ui.components.FilterChipRow
 import com.example.notally.ui.components.FocalTaskCard
+import com.example.notally.ui.components.NotallySearchBar
+import com.example.notally.ui.components.OfflineStatusPill
 import com.example.notally.ui.components.OpcionFiltro
 import com.example.notally.ui.components.SectionHeader
 import com.example.notally.ui.components.SwipeTaskRow
+import com.example.notally.ui.components.TodayHeroBanner
+import com.example.notally.ui.components.WelcomeAuthCard
 import com.example.notally.ui.theme.EspaciadoNotally
 import com.example.notally.ui.theme.margenHorizontalPantalla
 import com.example.notally.ui.theme.MovimientoNotally
@@ -96,6 +100,7 @@ fun TodayScreen(
     modifier: Modifier = Modifier,
     alCrearTarea: () -> Unit = {},
     alAbrirTarea: (Long) -> Unit = {},
+    alIrAjustes: () -> Unit = {},
     diaSeleccionadoEpoch: Long? = null,
     alSeleccionarDia: (Long?) -> Unit = {},
     alCambiarVisibilidadCluster: (Boolean) -> Unit = {},
@@ -106,8 +111,9 @@ fun TodayScreen(
 ) {
     val estado by viewModel.estadoUi.collectAsStateWithLifecycle()
     val contexto = LocalContext.current
-    val authRepository = remember(contexto) { contexto.contenedorNotally.authRepository }
-    val usuario by authRepository.usuario.collectAsStateWithLifecycle()
+    val contenedor = remember(contexto) { contexto.contenedorNotally }
+    val usuario by contenedor.authRepository.usuario.collectAsStateWithLifecycle()
+    val conectado by contenedor.monitorRed.conectado.collectAsStateWithLifecycle()
     val vacio = estado.vacio
     val estadoSnackbar = remember { SnackbarHostState() }
     val estadoLista = rememberLazyListState()
@@ -196,8 +202,11 @@ fun TodayScreen(
         !(estado.error && !estado.tieneDatosEnCache) && estado.vacio == null
     val focal = if (focalElegible) estado.focal else null
     val mostrarFocal = focal != null
+    val mostrarBusqueda = !estado.estaVacioTotal
     val indiceBaseSecciones = 1 +
+        (if (!conectado) 1 else 0) +
         (if (estado.error && estado.tieneDatosEnCache) 1 else 0) +
+        (if (mostrarBusqueda) 1 else 0) +
         (if (mostrarTira) 1 else 0) +
         (if (!estado.estaVacioTotal) 1 else 0) +
         (if (mostrarFocal) 1 else 0)
@@ -306,7 +315,7 @@ fun TodayScreen(
         }
     }
 
-    val accionDisponible = vacio != VacioHoy.Total
+    val accionDisponible = usuario != null && vacio != VacioHoy.Total
     val reportarDisponibilidadAccion by rememberUpdatedState(alCambiarDisponibilidadAccion)
     LaunchedEffect(accionDisponible) {
         reportarDisponibilidadAccion(accionDisponible)
@@ -336,16 +345,28 @@ fun TodayScreen(
                 contentPadding = PaddingValues(
                     start = margen,
                     end = margen,
-                    top = 24.dp,
+                    top = 16.dp,
                     bottom = EspaciadoNotally.rellenoInferiorLista,
                 ),
             ) {
                 item(key = "header") {
-                    EncabezadoHoy(
+                    TodayHeroBanner(
                         antetitulo = estado.antetitulo,
+                        ahora = estado.ahora,
                         resumen = estado.resumen,
+                        promedioNotas = estado.promedioNotas,
                         usuario = usuario,
+                        alPulsarPerfil = alIrAjustes,
                     )
+                }
+
+                if (!conectado) {
+                    item(key = "offline_pill") {
+                        OfflineStatusPill(
+                            visible = true,
+                            modifier = Modifier.padding(top = 12.dp),
+                        )
+                    }
                 }
 
                 if (estado.error && estado.tieneDatosEnCache) {
@@ -354,7 +375,18 @@ fun TodayScreen(
                             mensaje = errorRefrescar,
                             etiquetaReintentar = etiquetaReintentar,
                             alReintentar = viewModel::reintentar,
-                            modifier = Modifier.padding(top = 16.dp),
+                            modifier = Modifier.padding(top = 14.dp),
+                        )
+                    }
+                }
+
+                if (mostrarBusqueda) {
+                    item(key = "search_bar") {
+                        NotallySearchBar(
+                            consulta = estado.consultaBusqueda,
+                            placeholder = stringResource(R.string.today_search_placeholder),
+                            alCambiarConsulta = viewModel::cambiarConsultaBusqueda,
+                            modifier = Modifier.padding(top = 14.dp),
                         )
                     }
                 }
@@ -384,18 +416,27 @@ fun TodayScreen(
                     }
                 }
 
-                elementosHoy(
-                    focal = focal,
-                    estado = estado,
-                    mostrarCarga = mostrarCarga,
-                    errorCargar = errorCargar,
-                    etiquetaReintentar = etiquetaReintentar,
-                    vacio = vacio,
-                    alCrearTarea = alCrearTarea,
-                    alAbrirTarea = alAbrirTarea,
-                    viewModel = viewModel,
-                    coordenadasFila = coordenadasFila,
-                )
+                if (usuario == null && estado.estaVacioTotal && !mostrarCarga) {
+                    item(key = "welcome_unamad") {
+                        WelcomeAuthCard(
+                            alIrAjustes = alIrAjustes,
+                            modifier = Modifier.padding(top = 20.dp),
+                        )
+                    }
+                } else {
+                    elementosHoy(
+                        focal = focal,
+                        estado = estado,
+                        mostrarCarga = mostrarCarga,
+                        errorCargar = errorCargar,
+                        etiquetaReintentar = etiquetaReintentar,
+                        vacio = vacio,
+                        alCrearTarea = alCrearTarea,
+                        alAbrirTarea = alAbrirTarea,
+                        viewModel = viewModel,
+                        coordenadasFila = coordenadasFila,
+                    )
+                }
 
             }
         }

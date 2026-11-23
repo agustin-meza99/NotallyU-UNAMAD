@@ -277,6 +277,7 @@ private fun ContenedorPestanas(
                             Destino.Hoy -> TodayScreen(
                                 alCrearTarea = abrirNuevaTarea,
                                 alAbrirTarea = { id -> onAbrirEditor(id) },
+                                alIrAjustes = { onSeleccionar(Destino.Settings) },
                                 diaSeleccionadoEpoch = diaHoySeleccionado,
                                 alSeleccionarDia = { diaHoySeleccionado = it },
                                 alCambiarVisibilidadCluster = { clusterVisible = it },

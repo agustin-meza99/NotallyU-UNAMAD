@@ -4,21 +4,37 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // ---------------------------------------------------------------------
-    // Utilidades
+    // Utilidades de seguridad (ISO/IEC 25010 — Seguridad / Confidencialidad)
     // ---------------------------------------------------------------------
 
-    // Solo el usuario autenticado puede tocar su propio subarbol.
+    // Solo el usuario autenticado puede acceder a su propio subárbol.
     function isOwner(uid) {
       return request.auth != null && request.auth.uid == uid;
     }
 
-    // Error si el cliente intenta escribir un campo fuera del esquema.
-    // (hasOnly actua como lista blanca de claves.)
+    function validCurso(d) {
+      return d.keys().hasAll(['id', 'name', 'createdAt'])
+        && d.id is number
+        && d.name is string
+        && d.name.size() >= 1 && d.name.size() <= 160
+        && d.createdAt is number;
+    }
+
+    function validTarea(d) {
+      return d.keys().hasAll(['id', 'title', 'priority', 'status', 'createdAt', 'updatedAt'])
+        && d.id is number
+        && d.title is string
+        && d.title.size() >= 1 && d.title.size() <= 300
+        && (!d.keys().hasAny(['notes']) || (d.notes is string && d.notes.size() <= 20000))
+        && d.priority in ['BAJA', 'MEDIA', 'ALTA', 'LOW', 'MEDIUM', 'HIGH']
+        && d.status in ['PENDIENTE', 'EN_CURSO', 'COMPLETADA', 'PENDING', 'IN_PROGRESS', 'DONE']
+        && (!d.keys().hasAny(['subtasks']) || (d.subtasks is list && d.subtasks.size() <= 100))
+        && d.createdAt is number
+        && d.updatedAt is number;
+    }
 
     // ---------------------------------------------------------------------
     // Perfil: users/{uid}
-    // El esquema del perfil aun no esta definido; solo se acota el numero de
-    // campos y el tipo de las marcas de tiempo habituales.
     // ---------------------------------------------------------------------
     match /users/{uid} {
       allow read: if isOwner(uid);
@@ -40,22 +56,30 @@ service cloud.firestore {
             || (request.resource.data.updatedAt is timestamp
                 && request.resource.data.updatedAt == request.time));
 
-      // Borrado duro permitido para limpieza; la app usa borrado suave.
       allow delete: if isOwner(uid);
 
       // -------------------------------------------------------------------
       // Cursos: users/{uid}/courses/{courseId}
       // -------------------------------------------------------------------
       match /courses/{courseId} {
-        allow read, write: if isOwner(uid);
+        allow read, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid) && validCurso(request.resource.data);
       }
 
       // -------------------------------------------------------------------
       // Tareas: users/{uid}/tasks/{taskId}
       // -------------------------------------------------------------------
       match /tasks/{taskId} {
-        allow read, write: if isOwner(uid);
+        allow read, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid) && validTarea(request.resource.data);
       }
+    }
+
+    // ---------------------------------------------------------------------
+    // Cierre deny-by-default: nada fuera de users/{uid} es accesible.
+    // ---------------------------------------------------------------------
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

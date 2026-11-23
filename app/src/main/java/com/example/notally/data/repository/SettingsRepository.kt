@@ -7,8 +7,10 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.example.notally.data.model.Settings
+import com.example.notally.data.model.TemaApp
 import java.io.IOException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -30,14 +32,22 @@ class SettingsRepository(
             if (error is IOException) emit(emptyPreferences()) else throw error
         }
         .map { preferencias ->
+            val temaGuardado = preferencias[Claves.TEMA_APP]?.let { nombre ->
+                runCatching { TemaApp.valueOf(nombre) }.getOrNull()
+            } ?: TemaApp.SISTEMA
             Settings(
                 semanaEmpiezaLunes = preferencias[Claves.SEMANA_EMPIEZA_LUNES] ?: true,
                 ultimaSincronizacionFirestore = preferencias[Claves.ULTIMA_SINCRONIZACION],
+                tema = temaGuardado,
             )
         }
 
     suspend fun cambiarSemanaEmpiezaLunes(activo: Boolean) {
         dataStore.edit { it[Claves.SEMANA_EMPIEZA_LUNES] = activo }
+    }
+
+    suspend fun cambiarTema(tema: TemaApp) {
+        dataStore.edit { it[Claves.TEMA_APP] = tema.name }
     }
 
     /** Registra una subida completada para el estado “Guardado hace X”. */
@@ -48,5 +58,6 @@ class SettingsRepository(
     private object Claves {
         val SEMANA_EMPIEZA_LUNES = booleanPreferencesKey("week_starts_monday")
         val ULTIMA_SINCRONIZACION = longPreferencesKey("last_firestore_sync")
+        val TEMA_APP = stringPreferencesKey("theme_mode")
     }
 }

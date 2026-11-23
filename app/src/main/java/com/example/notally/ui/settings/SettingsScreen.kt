@@ -1,6 +1,8 @@
 package com.example.notally.ui.settings
 
 import android.util.Patterns
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,6 +30,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
@@ -59,7 +62,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
@@ -77,13 +82,16 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.notally.R
+import com.example.notally.contenedorNotally
 import com.example.notally.data.aula.ErrorAula
 import com.example.notally.data.firebase.ErrorAuth
 import com.example.notally.data.firebase.UsuarioFirebase
+import com.example.notally.data.model.TemaApp
 import com.example.notally.ui.components.anilloFoco
 import com.example.notally.ui.theme.EspaciadoNotally
 import com.example.notally.ui.theme.FormaNotally
 import com.example.notally.ui.theme.margenHorizontalPantalla
+import com.example.notally.ui.theme.unamad
 import com.example.notally.ui.utils.DateFormat
 import java.time.Instant
 import java.time.ZoneId
@@ -110,6 +118,8 @@ fun SettingsScreen(
     val estadoCuenta by viewModel.estadoCuenta.collectAsStateWithLifecycle()
     val margen = margenHorizontalPantalla
     val contexto = LocalContext.current
+    val conectado by remember(contexto) { contexto.contenedorNotally.monitorRed.conectado }
+        .collectAsStateWithLifecycle()
     val alcance = rememberCoroutineScope()
     val tituloPantalla = stringResource(R.string.nav_ajustes)
 
@@ -188,16 +198,36 @@ fun SettingsScreen(
                 .fillMaxWidth(),
             contentPadding = PaddingValues(start = margen, end = margen, bottom = 32.dp),
         ) {
+            item(key = "settings_hero") {
+                EncabezadoSettingsUnamad(modifier = Modifier.padding(bottom = 18.dp))
+            }
+
+            item(key = "appearance_label") {
+                EtiquetaSeccion(stringResource(R.string.settings_appearance))
+            }
+            item(key = "theme_selector") {
+                SelectorTemaUnamad(
+                    seleccionado = settings.tema,
+                    alSeleccionar = viewModel::cambiarTema,
+                    modifier = Modifier.padding(top = 6.dp),
+                )
+            }
+
             item(key = "agenda_label") {
-                EtiquetaSeccion(stringResource(R.string.settings_agenda))
+                EtiquetaSeccion(
+                    stringResource(R.string.settings_agenda),
+                    modifier = Modifier.padding(top = 24.dp),
+                )
             }
             item(key = "week_row") {
-                FilaInterruptorSettings(
-                    etiqueta = stringResource(R.string.settings_week),
-                    soporte = stringResource(R.string.settings_week_support),
-                    marcado = settings.semanaEmpiezaLunes,
-                    alCambiar = viewModel::cambiarSemanaEmpiezaLunes,
-                )
+                TarjetaSeccionSettings {
+                    FilaInterruptorSettings(
+                        etiqueta = stringResource(R.string.settings_week),
+                        soporte = stringResource(R.string.settings_week_support),
+                        marcado = settings.semanaEmpiezaLunes,
+                        alCambiar = viewModel::cambiarSemanaEmpiezaLunes,
+                    )
+                }
             }
 
             item(key = "account_label") {
@@ -210,23 +240,27 @@ fun SettingsScreen(
             val sesion = usuario
             if (sesion == null) {
                 item(key = "account_signed_out_row") {
-                    FilaIniciarSesion(
-                        alPulsar = {
-                            viewModel.descartarErrorCuenta()
-                            hojaCuentaVisible = true
-                        },
-                    )
+                    TarjetaSeccionSettings {
+                        FilaIniciarSesion(
+                            alPulsar = {
+                                viewModel.descartarErrorCuenta()
+                                hojaCuentaVisible = true
+                            },
+                        )
+                    }
                 }
             } else {
                 item(key = "account_signed_in_row") {
-                    FilaCuentaConSesion(
-                        usuario = sesion,
-                        ultimaSincronizacion = settings.ultimaSincronizacionFirestore,
-                        sincronizando = estadoCuenta.sincronizando,
-                        errorSync = estadoCuenta.errorSync,
-                        alSincronizar = viewModel::sincronizarAhora,
-                        alCerrarSesion = viewModel::cerrarSesion,
-                    )
+                    TarjetaSeccionSettings {
+                        FilaCuentaConSesion(
+                            usuario = sesion,
+                            ultimaSincronizacion = settings.ultimaSincronizacionFirestore,
+                            sincronizando = estadoCuenta.sincronizando,
+                            errorSync = estadoCuenta.errorSync,
+                            alSincronizar = viewModel::sincronizarAhora,
+                            alCerrarSesion = viewModel::cerrarSesion,
+                        )
+                    }
                 }
             }
 
@@ -239,21 +273,25 @@ fun SettingsScreen(
 
             if (estadoAula.conectado) {
                 item(key = "aula_connected_row") {
-                    FilaAulaConectada(
-                        estado = estadoAula,
-                        alImportar = viewModel::importarAulaAhora,
-                        alDesconectar = { confirmarDesconexion = true },
-                    )
+                    TarjetaSeccionSettings {
+                        FilaAulaConectada(
+                            estado = estadoAula,
+                            alImportar = viewModel::importarAulaAhora,
+                            alDesconectar = { confirmarDesconexion = true },
+                        )
+                    }
                 }
             } else {
                 item(key = "aula_connect_row") {
-                    FilaConectarAula(
-                        habilitada = !estadoAula.cargandoInicial && !estadoAula.importando,
-                        alPulsar = {
-                            viewModel.descartarErrorAula()
-                            hojaAulaVisible = true
-                        },
-                    )
+                    TarjetaSeccionSettings {
+                        FilaConectarAula(
+                            habilitada = !estadoAula.cargandoInicial && !estadoAula.importando,
+                            alPulsar = {
+                                viewModel.descartarErrorAula()
+                                hojaAulaVisible = true
+                            },
+                        )
+                    }
                 }
             }
 
@@ -280,26 +318,17 @@ fun SettingsScreen(
                 }
             }
 
-            item(key = "about_label") {
+            item(key = "iso_label") {
                 EtiquetaSeccion(
-                    stringResource(R.string.settings_about),
+                    stringResource(R.string.settings_iso_section),
                     modifier = Modifier.padding(top = 24.dp),
                 )
             }
-            item(key = "version_row") {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 56.dp)
-                        .padding(vertical = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = stringResource(R.string.settings_version, nombreVersion),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                }
+            item(key = "iso_card") {
+                TarjetaDiagnosticoIso25010(
+                    conectado = conectado,
+                    nombreVersion = nombreVersion,
+                )
             }
         }
 
@@ -1196,3 +1225,220 @@ private fun formatearUltimaImportacion(millis: Long): String =
     formatoUltimaImportacion.format(
         Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()),
     )
+
+
+@Composable
+private fun EncabezadoSettingsUnamad(modifier: Modifier = Modifier) {
+    val unamadColors = MaterialTheme.unamad
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(FormaNotally.xl)
+            .background(
+                Brush.linearGradient(
+                    colors = listOf(unamadColors.heroStart, unamadColors.heroEnd),
+                ),
+            )
+            .padding(20.dp),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .background(unamadColors.heroBadgeBg),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_settings),
+                    contentDescription = null,
+                    tint = unamadColors.heroBadgeContent,
+                    modifier = Modifier.size(22.dp),
+                )
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.settings_header_title),
+                    style = MaterialTheme.typography.titleLarge,
+                    color = unamadColors.heroOnContent,
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    text = stringResource(R.string.settings_header_subtitle),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = unamadColors.heroOnContent.copy(alpha = 0.82f),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun TarjetaSeccionSettings(
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
+    val colores = MaterialTheme.colorScheme
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(top = 6.dp),
+        shape = FormaNotally.l,
+        color = colores.surfaceContainerLowest,
+        border = BorderStroke(1.dp, colores.outlineVariant.copy(alpha = 0.45f)),
+    ) {
+        Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+            content()
+        }
+    }
+}
+
+@Composable
+private fun SelectorTemaUnamad(
+    seleccionado: TemaApp,
+    alSeleccionar: (TemaApp) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colores = MaterialTheme.colorScheme
+    val opciones = listOf(
+        TemaApp.SISTEMA to stringResource(R.string.settings_theme_system),
+        TemaApp.CLARO to stringResource(R.string.settings_theme_light),
+        TemaApp.OSCURO to stringResource(R.string.settings_theme_dark),
+    )
+
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = FormaNotally.l,
+        color = colores.surfaceContainerLowest,
+        border = BorderStroke(1.dp, colores.outlineVariant.copy(alpha = 0.45f)),
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_dark_mode),
+                    contentDescription = null,
+                    tint = colores.primary,
+                    modifier = Modifier.size(20.dp),
+                )
+                Text(
+                    text = stringResource(R.string.settings_theme_label),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = colores.onSurface,
+                )
+            }
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = stringResource(R.string.settings_theme_support),
+                style = MaterialTheme.typography.bodySmall,
+                color = colores.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(12.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                opciones.forEach { (tema, etiqueta) ->
+                    val activo = tema == seleccionado
+                    Surface(
+                        onClick = { alSeleccionar(tema) },
+                        shape = FormaNotally.m,
+                        color = if (activo) colores.primary else colores.surfaceContainerLow,
+                        contentColor = if (activo) colores.onPrimary else colores.onSurfaceVariant,
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 42.dp),
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(
+                                text = etiqueta,
+                                style = MaterialTheme.typography.labelLarge,
+                                maxLines = 1,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TarjetaDiagnosticoIso25010(
+    conectado: Boolean,
+    nombreVersion: String,
+    modifier: Modifier = Modifier,
+) {
+    val colores = MaterialTheme.colorScheme
+    val unamadColors = MaterialTheme.unamad
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(top = 6.dp),
+        shape = FormaNotally.l,
+        color = colores.surfaceContainerLowest,
+        border = BorderStroke(1.dp, colores.outlineVariant.copy(alpha = 0.45f)),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            FilaDiagnostico(
+                icono = if (conectado) R.drawable.ic_verified else R.drawable.ic_cloud_off,
+                tinte = if (conectado) unamadColors.successAccent else colores.secondary,
+                texto = stringResource(
+                    if (conectado) {
+                        R.string.settings_iso_network_online
+                    } else {
+                        R.string.settings_iso_network_offline
+                    },
+                ),
+            )
+            FilaDiagnostico(
+                icono = R.drawable.ic_verified,
+                tinte = colores.primary,
+                texto = stringResource(R.string.settings_iso_security),
+            )
+            FilaDiagnostico(
+                icono = R.drawable.ic_verified,
+                tinte = colores.tertiary,
+                texto = stringResource(R.string.settings_iso_privacy),
+            )
+            HorizontalDivider(color = colores.outlineVariant.copy(alpha = 0.5f))
+            Text(
+                text = stringResource(R.string.settings_version, nombreVersion) + " · NotallyU UNAMAD",
+                style = MaterialTheme.typography.bodySmall,
+                color = colores.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun FilaDiagnostico(
+    icono: Int,
+    tinte: androidx.compose.ui.graphics.Color,
+    texto: String,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Icon(
+            painter = painterResource(icono),
+            contentDescription = null,
+            tint = tinte,
+            modifier = Modifier.size(18.dp),
+        )
+        Text(
+            text = texto,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+    }
+}

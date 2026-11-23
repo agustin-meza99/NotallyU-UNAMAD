@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Fondo de `surface` en modo claro (§2.2), usado por el tema base. -->
-    <color name="notally_surface">#FFF6F9FE</color>
+    <!-- Fondo de `surface` en modo claro UNAMAD (verde hoja suave). -->
+    <color name="notally_surface">#FFF4F8F5</color>
 </resources>
